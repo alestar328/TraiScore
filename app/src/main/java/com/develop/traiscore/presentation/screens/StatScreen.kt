@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Spacer
@@ -9,7 +8,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -28,14 +26,14 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.develop.traiscore.R
+import com.develop.traiscore.data.pressBancaWorkouts
 import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.DropdownMenuComponent
+import com.develop.traiscore.presentation.components.LineChart
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBlue
 
@@ -43,10 +41,20 @@ import com.develop.traiscore.presentation.theme.traiBlue
 @Composable
 fun StatScreen(modifier: Modifier = Modifier) {
     val timeOptions = listOf("Hoy", "Esta semana", "Este mes", "Este año") // Opciones de tiempo
-    val exerOptions = listOf("Press banca", "Sentadilla", "Dominadas", "Curl biceps") // Opciones de tiempo
+    val exerOptions =
+        listOf("Press banca", "Sentadilla", "Dominadas", "Curl biceps") // Opciones de tiempo
 
 
     var selectedTime by remember { mutableStateOf("") }
+    // Normalizar los datos para el eje Y
+    val maxWeight = pressBancaWorkouts.maxOfOrNull { it.type.weight } ?: 1.0
+    val minWeight = pressBancaWorkouts.minOfOrNull { it.type.weight } ?: 0.0
+
+
+
+    val pressBancaData = pressBancaWorkouts.mapIndexed { index, workout ->
+        index.toFloat() to ((workout.type.weight - minWeight) / (maxWeight - minWeight)).toFloat()
+    }
 
     Scaffold(
         topBar = {
@@ -54,10 +62,10 @@ fun StatScreen(modifier: Modifier = Modifier) {
                 title = {
                     // Logo en lugar de texto
                     Text(
-                        text="Estadisticas",
+                        text = "Estadisticas",
                         style = MaterialTheme.typography.titleLarge.copy(
                             fontWeight = FontWeight.ExtraBold,
-                            fontSize = MaterialTheme.typography.titleLarge.fontSize*2
+                            fontSize = MaterialTheme.typography.titleLarge.fontSize * 2
                         ), // Estilo del texto
                         color = traiBlue, // Color del texto
                         textAlign = TextAlign.Center,
@@ -127,9 +135,21 @@ fun StatScreen(modifier: Modifier = Modifier) {
                     )
 
                 }
-
-
-
+                item {
+                    Text(
+                        text = "Progreso del ejercicio:",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    LineChart(
+                        data = pressBancaData,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(300.dp)
+                            .padding(horizontal = 16.dp)
+                    )
+                }
             }
         }
     )

@@ -1,11 +1,12 @@
 package com.develop.traiscore.domain
 
 import androidx.room.Entity
+import androidx.room.PrimaryKey
 
 
 @Entity(tableName = "workout_type")
 data class WorkoutType(
-
+    @PrimaryKey(autoGenerate = true) val id: Int = 0, // Clave primaria
     val title: String,
     val weight: Double,
     val reps: Int,

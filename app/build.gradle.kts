@@ -54,6 +54,8 @@ android {
 }
 
 dependencies {
+    val lifecycle_version = "2.8.7"
+
     val room_version = "2.6.1"
     implementation(libs.androidx.room.runtime)
     val nav_version = "2.8.4"
@@ -71,7 +73,9 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     //La mierda de abajo no acepta la palabra 'class'
     implementation(libs.androidx.material3.window.size)
-
+// ViewModel
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
 
     implementation(libs.hilt.android)
