@@ -1,8 +1,12 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.devtools.ksp")
     alias(libs.plugins.compose.compiler)
+    //Room
+    id("com.google.devtools.ksp")
+    //Hilt
+    id("kotlin-kapt")
+    id("com.google.dagger.hilt.android")
 
 }
 
@@ -50,6 +54,10 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+    // Allow references to generated code
+    kapt {
+        correctErrorTypes = true
+    }
 
 }
 
@@ -58,25 +66,29 @@ dependencies {
 
     val room_version = "2.6.1"
     implementation(libs.androidx.room.runtime)
+    // If this project uses any Kotlin source, use Kotlin Symbol Processing (KSP)
+    ksp(libs.androidx.room.compiler)
+
+    // optional - Kotlin Extensions and Coroutines support for Room
+    implementation(libs.androidx.room.ktx)
+
     val nav_version = "2.8.4"
     implementation(libs.androidx.material3.window.size)
-    val vicoVersion = "2.0.0-beta.6"
-    implementation(libs.compose)
-    implementation(libs.compose.m2)
-    implementation(libs.compose.m3)
-    implementation(libs.core)
-    implementation(libs.views)
-
-
+    // ViewModel
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
+    // ViewModel utilities for Compose
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
+    // Lifecycle utilities for Compose
+    implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.core.splashscreen)
-    ksp(libs.androidx.room.compiler)
     //La mierda de abajo no acepta la palabra 'class'
     implementation(libs.androidx.material3.window.size)
-// ViewModel
-    implementation(libs.androidx.lifecycle.viewmodel.ktx)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
+    //Hilt
+    implementation("com.google.dagger:hilt-android:2.51.1")
+    kapt("com.google.dagger:hilt-android-compiler:2.51.1")
+    implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
     implementation(libs.hilt.android)
     implementation(libs.androidx.core.ktx)

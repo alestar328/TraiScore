@@ -1,16 +1,23 @@
 package com.develop.traiscore.presentation.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Slider
@@ -27,6 +34,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import com.develop.traiscore.domain.defaultExercises
+import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.theme.primaryWhite
 import com.develop.traiscore.presentation.theme.traiBlue
 
@@ -39,7 +48,7 @@ fun AddExerciseDialogContent(
     var exerciseName by remember { mutableStateOf("") }
     var exerciseReps by remember { mutableStateOf("") }
     var exerciseWeight by remember { mutableStateOf("") }
-    var exerciseRIR by remember { mutableStateOf("") }
+    var sliderValue by remember { mutableStateOf(5f) } // Slider for RIR
 
     Column(
         modifier = modifier
@@ -71,30 +80,13 @@ fun AddExerciseDialogContent(
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold
             )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = traiBlue, // Color del borde
-                        shape = RoundedCornerShape(12.dp) // Bordes redondeados
-                    )
-                    .padding(3.dp) // Grosor del borde
-            ) {
-                OutlinedTextField(
-                    value = exerciseName,
-                    onValueChange = { exerciseName = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.White,
-                            RoundedCornerShape(12.dp)),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = traiBlue,
-                        unfocusedBorderColor = traiBlue
-                    )
-                )
-            }
+            FilterableDropdown(
+                items = com.develop.traiscore.domain.defaultExercises.map { it.name },
+                onItemSelected = { exerciseName = it },
+                selectedValue = exerciseName
+            )
         }
+
 
         Spacer(modifier = Modifier.size(16.dp))
 
@@ -166,7 +158,7 @@ fun AddExerciseDialogContent(
         }
         Spacer(modifier = Modifier.size(16.dp))
 
-        //RIR ejercicio
+        //RIR SLIDER
         Column(
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -208,7 +200,7 @@ fun AddExerciseDialogContent(
                 onClick = {
                     val reps = exerciseReps.toIntOrNull() ?: 0
                     val weight = exerciseWeight.toDoubleOrNull() ?: 0.0
-                    val rir = exerciseRIR.toIntOrNull() ?: 0
+                    val rir = sliderValue.toInt() ?: 0
 
                     onSave(exerciseName, reps, weight, rir)
                 },

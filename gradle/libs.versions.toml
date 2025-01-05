@@ -16,22 +16,22 @@ compose-material3 = "1.3.1"
 navigationCompose = "2.8.4"
 roomCommon = "2.6.1"
 roomCompiler = "2.6.1"
+roomKtx = "2.6.1"
 roomRuntime = "2.6.1"
 ui = "1.7.6"
-vicoVersion = "2.0.0-beta.6"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 #  el nombre alias: La mierda de abajo no acepta la palabra 'class'
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
+androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
+androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-material3-window-size = { module = "androidx.compose.material3:material3-window-size-class", version.ref = "material3WindowSizeClass" }
 androidx-navigation-compose = { module = "androidx.navigation:navigation-compose", version.ref = "navigationCompose" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "roomCompiler" }
+androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "roomKtx" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "roomRuntime" }
-compose = { module = "com.patrykandpatrick.vico:compose", version.ref = "vicoVersion" }
-compose-m2 = { module = "com.patrykandpatrick.vico:compose-m2", version.ref = "vicoVersion" }
-compose-m3 = { module = "com.patrykandpatrick.vico:compose-m3", version.ref = "vicoVersion" }
-core = { module = "com.patrykandpatrick.vico:core", version.ref = "vicoVersion" }
 hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hiltAndroid" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
@@ -48,7 +48,6 @@ androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" ,version.ref = "compose-material3"}
 androidx-room-common = { group = "androidx.room", name = "room-common", version.ref = "roomCommon" }
 ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
-views = { module = "com.patrykandpatrick.vico:views", version.ref = "vicoVersion" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
