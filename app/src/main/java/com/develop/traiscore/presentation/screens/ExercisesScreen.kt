@@ -23,18 +23,24 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import com.develop.traiscore.domain.WorkoutModel
-import com.develop.traiscore.domain.WorkoutType
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.develop.traiscore.data.local.entity.ExerciseEntity
+import com.develop.traiscore.domain.model.WorkoutModel
+import com.develop.traiscore.data.local.entity.WorkoutType
+import com.develop.traiscore.data.local.entity.WorkoutWithExercise
 import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.WorkoutCard
 import com.develop.traiscore.presentation.theme.traiBlue
+import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
 import java.util.Date
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ExercisesScreen(modifier: Modifier = Modifier) {
-    val workouts = sampleWorkouts//EJERCICIOS EJEMPLO
+fun ExercisesScreen(
+    exeScreenViewModel: ExercisesScreenViewModel = hiltViewModel(),
+   ) {
+    val exercises = exeScreenViewModel.exercises
 
     Scaffold(
         topBar = {
@@ -78,11 +84,14 @@ fun ExercisesScreen(modifier: Modifier = Modifier) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
 
-                items(workouts) { workout ->
+                items(
+                    items = exercises,
+                    key = { exercise -> exercise.workoutModel.id } // Usa workoutModel.id como clave
+                ) { exercise ->
                     WorkoutCard(
-                        workout = workout,
-                        onEditClick = { println("Edit ${workout.type.title}") },
-                        onDeleteClick = { println("Delete ${workout.type.title}") }
+                        workoutWithExercise = exercise,
+                        onEditClick = { println("Edit ${exercise.exerciseEntity.name}") },
+                        onDeleteClick = { println("Delete ${exercise.exerciseEntity.name}") }
                     )
 
 
@@ -99,73 +108,44 @@ fun ExercisesScreen(modifier: Modifier = Modifier) {
 )
 @Composable
 fun ExercisesScreenPreview() {
+    val workoutType = WorkoutType(
+        id = 1,
+        exerciseId = 1,
+        title = "Sentadillas",
+        weight = 100.0,
+        reps = 10,
+        rir = 2
+    )
+
+    val workoutModel = WorkoutModel(
+        id = 1,
+        timestamp = Date(),
+        workoutTypeId = 1
+    )
+
+    val workoutWithExercise = WorkoutWithExercise(
+        workoutModel = workoutModel,
+        workoutType = workoutType,
+        exerciseEntity = ExerciseEntity(
+            id = 1,
+            idIntern = "sentadillas",
+            name = "Sentadillas",
+            isDefault = true
+        )
+    )
+
     TraiScoreTheme {
-        ExercisesScreen()
+        LazyColumn {
+            items(
+                items = listOf(workoutWithExercise),
+                key = { it.workoutModel.id }
+            ) { exercise ->
+                WorkoutCard(
+                    workoutWithExercise = exercise,
+                    onEditClick = { println("Edit ${exercise.exerciseEntity.name}") },
+                    onDeleteClick = { println("Delete ${exercise.exerciseEntity.name}") }
+                )
+            }
+        }
     }
 }
-
-val sampleWorkouts = listOf(
-    WorkoutModel(
-        timestamp = Date(),
-        type = WorkoutType(
-            title = "Sentadillas",
-            weight = 100.0,
-            reps = 8,
-            rir = 2
-        )
-    ),
-    WorkoutModel(
-        timestamp = Date(),
-        type = WorkoutType(
-            title = "Press de Banca",
-            weight = 80.0,
-            reps = 10,
-            rir = 1
-        )
-    ),
-    WorkoutModel(
-        timestamp = Date(),
-        type = WorkoutType(
-            title = "Peso Muerto",
-            weight = 120.0,
-            reps = 6,
-            rir = 3
-        )
-    ),
-    WorkoutModel(
-        timestamp = Date(),
-        type = WorkoutType(
-            title = "Press Militar",
-            weight = 120.0,
-            reps = 6,
-            rir = 3
-        )
-    ),
-    WorkoutModel(
-        timestamp = Date(),
-        type = WorkoutType(
-            title = "Dominadas",
-            weight = 120.0,
-            reps = 6,
-            rir = 3
-        )
-    ),
-    WorkoutModel(
-        timestamp = Date(),
-        type = WorkoutType(
-            title = "Prensa",
-            weight = 120.0,
-            reps = 6,
-            rir = 3
-        )
-    ),
-    WorkoutModel(
-        timestamp = Date(),
-        type = WorkoutType(
-            title = "Curl biceps",
-            weight = 120.0,
-            reps = 6,
-            rir = 3
-        )
-    ),
-)

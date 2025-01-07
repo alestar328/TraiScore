@@ -24,8 +24,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
-import com.develop.traiscore.domain.WorkoutModel
-import com.develop.traiscore.domain.WorkoutType
+import com.develop.traiscore.data.local.entity.WorkoutType
+import com.develop.traiscore.data.local.entity.WorkoutWithExercise
+import com.develop.traiscore.domain.model.WorkoutModel
 import com.develop.traiscore.presentation.theme.traiBlue
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -33,11 +34,14 @@ import java.util.Locale
 
 @Composable
 fun WorkoutCard(
-    workout: WorkoutModel,
+    workoutWithExercise: WorkoutWithExercise,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+
+    val workout = workoutWithExercise.workoutModel
+    val workoutType = workoutWithExercise.workoutType
     Box(
         modifier = modifier
             .fillMaxWidth()
@@ -54,7 +58,7 @@ fun WorkoutCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = workout.type.title.uppercase(),
+                    text = workoutType.title.uppercase(),
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
                     fontSize = 18.sp
@@ -80,7 +84,7 @@ fun WorkoutCard(
                     horizontalAlignment = Alignment.CenterHorizontally // Centrado opcional
                 ) {
                     Text(
-                        text = "${workout.type.reps}",
+                        text = "${workoutType.reps}",
                         color = Color.Black,
                         fontWeight = FontWeight.Bold, // Destacar el número
                         fontSize = 14.sp // Tamaño más grande para el dato
@@ -98,7 +102,7 @@ fun WorkoutCard(
 
                 ) {
                     Text(
-                        text = "${workout.type.weight} kg",
+                        text = "${workoutType.weight} kg",
                         color = Color.Black,
                         fontWeight = FontWeight.Bold, // Destacar el número
                         fontSize = 14.sp // Tamaño más grande para el dato
@@ -115,7 +119,7 @@ fun WorkoutCard(
 
                 ) {
                     Text(
-                        text = "${workout.type.rir}",
+                        text = "${workoutType.rir}",
                         color = Color.Black,
                         fontWeight = FontWeight.Bold, // Destacar el número
                         fontSize = 14.sp // Tamaño más grande para el dato
@@ -143,17 +147,30 @@ fun WorkoutCard(
 @Preview
 @Composable
 fun WorkoutCardPreview() {
-    val workout = WorkoutModel(
-        timestamp = Date(),
-        type = WorkoutType(
-            title = "Sentadillas",
-            weight = 100.0,
-            reps = 8,
-            rir = 2
+    val workoutType = WorkoutType(
+        id = 1,
+        exerciseId = 1,
+        title = "Sentadillas",
+        weight = 100.0,
+        reps = 8,
+        rir = 2
+    )
+    val workoutWithExercise = WorkoutWithExercise(
+        workoutModel = WorkoutModel(
+            id = 1,
+            timestamp = Date(),
+            workoutTypeId = 1
+        ),
+        workoutType = workoutType,
+        exerciseEntity  = com.develop.traiscore.data.local.entity.ExerciseEntity(
+            id = 1,
+            idIntern = "sentadillas",
+            name = "Sentadillas",
+            isDefault = true
         )
     )
     WorkoutCard(
-        workout = workout,
+        workoutWithExercise = workoutWithExercise,
         onEditClick = { /* Acción de editar */ },
         onDeleteClick = { /* Acción de eliminar */ }
     )

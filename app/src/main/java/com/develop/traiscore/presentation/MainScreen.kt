@@ -22,6 +22,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
 
 import com.develop.traiscore.presentation.components.NavItem
 import com.develop.traiscore.presentation.screens.AddExerciseDialogContent
@@ -34,11 +35,14 @@ import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.primaryBlack
 import com.develop.traiscore.presentation.theme.primaryWhite
 import com.develop.traiscore.presentation.theme.traiBlue
+import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
 
 
 @Composable
-fun MainScreen(modifier: Modifier = Modifier){
-
+fun MainScreen(
+    modifier: Modifier = Modifier,
+    exeScreenViewModel: ExercisesScreenViewModel = hiltViewModel()
+){
     val navItemList = listOf(
         NavItem("Ejercicio",painter = painterResource(id = R.drawable.routine_icon),badgeCount = 0),
         NavItem("Stats",painter = painterResource(id = R.drawable.stats_icon),badgeCount = 0),
@@ -111,7 +115,8 @@ fun MainScreen(modifier: Modifier = Modifier){
     ){ innerPadding ->
         ContenteScreen(
             modifier = Modifier.padding(innerPadding),
-            selectedIndex = selectedIndex
+            selectedIndex = selectedIndex,
+            exeScreenViewModel = exeScreenViewModel
         )
 
     }
@@ -121,8 +126,9 @@ fun MainScreen(modifier: Modifier = Modifier){
             onDismissRequest = {isDialogVisible = false}
         ){
             AddExerciseDialogContent(
-                onSave = {name, reps, weight, rir ->
-                    println("Guardado: $name, $reps, $weight, $rir")
+                onSave = { exerciseData ->
+                    println("Guardado: ${exerciseData.name}, ${exerciseData.reps}, ${exerciseData.weight}, ${exerciseData.rir}")
+                    exeScreenViewModel.addExercise(exerciseData) // Agregar ejercicio al estado compartido
                     isDialogVisible = false
                 },
                 onCancel = {
@@ -134,7 +140,10 @@ fun MainScreen(modifier: Modifier = Modifier){
 }
 
 @Composable
-fun ContenteScreen(modifier: Modifier = Modifier, selectedIndex : Int){
+fun ContenteScreen(
+    modifier: Modifier = Modifier,
+    selectedIndex : Int,
+    exeScreenViewModel: ExercisesScreenViewModel){
     when(selectedIndex){
             0-> ExercisesScreen()
             1-> StatScreen()

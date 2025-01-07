@@ -1,6 +1,5 @@
 package com.develop.traiscore.domain.model
 
-import com.develop.traiscore.domain.WorkoutModel
 import java.util.Calendar
 import java.util.Date
 

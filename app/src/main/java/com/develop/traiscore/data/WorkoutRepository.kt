@@ -1,6 +1,6 @@
 package com.develop.traiscore.data
 
-import com.develop.traiscore.domain.WorkoutType
+import com.develop.traiscore.data.local.entity.WorkoutType
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 

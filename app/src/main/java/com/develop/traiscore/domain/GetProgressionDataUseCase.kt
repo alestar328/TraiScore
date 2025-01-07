@@ -1,5 +1,5 @@
 package com.develop.traiscore.domain
-import com.develop.traiscore.domain.WorkoutModel
+import com.develop.traiscore.domain.model.WorkoutModel
 
 class GetProgressionDataUseCase {
     operator fun invoke(workouts: List<WorkoutModel>, exercise: String): List<Pair<String, Float>> {

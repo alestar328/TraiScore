@@ -3,12 +3,17 @@ package com.develop.traiscore.presentation.components
 import android.text.TextPaint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.copy
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -19,122 +24,132 @@ import androidx.compose.ui.unit.sp
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 
 @Composable
-fun LineChart(
-    data: List<Pair<Float, Float>>, // Lista de puntos (x, y)
+fun LineChartView(
+    dataPoints: List<Pair<String, Float>>, // Lista de pares (fecha, valor)
+    lineColor: Color = Color.Blue,
+    axisColor: Color = Color.Gray,
+    backgroundChartColor: Color = Color.White,
+    maxYValue: Float? = null,
+    minYValue: Float? = null,
     modifier: Modifier = Modifier
 ) {
     Canvas(modifier = modifier.fillMaxSize()) {
-        val padding = 40.dp.toPx()
+        val padding = 20.dp.toPx()
         val chartWidth = size.width - padding * 2
         val chartHeight = size.height - padding * 2
-        val stepX = chartWidth / (data.size - 1)
+        val stepX = chartWidth / (dataPoints.size - 1)
+
+        val maxValue = maxYValue ?: dataPoints.maxOfOrNull { it.second } ?: 100f
+        val minValue = minYValue ?: dataPoints.minOfOrNull { it.second } ?: 0f
+        val valueRange = maxValue - minValue
+
+        // Fondo de la gráfica
+        drawRect(
+            color = backgroundChartColor,
+            size = size,
+            topLeft = Offset.Zero
+        )
 
         // Dibujar ejes
         drawLine(
-            color = Color.Gray,
-            start = androidx.compose.ui.geometry.Offset(padding, size.height - padding),
-            end = androidx.compose.ui.geometry.Offset(size.width - padding, size.height - padding),
-            strokeWidth = 2.dp.toPx()
+            color = axisColor,
+            start = Offset(padding, size.height - padding),
+            end = Offset(size.width - padding, size.height - padding),
+            strokeWidth = 1.dp.toPx()
         )
         drawLine(
-            color = Color.Gray,
-            start = androidx.compose.ui.geometry.Offset(padding, size.height - padding),
-            end = androidx.compose.ui.geometry.Offset(padding, padding),
-            strokeWidth = 2.dp.toPx()
+            color = axisColor,
+            start = Offset(padding, size.height - padding),
+            end = Offset(padding, padding),
+            strokeWidth = 1.dp.toPx()
         )
-        // Dibujar líneas horizontales
-        val numberOfLines = 5
-        val stepY = chartHeight / numberOfLines
-        for (i in 0..numberOfLines) {
-            val y = size.height - padding - i * stepY
-            drawLine(
-                color = Color.LightGray,
-                start = androidx.compose.ui.geometry.Offset(padding, y),
-                end = androidx.compose.ui.geometry.Offset(size.width - padding, y),
-                strokeWidth = 1.dp.toPx(),
-                pathEffect = androidx.compose.ui.graphics.PathEffect.dashPathEffect(floatArrayOf(10f, 10f), 0f)
-            )
 
-            // Dibujar etiquetas de eje Y
-            drawIntoCanvas {
-                val textPaint = TextPaint().apply {
-                    color = Color.Gray.toArgb()
-                    textSize = 12.sp.toPx()
-                }
-                it.nativeCanvas.drawText(
-                    "${(i * 20)}",
-                    padding - 30,
-                    y + 5,
-                    textPaint
-                )
-            }
-        }
-
-        // Crear el Path para la línea
+        // Crear línea del gráfico con curvas
         val path = Path().apply {
-            data.forEachIndexed { index, point ->
+            dataPoints.forEachIndexed { index, point ->
                 val x = padding + index * stepX
-                val y = size.height - padding - (point.second * chartHeight)
+                val y = size.height - padding - ((point.second - minValue) / valueRange) * chartHeight
                 if (index == 0) {
                     moveTo(x, y)
                 } else {
-                    lineTo(x, y)
+                    cubicTo(
+                        x - stepX / 2, size.height - padding, // Control Point 1
+                        x - stepX / 2, y,                   // Control Point 2
+                        x, y                                // Target Point
+                    )
                 }
             }
         }
 
-        // Dibujar la línea en el Canvas
+        // Dibujar línea del gráfico
         drawPath(
             path = path,
-            color = Color.Blue,
-            style = Stroke(
-                width = 4.dp.toPx(),
-                cap = StrokeCap.Round,
-                join = StrokeJoin.Round
+            color = lineColor,
+            style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
+        )
+
+        // Dibujar gradiente bajo la línea
+        val gradientPath = path.copy()
+        gradientPath.lineTo(size.width - padding, size.height - padding)
+        gradientPath.lineTo(padding, size.height - padding)
+        gradientPath.close()
+
+        drawPath(
+            path = gradientPath,
+            brush = Brush.verticalGradient(
+                colors = listOf(lineColor.copy(alpha = 0.3f), Color.Transparent),
+                startY = padding,
+                endY = size.height - padding
             )
         )
 
-        // Dibujar puntos en cada cruce
-        data.forEachIndexed { index, point ->
+        // Dibujar puntos en los cruces
+        dataPoints.forEachIndexed { index, point ->
             val x = padding + index * stepX
-            val y = size.height - padding - (point.second * chartHeight)
-            // Etiquetas del eje X
-            drawIntoCanvas {
-                val textPaint = TextPaint().apply {
-                    color = Color.Gray.toArgb()
-                    textSize = 12.sp.toPx()
-                }
-                it.nativeCanvas.drawText(
-                    "${(index + 1)}", // Etiqueta simple (puedes reemplazarlo con fechas u otros datos)
-                    x - 10, // Centrar etiqueta
-                    size.height - padding + 20, // Debajo del eje X
-                    textPaint
-                )
-            }
-
-
+            val y = size.height - padding - ((point.second - minValue) / valueRange) * chartHeight
             drawCircle(
-                color = Color.Cyan,
-                radius = 6.dp.toPx(),
-                center = androidx.compose.ui.geometry.Offset(x, y)
+                color = lineColor,
+                radius = 4.dp.toPx(),
+                center = Offset(x, y)
             )
+
+            // Etiquetas del eje X
+            if (index % 2 == 0) { // Mostrar cada dos puntos
+                drawIntoCanvas {
+                    val textPaint = TextPaint().apply {
+                        color = axisColor.toArgb()
+                        textSize = 10.sp.toPx()
+                        isAntiAlias = true
+                    }
+                    it.nativeCanvas.drawText(
+                        point.first, // Fecha
+                        x - 15, // Ajustar posición
+                        size.height - padding + 20, // Debajo del eje X
+                        textPaint
+                    )
+                }
+            }
         }
     }
 }
-@Preview(
-    name = "LineChartPreview",
-    showBackground = true
-)
+
+@Preview(showBackground = true)
 @Composable
-fun LineChartPreview() {
+fun LineChartViewPreview() {
     val sampleData = listOf(
-        0.1f to 0.2f,
-        0.2f to 0.4f,
-        0.3f to 0.8f,
-        0.4f to 0.6f,
-        0.5f to 0.9f
+        "2025-01-01" to 10f,
+        "2025-01-02" to 15f,
+        "2025-01-03" to 8f,
+        "2025-01-04" to 12f,
+        "2025-01-05" to 20f
     )
     TraiScoreTheme {
-        LineChart(data = sampleData)
+        LineChartView(
+            dataPoints = sampleData,
+            lineColor = Color.Cyan,
+            axisColor = Color.Gray,
+            backgroundChartColor = Color.DarkGray,
+            modifier = Modifier.size(300.dp, 150.dp)
+        )
     }
 }

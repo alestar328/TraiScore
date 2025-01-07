@@ -1,5 +1,6 @@
-package com.develop.traiscore.domain
+package com.develop.traiscore.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 
@@ -7,10 +8,11 @@ import androidx.room.PrimaryKey
 @Entity(tableName = "workout_type")
 data class WorkoutType(
     @PrimaryKey(autoGenerate = true) val id: Int = 0, // Clave primaria
+    val exerciseId: Int,
     val title: String,
     val weight: Double,
     val reps: Int,
-    val rir: Int? = 0 // RIR es opcional y por defecto 0
+    @ColumnInfo(defaultValue = "0") val rir: Int? = 0 // RIR es opcional y por defecto 0
 ) {
     // Propiedades derivadas similares al código de Swift
     val rirString: String
