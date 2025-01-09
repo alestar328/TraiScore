@@ -119,20 +119,25 @@ fun ExercisesScreenPreview() {
 
     val workoutModel = WorkoutModel(
         id = 1,
+        exerciseId = 1,
+        title = workoutType.title,
+        reps = workoutType.reps,
+        weight = workoutType.weight,
         timestamp = Date(),
-        workoutTypeId = 1
+        workoutTypeId = workoutType.id // Ahora es válido
     )
-
+    val exerciseEntity = ExerciseEntity(
+        id = 1,
+        idIntern = "sentadillas",
+        name = "Sentadillas",
+        isDefault = true
+    )
     val workoutWithExercise = WorkoutWithExercise(
         workoutModel = workoutModel,
         workoutType = workoutType,
-        exerciseEntity = ExerciseEntity(
-            id = 1,
-            idIntern = "sentadillas",
-            name = "Sentadillas",
-            isDefault = true
-        )
+        exerciseEntity = exerciseEntity
     )
+
 
     TraiScoreTheme {
         LazyColumn {

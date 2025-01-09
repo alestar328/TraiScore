@@ -2,6 +2,9 @@ package com.develop.traiscore.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.develop.traiscore.data.local.dao.WorkoutTypeDao
+import com.develop.traiscore.data.local.entity.WorkoutType
+import com.develop.traiscore.data.local.entity.WorkoutWithType
 import com.develop.traiscore.data.workoutDataMap
 import com.develop.traiscore.domain.model.WorkoutModel
 import com.develop.traiscore.domain.defaultExerciseEntities
@@ -15,8 +18,12 @@ import javax.inject.Inject
 
 
 @HiltViewModel
-class StatScreenViewModel @Inject constructor() : ViewModel() {
-
+class StatScreenViewModel @Inject constructor(
+    private val workoutTypeDao: WorkoutTypeDao
+) : ViewModel() {
+    suspend fun getWorkoutTypeById(workoutTypeId: Int): WorkoutType? {
+        return workoutTypeDao.getWorkoutTypeById(workoutTypeId)
+    }
     private val _timeOptions = MutableStateFlow(TimeFilter.values().map { it.displayName })
     val timeOptions: StateFlow<List<String>> = _timeOptions.asStateFlow()
 
@@ -29,8 +36,8 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
     private val _selectedExercise = MutableStateFlow<String?>(null)
     val selectedExercise: StateFlow<String?> = _selectedExercise
 
-    private val _workoutData = MutableStateFlow<List<WorkoutModel>>(emptyList())
-    val workoutData: StateFlow<List<WorkoutModel>> = _workoutData
+    private val _workoutData = MutableStateFlow<List<WorkoutWithType>>(emptyList())
+    val workoutData: StateFlow<List<WorkoutWithType>> = _workoutData.asStateFlow()
 
     private val _progressData = MutableStateFlow<List<Pair<String, Float>>>(emptyList())
     val progressData: StateFlow<List<Pair<String, Float>>> = _progressData
@@ -54,13 +61,6 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    private fun loadWorkoutData(exerciseId: String) {
-        viewModelScope.launch {
-            val workouts = workoutDataMap[exerciseId] ?: emptyList()
-            _workoutData.value = workouts
-            updateAllGraphData()
-        }
-    }
 
     private fun updateAllGraphData() {
         updateLineChartData()
@@ -74,15 +74,16 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
             return
         }
 
-        val maxWeight = workouts.maxOfOrNull { it.type.weight } ?: 1.0
-        val minWeight = workouts.minOfOrNull { it.type.weight } ?: 0.0
+        val maxWeight = workouts.maxOfOrNull { it.workoutType.weight } ?: 1.0
+        val minWeight = workouts.minOfOrNull { it.workoutType.weight } ?: 0.0
 
-        _progressData.value = workouts.map { workout ->
+        _progressData.value = workouts.map { (workout, workoutType) ->
             val normalizedWeight =
-                if (maxWeight != minWeight) ((workout.type.weight - minWeight) / (maxWeight - minWeight)).toFloat() else 1f
+                if (maxWeight != minWeight) ((workoutType.weight - minWeight) / (maxWeight - minWeight)).toFloat() else 1f
             workout.timestamp.toString() to normalizedWeight
         }
     }
+
 
     private fun updateCircularChartData() {
         val workouts = _workoutData.value
@@ -91,10 +92,39 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
             return
         }
 
-        val oneRepMax = workouts.maxOfOrNull { it.type.weight * (1 + it.type.reps / 30.0) } ?: 0.0
-        val maxReps = workouts.maxOfOrNull { it.type.reps } ?: 0
-        val averageRIR = workouts.mapNotNull { it.type.rir }.average().toInt()
+        val oneRepMax = workouts.maxOfOrNull { (_, workoutType) ->
+            workoutType.weight * (1 + workoutType.reps / 30.0)
+        } ?: 0.0
+
+        val maxReps = workouts.maxOfOrNull { it.workoutType.reps } ?: 0
+
+        val averageRIR = workouts.mapNotNull { it.workoutType.rir }.average().toInt()
 
         _circularData.value = Triple(oneRepMax, maxReps, averageRIR)
+    }
+
+
+    private fun getWorkoutType(workoutTypeId: Int, callback: (WorkoutType?) -> Unit) {
+        viewModelScope.launch {
+            val workoutType = workoutTypeDao.getWorkoutTypeById(workoutTypeId)
+            callback(workoutType)
+        }
+    }
+    private fun loadWorkoutData(exerciseId: String) {
+        viewModelScope.launch {
+            val workouts = workoutDataMap[exerciseId] ?: emptyList()
+            val workoutTypeIds = workouts.map { it.workoutTypeId }
+            val workoutTypes = workoutTypeDao.getWorkoutTypesByIds(workoutTypeIds)
+
+            val workoutsWithTypes = workouts.mapNotNull { workout ->
+                val workoutType = workoutTypes.find { it.id == workout.workoutTypeId }
+                if (workoutType != null) {
+                    WorkoutWithType(workout, workoutType)
+                } else null
+            }
+
+            _workoutData.value = workoutsWithTypes
+            updateAllGraphData()
+        }
     }
 }

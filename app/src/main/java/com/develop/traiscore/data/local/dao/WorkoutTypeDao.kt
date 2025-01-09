@@ -19,9 +19,12 @@ interface WorkoutTypeDao {
     @Delete
     suspend fun deleteWorkoutType(workoutType: WorkoutType)
 
-    @Query("SELECT * FROM workout_type WHERE id = :workoutTypeId")
-    suspend fun getWorkoutTypeById(workoutTypeId: Int): WorkoutType?
+    @Query("SELECT * FROM workout_type WHERE id = :id LIMIT 1")
+    suspend fun getWorkoutTypeById(id: Int): WorkoutType
 
     @Query("SELECT * FROM workout_type WHERE exerciseId = :exerciseId")
     suspend fun getWorkoutTypesByExercise(exerciseId: Int): List<WorkoutType>
+
+    @Query("SELECT * FROM workout_type WHERE id IN (:workoutTypeIds)")
+    suspend fun getWorkoutTypesByIds(workoutTypeIds: List<Int>): List<WorkoutType>
 }

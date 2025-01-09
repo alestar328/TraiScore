@@ -3,6 +3,7 @@ package com.develop.traiscore.data.local.entity
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.develop.traiscore.domain.model.WorkoutModel
 
 
 @Entity(tableName = "workout_type")
