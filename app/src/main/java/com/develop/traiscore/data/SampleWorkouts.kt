@@ -38,13 +38,13 @@ fun generatePressBancaWorkouts(): List<WorkoutModel> {
 
         workouts.add(
             WorkoutModel(
-                timestamp = calendar.time,
-                type = WorkoutType(
-                    title = "Press banca",
-                    weight = weight,
-                    reps = reps,
-                    rir = 2
-                )
+                id = index + 1,
+                exerciseId = 1,
+                title = "Press banca",
+                weight = weight,
+                reps = reps,
+                rir = 2,
+                timestamp = calendar.time
             )
         )
     }
@@ -77,13 +77,13 @@ fun generateSentadillaWorkouts(): List<WorkoutModel> {
         calendar.add(Calendar.DAY_OF_YEAR, index) // Incrementar un día por iteración
         workouts.add(
             WorkoutModel(
-                timestamp = calendar.time,
-                type = WorkoutType(
-                    title = "Sentadilla",
-                    weight = weight,
-                    reps = reps,
-                    rir = 2
-                )
+                id = index + 1,
+                exerciseId = 2,
+                title = "Sentadilla",
+                weight = weight,
+                reps = reps,
+                rir = 2,
+                timestamp = calendar.time
             )
         )
     }
@@ -115,13 +115,13 @@ fun generateDominadasWorkouts(): List<WorkoutModel> {
         calendar.add(Calendar.DAY_OF_YEAR, index) // Incrementar un día por iteración
         workouts.add(
             WorkoutModel(
-                timestamp = calendar.time,
-                type = WorkoutType(
-                    title = "Dominadas",
-                    weight = weight,
-                    reps = reps,
-                    rir = 2
-                )
+                id = index + 1,
+                exerciseId = 3,
+                title = "Dominadas",
+                weight = weight,
+                reps = reps,
+                rir = 2,
+                timestamp = calendar.time
             )
         )
     }

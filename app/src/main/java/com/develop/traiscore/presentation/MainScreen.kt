@@ -128,7 +128,15 @@ fun MainScreen(
             AddExerciseDialogContent(
                 onSave = { exerciseData ->
                     println("Guardado: ${exerciseData.name}, ${exerciseData.reps}, ${exerciseData.weight}, ${exerciseData.rir}")
-                    exeScreenViewModel.addExercise(exerciseData) // Agregar ejercicio al estado compartido
+                    exeScreenViewModel.addExercise(
+                        exerciseData,
+                        onError = { errorMessage ->
+                            println("Error al guardar el ejercicio: $errorMessage")
+                        },
+                        onSuccess = {
+                            println("Ejercicio guardado con éxito")
+                        }
+                    )
                     isDialogVisible = false
                 },
                 onCancel = {

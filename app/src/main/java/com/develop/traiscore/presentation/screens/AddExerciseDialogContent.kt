@@ -198,14 +198,20 @@ fun AddExerciseDialogContent(
                 onClick = {
                     if (!viewModel.isSaving.value) {
                         val exerciseData = viewModel.getExerciseData()
-                        if (exerciseData != null) {
-                            viewModel.setIsSaving(true)
-                            exeScreenViewModel.addExercise(exerciseData)
-                            viewModel.resetInputFields() // Reinicia los campos después de guardar
-                            onSave(exerciseData) // Llama a onSave con ExerciseData
+                        if (exerciseData == null) {
+                            println("Datos del ejercicio incompletos o inválidos.")
+                            return@Button
                         }
-                        viewModel.setIsSaving(false) // Libera el bloqueo
 
+                        viewModel.saveOrUpdateWorkout(
+                            onSuccess = {
+                                viewModel.resetInputFields()
+                                onSave(exerciseData)
+                            },
+                            onError = { errorMessage ->
+                                println("Error al guardar: $errorMessage")
+                            }
+                        )
                     }
                 },
                 modifier = Modifier.fillMaxWidth(),

@@ -18,12 +18,16 @@ import com.develop.traiscore.R
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.lifecycle.repeatOnLifecycle
 import com.develop.traiscore.data.local.entity.ExerciseEntity
 import com.develop.traiscore.domain.model.WorkoutModel
 import com.develop.traiscore.data.local.entity.WorkoutType
@@ -38,9 +42,20 @@ import java.util.Date
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExercisesScreen(
-    exeScreenViewModel: ExercisesScreenViewModel = hiltViewModel(),
-   ) {
-    val exercises = exeScreenViewModel.exercises
+    viewModel: ExercisesScreenViewModel = hiltViewModel(),
+) {
+    val exercises = viewModel.exercises
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    LaunchedEffect(Unit){
+        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED){
+            viewModel.getExercises{
+                error ->
+                println("Error al obtener ejercicios: $error")
+            }
+
+        }
+    }
 
     Scaffold(
         topBar = {
@@ -80,7 +95,7 @@ fun ExercisesScreen(
                     .background(Color.Black)
                     .fillMaxSize()
                     .padding(TraiScoreTheme.dimens.paddingMedium),
-                     // Fondo negro
+                // Fondo negro
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
 
@@ -91,7 +106,18 @@ fun ExercisesScreen(
                     WorkoutCard(
                         workoutWithExercise = exercise,
                         onEditClick = { println("Edit ${exercise.exerciseEntity.name}") },
-                        onDeleteClick = { println("Delete ${exercise.exerciseEntity.name}") }
+                        onDeleteClick = {
+                            viewModel.deleteExercise(
+                                workoutId = exercise.workoutModel.id,
+                                onSuccess = {
+                                    println("Delete ${exercise.exerciseEntity.name}")
+                                },
+                                onError = { error ->
+                                    // Mostrar un mensaje de error
+                                    println("Error: $error")
+                                }
+                            )
+                        }
                     )
 
 

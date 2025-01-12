@@ -159,7 +159,11 @@ fun WorkoutCardPreview() {
         workoutModel = WorkoutModel(
             id = 1,
             timestamp = Date(),
-            workoutTypeId = 1
+            exerciseId = 1,
+            workoutTypeId = 1,
+            reps = 10,
+            title = "Rojo",
+            weight = 10.0
         ),
         workoutType = workoutType,
         exerciseEntity  = com.develop.traiscore.data.local.entity.ExerciseEntity(

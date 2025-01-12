@@ -7,30 +7,37 @@ import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
+import com.develop.traiscore.data.local.entity.WorkoutType
 import com.develop.traiscore.domain.model.WorkoutModel
 import com.develop.traiscore.data.local.entity.WorkoutWithExercise
 @Dao
 interface WorkoutDao  {
+
+    // Inserta un nuevo entrenamiento
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertWorkout(workout: WorkoutModel): Long
+    suspend fun insertWorkout(workout: WorkoutType): Long
 
-    @Query("SELECT * FROM workout_table WHERE timestamp = :date LIMIT 1")
-    suspend fun getWorkoutByDate(date: String): WorkoutModel
-
+    // Actualiza un entrenamiento existente
     @Update
-    suspend fun updateWorkout(workout: WorkoutModel)
+    suspend fun updateWorkout(workout: WorkoutType)
 
+    // Elimina un entrenamiento específico
     @Delete
-    suspend fun deleteWorkout(workout: WorkoutModel)
+    suspend fun deleteWorkout(workout: WorkoutType)
 
-    @Query("SELECT * FROM workout_table WHERE id = :workoutId")
-    suspend fun getWorkoutById(workoutId: Int): WorkoutModel?
+    // Elimina un entrenamiento por ID
+    @Query("DELETE FROM workout_type WHERE id = :workoutId")
+    suspend fun deleteWorkoutById(workoutId: Int)
 
-    @Transaction
-    @Query("SELECT * FROM workout_table")
-    suspend fun getAllWorkoutsWithExercise(): List<WorkoutWithExercise>
+    // Obtiene un entrenamiento por ID
+    @Query("SELECT * FROM workout_type WHERE id = :workoutId")
+    suspend fun getWorkoutById(workoutId: Int): WorkoutType?
 
-    @Transaction
-    @Query("SELECT * FROM workout_table WHERE id = :workoutId")
-    suspend fun getWorkoutWithExerciseById(workoutId: Int): WorkoutWithExercise?
+    // Obtiene un entrenamiento por fecha
+    @Query("SELECT * FROM workout_type WHERE timestamp = :date LIMIT 1")
+    suspend fun getWorkoutByDate(date: String): WorkoutType?
+
+    // Obtiene todos los entrenamientos
+    @Query("SELECT * FROM workout_type")
+    suspend fun getAllWorkouts(): List<WorkoutType>
 }
