@@ -10,14 +10,11 @@ import javax.inject.Inject
 class GetWorkoutUseCase @Inject constructor(
     private val repository: LocalStorageRepository
 ) {
-    operator fun invoke(date: String): Flow<Resource<WorkoutModel>> = flow {
+    operator fun invoke(startDate: Long, endDate: Long): Flow<Resource<WorkoutModel>> = flow {
         try{
             emit(Resource.Loading())
-            emit(
-                Resource.Success(
-                    data = repository.getWorkout(date)
-                )
-            )
+            val workout = repository.getWorkout(startDate, endDate)
+            emit(Resource.Success(data = workout))
 
         }catch (e:Exception){
             emit(

@@ -36,15 +36,12 @@ import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
 fun AddExerciseDialogContent(
     modifier: Modifier = Modifier,
     viewModel: AddExerciseViewModel = hiltViewModel(),
-    exeScreenViewModel: ExercisesScreenViewModel = hiltViewModel(),
     onSave: (ExerciseData) -> Unit, // Cambiar para aceptar ExerciseData
     onCancel: () -> Unit
 ) {
+    val exerciseData by viewModel.exerciseData
     val filteredItems by viewModel.filteredExercises
-    val filterText by viewModel.filterText
-    val exerciseReps by viewModel.exerciseReps
-    val exerciseWeight by viewModel.exerciseWeight
-    val sliderValue by viewModel.sliderValue
+    val isSaving by viewModel.isSaving
 
     Column(
         modifier = modifier
@@ -78,10 +75,8 @@ fun AddExerciseDialogContent(
             )
             FilterableDropdown(
                 items = filteredItems,
-                selectedValue = filterText,
-                onItemSelected = { exercise ->
-                    viewModel.updateFilterText(exercise)
-                },
+                selectedValue = exerciseData.name,
+                onItemSelected = { viewModel.updateFilterText(it) },
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -109,7 +104,7 @@ fun AddExerciseDialogContent(
                     .padding(3.dp) // Grosor del borde
             ) {
                 OutlinedTextField(
-                    value = exerciseReps,
+                    value = exerciseData.reps.toString(),
                     onValueChange = { viewModel.updateExerciseReps(it) },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -143,7 +138,7 @@ fun AddExerciseDialogContent(
                     .padding(3.dp) // Grosor del borde
             ) {
                 OutlinedTextField(
-                    value = exerciseWeight,
+                    value = exerciseData.weight.toString(),
                     onValueChange = { viewModel.updateExerciseWeight(it) },
                     modifier = Modifier
                         .fillMaxWidth()
@@ -170,14 +165,14 @@ fun AddExerciseDialogContent(
             Spacer(modifier = Modifier.size(8.dp))
 
             Text(
-                text = "@${sliderValue.toInt()}",
+                text = "@${exerciseData.rir}",
                 color = traiBlue,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             Slider(
-                value = sliderValue,
+                value = exerciseData.rir.toFloat(),
                 onValueChange = { viewModel.updateSliderValue(it) },
                 valueRange = 1f..10f, // Rango de valores del slider
                 steps = 8, // Pasos intermedios (10 - 1 = 9, por lo tanto, 8 pasos intermedios)
@@ -196,21 +191,13 @@ fun AddExerciseDialogContent(
         ) {
             Button(
                 onClick = {
-                    if (!viewModel.isSaving.value) {
-                        val exerciseData = viewModel.getExerciseData()
-                        if (exerciseData == null) {
-                            println("Datos del ejercicio incompletos o inválidos.")
-                            return@Button
-                        }
-
-                        viewModel.saveOrUpdateWorkout(
+                    if (!isSaving) {
+                        viewModel.saveWorkout(
                             onSuccess = {
                                 viewModel.resetInputFields()
                                 onSave(exerciseData)
                             },
-                            onError = { errorMessage ->
-                                println("Error al guardar: $errorMessage")
-                            }
+                            onError = { println("Error al guardar: $it") }
                         )
                     }
                 },

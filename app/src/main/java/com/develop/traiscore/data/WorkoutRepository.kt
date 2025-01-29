@@ -1,24 +1,36 @@
 package com.develop.traiscore.data
 
+import com.develop.traiscore.data.local.dao.WorkoutDao
 import com.develop.traiscore.data.local.entity.WorkoutType
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
-class WorkoutRepository {
+class WorkoutRepository(private val workoutDao: WorkoutDao) {
 
-    private val _workouts = MutableStateFlow<List<WorkoutType>>(emptyList())
-    val workouts: StateFlow<List<WorkoutType>> = _workouts
-
-    // Agregar un nuevo ejercicio a la lista
-    fun addWorkout(workout: WorkoutType) {
-        val updatedList = _workouts.value.toMutableList()
-        updatedList.add(workout)
-        _workouts.value = updatedList
+    val workouts: Flow<List<WorkoutType>> = workoutDao.getAllWorkoutsFlow()
+    // Agregar un nuevo entrenamiento
+    suspend fun addWorkout(workout: WorkoutType) {
+        workoutDao.insertWorkout(workout)
     }
-    // Eliminar un ejercicio de la lista
-    fun removeWorkout(workout: WorkoutType) {
-        val updatedList = _workouts.value.toMutableList()
-        updatedList.remove(workout)
-        _workouts.value = updatedList
+
+    // Actualizar un entrenamiento existente
+    suspend fun updateWorkout(workout: WorkoutType) {
+        workoutDao.updateWorkout(workout)
+    }
+
+    // Eliminar un entrenamiento
+    suspend fun removeWorkout(workout: WorkoutType) {
+        workoutDao.deleteWorkout(workout)
+    }
+
+    // Obtener un entrenamiento por ID
+    suspend fun getWorkoutById(id: Int): WorkoutType? {
+        return workoutDao.getWorkoutById(id)
+    }
+
+    // Obtener entrenamientos por ejercicio
+    suspend fun getWorkoutsByExercise(exerciseId: Int): List<WorkoutType> {
+        return workoutDao.getWorkoutTypesByExercise(exerciseId)
     }
 }

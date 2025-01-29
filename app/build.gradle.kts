@@ -62,6 +62,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.paging.common.android)
     val lifecycle_version = "2.8.7"
 
     val room_version = "2.6.1"

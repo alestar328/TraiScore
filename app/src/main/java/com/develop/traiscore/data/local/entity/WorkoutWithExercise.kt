@@ -7,7 +7,7 @@ import com.develop.traiscore.domain.model.WorkoutModel
 data class WorkoutWithExercise(
     @Embedded val workoutModel: WorkoutModel,
     @Relation(
-        parentColumn = "workoutTypeId", // Columna en WorkoutModel
+        parentColumn = "id", // Columna en WorkoutModel
         entityColumn = "id" // Columna en WorkoutType
     )
     val workoutType: WorkoutType,

@@ -153,14 +153,14 @@ fun WorkoutCardPreview() {
         title = "Sentadillas",
         weight = 100.0,
         reps = 8,
-        rir = 2
+        rir = 2,
+        timestamp = Date()
     )
     val workoutWithExercise = WorkoutWithExercise(
         workoutModel = WorkoutModel(
             id = 1,
             timestamp = Date(),
             exerciseId = 1,
-            workoutTypeId = 1,
             reps = 10,
             title = "Rojo",
             weight = 10.0

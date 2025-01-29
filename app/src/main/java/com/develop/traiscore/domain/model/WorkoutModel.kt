@@ -29,3 +29,14 @@ fun WorkoutModel.toWorkoutType(): WorkoutType {
     )
 }
 
+fun WorkoutType.toWorkoutModel(): WorkoutModel {
+    return WorkoutModel(
+        id = this.id,
+        exerciseId = this.exerciseId,
+        title = this.title,
+        weight = this.weight,
+        reps = this.reps,
+        rir = this.rir,
+        timestamp = this.timestamp
+    )
+}

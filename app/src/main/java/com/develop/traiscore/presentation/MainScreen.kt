@@ -126,10 +126,9 @@ fun MainScreen(
             onDismissRequest = {isDialogVisible = false}
         ){
             AddExerciseDialogContent(
-                onSave = { exerciseData ->
-                    println("Guardado: ${exerciseData.name}, ${exerciseData.reps}, ${exerciseData.weight}, ${exerciseData.rir}")
+                onSave = {
                     exeScreenViewModel.addExercise(
-                        exerciseData,
+                        exercise = it,
                         onError = { errorMessage ->
                             println("Error al guardar el ejercicio: $errorMessage")
                         },

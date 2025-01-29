@@ -20,7 +20,9 @@ class DatabaseModule {
         return Room.databaseBuilder(
             appContext,
             AppDatabase::class.java, "trai_score_database"
-        ).build()
+        )
+            .fallbackToDestructiveMigration() // Permite eliminar y recrear la base de datos
+            .build()
     }
 
     @Singleton
@@ -31,7 +33,4 @@ class DatabaseModule {
     @Provides
     fun provideExerciseDao(db: AppDatabase) = db.exerciseDao() // Proveer ExerciseDao
 
-    @Singleton
-    @Provides
-    fun provideWorkoutTypeDao(db: AppDatabase) = db.workoutTypeDao() // Proveer WorkoutTypeDao
 }

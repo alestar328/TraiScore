@@ -1,6 +1,5 @@
-package com.develop.traiscore.domain
+package com.develop.traiscore.domain.usecase
 import com.develop.traiscore.data.local.entity.WorkoutWithExercise
-import com.develop.traiscore.domain.model.WorkoutModel
 
 class GetProgressionDataUseCase {
     operator fun invoke(workouts: List<WorkoutWithExercise>, exercise: String): List<Pair<String, Float>> {

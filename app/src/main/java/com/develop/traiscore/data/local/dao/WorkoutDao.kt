@@ -8,8 +8,9 @@ import androidx.room.Query
 import androidx.room.Transaction
 import androidx.room.Update
 import com.develop.traiscore.data.local.entity.WorkoutType
-import com.develop.traiscore.domain.model.WorkoutModel
 import com.develop.traiscore.data.local.entity.WorkoutWithExercise
+import kotlinx.coroutines.flow.Flow
+
 @Dao
 interface WorkoutDao  {
 
@@ -34,10 +35,35 @@ interface WorkoutDao  {
     suspend fun getWorkoutById(workoutId: Int): WorkoutType?
 
     // Obtiene un entrenamiento por fecha
-    @Query("SELECT * FROM workout_type WHERE timestamp = :date LIMIT 1")
-    suspend fun getWorkoutByDate(date: String): WorkoutType?
+    @Query("SELECT * FROM workout_type WHERE timestamp BETWEEN :startDate AND :endDate LIMIT 1")
+    suspend fun getWorkoutByDate(startDate: Long, endDate: Long): WorkoutType?
 
-    // Obtiene todos los entrenamientos
+
+    @Transaction
+    @Query("SELECT * FROM workout_type WHERE id = :workoutId")
+    suspend fun getWorkoutWithExercise(workoutId: Int): WorkoutWithExercise?
+
     @Query("SELECT * FROM workout_type")
-    suspend fun getAllWorkouts(): List<WorkoutType>
+    fun getAllWorkoutsFlow(): Flow<List<WorkoutType>>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertWorkouts(workouts: List<WorkoutType>)
+
+    @Query("SELECT * FROM workout_type WHERE exerciseId = :exerciseId")
+    suspend fun getWorkoutTypesByExercise(exerciseId: Int): List<WorkoutType>
+
+    @Query("SELECT * FROM workout_type WHERE id IN (:workoutTypeIds)")
+    suspend fun getWorkoutTypesByIds(workoutTypeIds: List<Int>): List<WorkoutType>
+
+
+    @Transaction
+    @Query("SELECT * FROM workout_type")
+    suspend fun getAllWorkoutsWithExercise(): List<WorkoutWithExercise>
+
+    @Query("SELECT * FROM workout_type WHERE exerciseId = :exerciseId AND timestamp BETWEEN :startDate AND :endDate")
+    suspend fun getWorkoutTypesForExerciseAndDateRange(
+        exerciseId: Int,
+        startDate: Long,
+        endDate: Long
+    ): List<WorkoutType>
 }

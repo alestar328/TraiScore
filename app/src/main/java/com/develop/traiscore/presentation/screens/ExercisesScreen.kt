@@ -140,7 +140,8 @@ fun ExercisesScreenPreview() {
         title = "Sentadillas",
         weight = 100.0,
         reps = 10,
-        rir = 2
+        rir = 2,
+        timestamp = Date()
     )
 
     val workoutModel = WorkoutModel(
@@ -149,8 +150,7 @@ fun ExercisesScreenPreview() {
         title = workoutType.title,
         reps = workoutType.reps,
         weight = workoutType.weight,
-        timestamp = Date(),
-        workoutTypeId = workoutType.id // Ahora es válido
+        timestamp = Date()
     )
     val exerciseEntity = ExerciseEntity(
         id = 1,

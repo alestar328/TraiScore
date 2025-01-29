@@ -47,7 +47,6 @@ fun StatScreen(
     modifier: Modifier = Modifier,
     viewModel: StatScreenViewModel = hiltViewModel()
 ) {
-    val timeOptions by viewModel.timeOptions.collectAsState()
     val exerOptions by viewModel.exerciseOptions.collectAsState()
     val progressData by viewModel.progressData.collectAsState()
     val circularData by viewModel.circularData.collectAsState()
@@ -114,13 +113,6 @@ fun StatScreen(
                         color = Color.White,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
-                    DropdownMenuComponent(
-                        items = timeOptions,
-                        onItemSelected = { viewModel.onTimeSelected(it) },
-                        placeholder = "Tiempo",
-                        modifier = Modifier.fillMaxWidth()
-                        )
-                    Spacer(modifier = Modifier.height(TraiScoreTheme.dimens.spacerNormal))
                     DropdownMenuComponent(
                         items = exerOptions,
                         onItemSelected = { viewModel.onExerciseSelected(it) },
