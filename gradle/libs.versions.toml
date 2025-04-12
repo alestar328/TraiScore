@@ -20,6 +20,9 @@ roomKtx = "2.6.1"
 roomRuntime = "2.6.1"
 ui = "1.7.6"
 pagingCommonAndroid = "3.3.5"
+firebaseCrashlytics = "19.4.2"
+googleGmsGoogleServices = "4.4.2"
+googleFirebaseCrashlytics = "3.0.3"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -50,10 +53,13 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 androidx-room-common = { group = "androidx.room", name = "room-common", version.ref = "roomCommon" }
 ui = { module = "androidx.compose.ui:ui", version.ref = "ui" }
 androidx-paging-common-android = { group = "androidx.paging", name = "paging-common-android", version.ref = "pagingCommonAndroid" }
+firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics", version.ref = "firebaseCrashlytics" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 org-jetbrains-kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }
+google-firebase-crashlytics = { id = "com.google.firebase.crashlytics", version.ref = "googleFirebaseCrashlytics" }
 

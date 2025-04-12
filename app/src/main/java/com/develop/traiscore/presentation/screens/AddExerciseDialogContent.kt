@@ -1,5 +1,6 @@
 package com.develop.traiscore.presentation.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -9,12 +10,11 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Slider
-import androidx.compose.material3.SliderDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.Text
 import androidx.compose.ui.Alignment
@@ -22,30 +22,39 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.presentation.components.FilterableDropdown
+import com.develop.traiscore.presentation.components.RIRSlider
 import com.develop.traiscore.presentation.theme.primaryWhite
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
-import com.develop.traiscore.presentation.viewmodels.ExerciseData
-import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
 
 @Composable
 fun AddExerciseDialogContent(
     modifier: Modifier = Modifier,
     viewModel: AddExerciseViewModel = hiltViewModel(),
-    onSave: (ExerciseData) -> Unit, // Cambiar para aceptar ExerciseData
-    onCancel: () -> Unit
+    workoutToEdit: WorkoutEntry? = null,
+    onDismiss: () -> Unit,
+    onSave: (Map<String, Any>) -> Unit
 ) {
-    val exerciseData by viewModel.exerciseData
-    val filteredItems by viewModel.filteredExercises
-    val isSaving by viewModel.isSaving
+    val exerciseNames = viewModel.exerciseNames
+    var selectedExercise by remember { mutableStateOf(workoutToEdit?.title ?: "") }
+    var repsText by remember { mutableStateOf(workoutToEdit?.reps?.toString() ?: "") }
+    var weightText by remember { mutableStateOf(workoutToEdit?.weight?.toString() ?: "") }
+    var rirValue by remember { mutableStateOf(workoutToEdit?.rir ?: 5) }
+    val context = LocalContext.current
 
     Column(
         modifier = modifier
-            .fillMaxWidth(0.95f)
+            .fillMaxWidth(1f)
             .padding(16.dp)
             .background(
                 color = Color.Gray,
@@ -74,9 +83,9 @@ fun AddExerciseDialogContent(
                 fontWeight = FontWeight.Bold
             )
             FilterableDropdown(
-                items = filteredItems,
-                selectedValue = exerciseData.name,
-                onItemSelected = { viewModel.updateFilterText(it) },
+                items = exerciseNames,
+                selectedValue = selectedExercise,
+                onItemSelected = { selectedExercise = it },
                 modifier = Modifier.fillMaxWidth()
             )
         }
@@ -104,11 +113,12 @@ fun AddExerciseDialogContent(
                     .padding(3.dp) // Grosor del borde
             ) {
                 OutlinedTextField(
-                    value = exerciseData.reps.toString(),
-                    onValueChange = { viewModel.updateExerciseReps(it) },
+                    value = repsText,
+                    onValueChange = { repsText = it },
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color.White, RoundedCornerShape(12.dp)),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = traiBlue,
                         unfocusedBorderColor = traiBlue
@@ -138,11 +148,12 @@ fun AddExerciseDialogContent(
                     .padding(3.dp) // Grosor del borde
             ) {
                 OutlinedTextField(
-                    value = exerciseData.weight.toString(),
-                    onValueChange = { viewModel.updateExerciseWeight(it) },
+                    value = weightText,
+                    onValueChange = { weightText = it },
                     modifier = Modifier
                         .fillMaxWidth()
                         .background(Color.White, RoundedCornerShape(12.dp)),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = traiBlue,
                         unfocusedBorderColor = traiBlue
@@ -163,25 +174,18 @@ fun AddExerciseDialogContent(
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.size(8.dp))
-
+            RIRSlider(
+                value = rirValue,
+                onValueChange = { rirValue = it }
+            )
             Text(
-                text = "@${exerciseData.rir}",
+                text = "RIR: $rirValue",
                 color = traiBlue,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
-            Slider(
-                value = exerciseData.rir.toFloat(),
-                onValueChange = { viewModel.updateSliderValue(it) },
-                valueRange = 1f..10f, // Rango de valores del slider
-                steps = 8, // Pasos intermedios (10 - 1 = 9, por lo tanto, 8 pasos intermedios)
-                colors = SliderDefaults.colors(
-                    thumbColor = traiBlue, // Color del deslizador circular
-                    activeTrackColor = traiBlue, // Color de la barra activa
-                    inactiveTrackColor = Color.Gray // Color de la barra inactiva
-                )
-            )
+
         }
         Spacer(modifier = Modifier.size(24.dp))
 
@@ -191,15 +195,26 @@ fun AddExerciseDialogContent(
         ) {
             Button(
                 onClick = {
-                    if (!isSaving) {
-                        viewModel.saveWorkout(
-                            onSuccess = {
-                                viewModel.resetInputFields()
-                                onSave(exerciseData)
-                            },
-                            onError = { println("Error al guardar: $it") }
+                    if (workoutToEdit == null) {
+                        // Guardar nuevo
+                        viewModel.saveWorkoutEntry(
+                            title = selectedExercise,
+                            reps = repsText.toIntOrNull() ?: 0,
+                            weight = weightText.toDoubleOrNull() ?: 0.0,
+                            rir = rirValue
                         )
+                    } else {
+                        // Editar existente
+                        val updated: Map<String, Any> = mapOf(
+                            "title" to selectedExercise as Any,
+                            "reps" to (repsText.toIntOrNull() ?: 0) as Any,
+                            "weight" to (weightText.toDoubleOrNull() ?: 0.0) as Any,
+                            "rir" to rirValue as Any
+                        )
+                        onSave(updated)
                     }
+                    Toast.makeText(context, "Guardado", Toast.LENGTH_SHORT).show()
+                    onDismiss()
                 },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
@@ -210,7 +225,7 @@ fun AddExerciseDialogContent(
             }
 
             Button(
-                onClick = onCancel,
+                onClick = { onDismiss() },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = Color.Red // Color rojo para el botón

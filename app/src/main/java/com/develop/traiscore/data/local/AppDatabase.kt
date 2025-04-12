@@ -7,11 +7,10 @@ import com.develop.traiscore.core.Converters
 import com.develop.traiscore.data.local.dao.ExerciseDao
 import com.develop.traiscore.data.local.dao.WorkoutDao
 import com.develop.traiscore.data.local.entity.ExerciseEntity
-import com.develop.traiscore.domain.model.WorkoutModel
-import com.develop.traiscore.data.local.entity.WorkoutType
+import com.develop.traiscore.data.local.entity.WorkoutEntry
 
 @Database(
-    entities = [WorkoutType::class, ExerciseEntity::class],
+    entities = [WorkoutEntry::class, ExerciseEntity::class],
     version = 2,
     exportSchema = true // Cambia según tus necesidades
 

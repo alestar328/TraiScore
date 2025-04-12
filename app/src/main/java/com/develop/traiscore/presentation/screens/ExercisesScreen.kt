@@ -4,6 +4,7 @@ package com.develop.traiscore.presentation.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,50 +19,38 @@ import com.develop.traiscore.R
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.compose.LocalLifecycleOwner
-import androidx.lifecycle.repeatOnLifecycle
 import com.develop.traiscore.data.local.entity.ExerciseEntity
 import com.develop.traiscore.domain.model.WorkoutModel
-import com.develop.traiscore.data.local.entity.WorkoutType
+import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.data.local.entity.WorkoutWithExercise
 import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.WorkoutCard
 import com.develop.traiscore.presentation.theme.traiBlue
-import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
+import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.util.Date
 
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExercisesScreen(
-    viewModel: ExercisesScreenViewModel = hiltViewModel(),
+    viewModel: WorkoutEntryViewModel = hiltViewModel()
 ) {
-    val exercises = viewModel.exercises
-
-    val lifecycleOwner = LocalLifecycleOwner.current
-    LaunchedEffect(Unit){
-        lifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED){
-            viewModel.getExercises{
-                error ->
-                println("Error al obtener ejercicios: $error")
-            }
-
-        }
-    }
+    val entries = viewModel.entries.value
+    val showDialog = remember { mutableStateOf(false) }
+    val selectedEntry = remember { mutableStateOf<WorkoutEntry?>(null) }
 
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
-                    // Logo en lugar de texto
                     Image(
                         painter = painterResource(id = R.drawable.trailogoup),
                         contentDescription = "Logo cabecera",
@@ -69,7 +58,6 @@ fun ExercisesScreen(
                     )
                 },
                 actions = {
-                    // Ícono de búsqueda
                     IconButton(onClick = { println("Search clicked") }) {
                         CircleDot(color = traiBlue) {
                             Icon(
@@ -82,51 +70,53 @@ fun ExercisesScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.DarkGray, // Fondo de la barra
-                    titleContentColor = MaterialTheme.colorScheme.onSurface // Color del texto
+                    containerColor = Color.DarkGray,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         },
         content = { paddingValues ->
-            // Contenido principal
             LazyColumn(
                 modifier = Modifier
                     .padding(paddingValues)
                     .background(Color.Black)
                     .fillMaxSize()
                     .padding(TraiScoreTheme.dimens.paddingMedium),
-                // Fondo negro
+                contentPadding = PaddingValues(bottom = 50.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-
                 items(
-                    items = exercises,
-                    key = { exercise -> exercise.workoutModel.id } // Usa workoutModel.id como clave
-                ) { exercise ->
+                    items = entries,
+                    key = { it.id }
+                ) { entry ->
                     WorkoutCard(
-                        workoutWithExercise = exercise,
-                        onEditClick = { println("Edit ${exercise.exerciseEntity.name}") },
-                        onDeleteClick = {
-                            viewModel.deleteExercise(
-                                workoutId = exercise.workoutModel.id,
-                                onSuccess = {
-                                    println("Delete ${exercise.exerciseEntity.name}")
-                                },
-                                onError = { error ->
-                                    // Mostrar un mensaje de error
-                                    println("Error: $error")
-                                }
-                            )
+                        workoutEntry = entry,
+                        onEditClick = {  selectedEntry.value = entry
+                            showDialog.value = true },
+                        onDeleteClick = { entry.firebaseId?.let { id ->
+                            viewModel.deleteWorkoutEntry(id)
+                        }
                         }
                     )
-
-
                 }
-
             }
         }
     )
+    // ⬇️ Este bloque debe ir AQUÍ justo después del Scaffold:
+    if (showDialog.value && selectedEntry.value != null) {
+        AddExerciseDialogContent(
+            workoutToEdit = selectedEntry.value,
+            onDismiss = { showDialog.value = false },
+            onSave = { updatedData ->
+                selectedEntry.value?.firebaseId?.let { id ->
+                    viewModel.editWorkoutEntry(id, updatedData)
+                    showDialog.value = false
+                }
+            }
+        )
+    }
 }
+
 
 @Preview(
     name = "ExercisesScreenPreview",
@@ -134,22 +124,24 @@ fun ExercisesScreen(
 )
 @Composable
 fun ExercisesScreenPreview() {
-    val workoutType = WorkoutType(
+    val workoutEntry = WorkoutEntry(
         id = 1,
         exerciseId = 1,
         title = "Sentadillas",
         weight = 100.0,
         reps = 10,
         rir = 2,
+        series = 0,
         timestamp = Date()
     )
 
     val workoutModel = WorkoutModel(
         id = 1,
         exerciseId = 1,
-        title = workoutType.title,
-        reps = workoutType.reps,
-        weight = workoutType.weight,
+        title = workoutEntry.title,
+        reps = workoutEntry.reps,
+        weight = workoutEntry.weight,
+        series = 0,
         timestamp = Date()
     )
     val exerciseEntity = ExerciseEntity(
@@ -160,7 +152,7 @@ fun ExercisesScreenPreview() {
     )
     val workoutWithExercise = WorkoutWithExercise(
         workoutModel = workoutModel,
-        workoutType = workoutType,
+        workoutEntry = workoutEntry,
         exerciseEntity = exerciseEntity
     )
 
@@ -172,7 +164,7 @@ fun ExercisesScreenPreview() {
                 key = { it.workoutModel.id }
             ) { exercise ->
                 WorkoutCard(
-                    workoutWithExercise = exercise,
+                    workoutEntry = workoutEntry,
                     onEditClick = { println("Edit ${exercise.exerciseEntity.name}") },
                     onDeleteClick = { println("Delete ${exercise.exerciseEntity.name}") }
                 )

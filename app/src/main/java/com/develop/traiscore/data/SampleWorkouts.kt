@@ -1,6 +1,5 @@
 package com.develop.traiscore.data
 import com.develop.traiscore.domain.model.WorkoutModel
-import com.develop.traiscore.data.local.entity.WorkoutType
 import java.util.Calendar
 import java.util.Date
 
@@ -44,6 +43,7 @@ fun generatePressBancaWorkouts(): List<WorkoutModel> {
                 weight = weight,
                 reps = reps,
                 rir = 2,
+                series = 4,
                 timestamp = calendar.time
             )
         )
@@ -81,6 +81,7 @@ fun generateSentadillaWorkouts(): List<WorkoutModel> {
                 exerciseId = 2,
                 title = "Sentadilla",
                 weight = weight,
+                series = 6,
                 reps = reps,
                 rir = 2,
                 timestamp = calendar.time
@@ -119,6 +120,7 @@ fun generateDominadasWorkouts(): List<WorkoutModel> {
                 exerciseId = 3,
                 title = "Dominadas",
                 weight = weight,
+                series = 9,
                 reps = reps,
                 rir = 2,
                 timestamp = calendar.time

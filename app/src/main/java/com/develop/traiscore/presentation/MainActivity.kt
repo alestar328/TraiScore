@@ -20,6 +20,7 @@ import androidx.navigation.NavHostController
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.screens.LoginScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
+import com.google.firebase.FirebaseApp
 import dagger.hilt.android.AndroidEntryPoint
 
 
@@ -30,6 +31,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         installSplashScreen()
+
+        FirebaseApp.initializeApp(this)
+
         setContent {
             //Creamos esta variable
             val windowSize = calculateWindowSizeClass(this)

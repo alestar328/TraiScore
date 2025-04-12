@@ -1,8 +1,7 @@
 package com.develop.traiscore.data.repository
 
-import com.develop.traiscore.data.local.dao.ExerciseDao
 import com.develop.traiscore.data.local.dao.WorkoutDao
-import com.develop.traiscore.data.local.entity.WorkoutType
+import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.data.local.entity.WorkoutWithExercise
 import com.develop.traiscore.domain.model.WorkoutModel
 import com.develop.traiscore.domain.model.toWorkoutType
@@ -15,7 +14,7 @@ class LocalStorageRepositoryImpl @Inject constructor(
 
     override suspend fun saveWorkout(workoutModel: WorkoutModel): Boolean {
         return try {
-            // Convierte WorkoutModel a WorkoutType antes de insertar
+            // Convierte WorkoutModel a WorkoutEntry antes de insertar
             val workoutType = workoutModel.toWorkoutType()
             workoutDao.insertWorkout(workoutType)
             true
@@ -35,12 +34,13 @@ class LocalStorageRepositoryImpl @Inject constructor(
         }
     }
 
-    private fun WorkoutType.toWorkoutModel(): WorkoutModel {
+    private fun WorkoutEntry.toWorkoutModel(): WorkoutModel {
         return WorkoutModel(
             id = this.id,
             exerciseId = this.exerciseId,
             title = this.title,
             weight = this.weight,
+            series = this.series,
             reps = this.reps,
             rir = this.rir,
             timestamp = this.timestamp

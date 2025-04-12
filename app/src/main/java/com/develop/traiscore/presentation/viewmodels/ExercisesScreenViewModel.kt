@@ -3,9 +3,8 @@ package com.develop.traiscore.presentation.viewmodels
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.develop.traiscore.data.local.entity.ExerciseEntity
 import com.develop.traiscore.domain.model.WorkoutModel
-import com.develop.traiscore.data.local.entity.WorkoutType
+import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.data.local.entity.WorkoutWithExercise
 import com.develop.traiscore.domain.model.Resource
 import com.develop.traiscore.domain.usecase.DeleteWorkoutUseCase
@@ -68,44 +67,6 @@ class ExercisesScreenViewModel @Inject constructor(
     }
 
 
-    fun addExercise(exercise: ExerciseData, onError: (String) -> Unit, onSuccess: () -> Unit) {
-        viewModelScope.launch {
-            try {
-                val workoutType = WorkoutType(
-                    id = 0, // ID será autogenerado
-                    exerciseId = exercise.name.hashCode(), // Generar un ID único
-                    title = exercise.name,
-                    weight = exercise.weight,
-                    reps = exercise.reps,
-                    rir = exercise.rir,
-                    timestamp = exercise.timestamp
-                )
 
-                val workoutModel = WorkoutModel(
-                    id = 0, // ID será autogenerado
-                    timestamp = Date(),
-                    exerciseId = 1, // Actualiza según la lógica
-                    reps = exercise.reps,
-                    title = exercise.name,
-                    weight = exercise.weight
-                )
-
-                saveWorkoutUseCase(workoutModel).collect { result ->
-                    when (result) {
-                        is Resource.Success -> {
-                            getExercises { error -> onError(error) } // Refresca los datos desde la base de datos
-                            onSuccess()
-                        }
-                        is Resource.Error -> {
-                            onError(result.message ?: "Error al guardar el ejercicio.")
-                        }
-                        else -> {}
-                    }
-                }
-            } catch (e: Exception) {
-                onError(e.message ?: "Error desconocido al guardar el ejercicio.")
-            }
-        }
-    }
 
 }

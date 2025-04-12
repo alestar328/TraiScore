@@ -2,6 +2,7 @@ package com.develop.traiscore.presentation
 
 import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
@@ -21,13 +22,15 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 
 import com.develop.traiscore.presentation.components.NavItem
 import com.develop.traiscore.presentation.screens.AddExerciseDialogContent
 import com.develop.traiscore.presentation.screens.ExercisesScreen
-import com.develop.traiscore.presentation.screens.LoginScreen
+import com.develop.traiscore.data.local.entity.WorkoutEntry
+import com.develop.traiscore.presentation.screens.FirebaseRoutineScreen
 import com.develop.traiscore.presentation.screens.RoutineScreen
 import com.develop.traiscore.presentation.screens.SettingsScreen
 import com.develop.traiscore.presentation.screens.StatScreen
@@ -62,6 +65,7 @@ fun MainScreen(
     Scaffold (modifier = Modifier.fillMaxSize(),
         bottomBar = {
             NavigationBar(
+                modifier = Modifier.height(100.dp),
                 containerColor = primaryBlack, // Fondo de la barra de navegación
                 contentColor = primaryWhite // Color por defecto de los íconos
             ) {
@@ -93,7 +97,7 @@ fun MainScreen(
                             Text(
                                 text = navItem.label,
                                 color = if (selectedIndex == index) traiBlue
-                                else primaryWhite
+                                else primaryWhite,
                             )
                         },
                         alwaysShowLabel = false,
@@ -125,21 +129,10 @@ fun MainScreen(
         Dialog (
             onDismissRequest = {isDialogVisible = false}
         ){
-            AddExerciseDialogContent(
-                onSave = {
-                    exeScreenViewModel.addExercise(
-                        exercise = it,
-                        onError = { errorMessage ->
-                            println("Error al guardar el ejercicio: $errorMessage")
-                        },
-                        onSuccess = {
-                            println("Ejercicio guardado con éxito")
-                        }
-                    )
-                    isDialogVisible = false
-                },
-                onCancel = {
-                    isDialogVisible = false
+            AddExerciseDialogContent(onDismiss =
+            {isDialogVisible = false},
+                onSave = { updated ->
+                    println("🔧 Datos actualizados: $updated")
                 }
             )
          }
@@ -155,7 +148,7 @@ fun ContenteScreen(
             0-> ExercisesScreen()
             1-> StatScreen()
             2->Text("Pantalla Add (opcional)")
-            3-> RoutineScreen()
+            3 -> FirebaseRoutineScreen(documentId = "XyV1ERd0yYturM1p9Sqp")
             4-> SettingsScreen()
         }
 

@@ -11,7 +11,7 @@ class GetProgressionDataUseCase {
 
         // Convertir a datos para el gráfico (fecha -> peso)
         return sortedWorkouts.map { workout ->
-            val weight = workout.workoutType.weight.toFloat()
+            val weight = workout.workoutEntry.weight.toFloat()
             Pair(
                 workout.workoutModel.timestamp.toString(), // Fecha como cadena
                 weight // Peso como valor flotante

@@ -5,9 +5,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,9 +22,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
-import com.develop.traiscore.data.local.entity.WorkoutType
-import com.develop.traiscore.data.local.entity.WorkoutWithExercise
-import com.develop.traiscore.domain.model.WorkoutModel
+import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.presentation.theme.traiBlue
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -34,19 +30,19 @@ import java.util.Locale
 
 @Composable
 fun WorkoutCard(
-    workoutWithExercise: WorkoutWithExercise,
+    workoutEntry: WorkoutEntry,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
 
-    val workout = workoutWithExercise.workoutModel
-    val workoutType = workoutWithExercise.workoutType
+    val workout = workoutEntry
+
     Box(
         modifier = modifier
             .fillMaxWidth()
             .background(color = traiBlue, shape = RoundedCornerShape(12.dp))
-            .padding(16.dp)
+            .padding(8.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -58,21 +54,20 @@ fun WorkoutCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
-                    text = workoutType.title.uppercase(),
+                    text = workout.title.uppercase(),
                     fontWeight = FontWeight.Bold,
                     color = Color.Black,
                     fontSize = 18.sp
                 )
                 Row {
                     IconButton(onClick = onEditClick) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Black)
+                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Yellow)
                     }
                     IconButton(onClick = onDeleteClick) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Black)
+                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(8.dp))
             // Detalles del ejercicio
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -84,7 +79,7 @@ fun WorkoutCard(
                     horizontalAlignment = Alignment.CenterHorizontally // Centrado opcional
                 ) {
                     Text(
-                        text = "${workoutType.reps}",
+                        text = "${workout.reps}",
                         color = Color.Black,
                         fontWeight = FontWeight.Bold, // Destacar el número
                         fontSize = 14.sp // Tamaño más grande para el dato
@@ -102,7 +97,7 @@ fun WorkoutCard(
 
                 ) {
                     Text(
-                        text = "${workoutType.weight} kg",
+                        text = "${workout.weight} kg",
                         color = Color.Black,
                         fontWeight = FontWeight.Bold, // Destacar el número
                         fontSize = 14.sp // Tamaño más grande para el dato
@@ -119,7 +114,7 @@ fun WorkoutCard(
 
                 ) {
                     Text(
-                        text = "${workoutType.rir}",
+                        text = "${workout.rir}",
                         color = Color.Black,
                         fontWeight = FontWeight.Bold, // Destacar el número
                         fontSize = 14.sp // Tamaño más grande para el dato
@@ -138,43 +133,26 @@ fun WorkoutCard(
                     modifier = Modifier.padding(start = 8.dp)
                 )
             }
-            Spacer(modifier = Modifier.height(8.dp))
 
         }
     }
 }
-
-@Preview
+@Preview(showBackground = true)
 @Composable
 fun WorkoutCardPreview() {
-    val workoutType = WorkoutType(
+    val workoutEntry = WorkoutEntry(
         id = 1,
-        exerciseId = 1,
-        title = "Sentadillas",
-        weight = 100.0,
-        reps = 8,
+        exerciseId = 101,
+        title = "Press Banca",
+        weight = 85.0,
+        reps = 10,
         rir = 2,
+        series = 4,
         timestamp = Date()
     )
-    val workoutWithExercise = WorkoutWithExercise(
-        workoutModel = WorkoutModel(
-            id = 1,
-            timestamp = Date(),
-            exerciseId = 1,
-            reps = 10,
-            title = "Rojo",
-            weight = 10.0
-        ),
-        workoutType = workoutType,
-        exerciseEntity  = com.develop.traiscore.data.local.entity.ExerciseEntity(
-            id = 1,
-            idIntern = "sentadillas",
-            name = "Sentadillas",
-            isDefault = true
-        )
-    )
+
     WorkoutCard(
-        workoutWithExercise = workoutWithExercise,
+        workoutEntry = workoutEntry,
         onEditClick = { /* Acción de editar */ },
         onDeleteClick = { /* Acción de eliminar */ }
     )

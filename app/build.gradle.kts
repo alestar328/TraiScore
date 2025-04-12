@@ -7,6 +7,8 @@ plugins {
     //Hilt
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
+    alias(libs.plugins.google.gms.google.services)
+    alias(libs.plugins.google.firebase.crashlytics)
 
 }
 
@@ -16,8 +18,8 @@ android {
 
     defaultConfig {
         applicationId = "com.develop.traiscore"
-        minSdk = 31
-        targetSdk = 34
+        minSdk = 30
+        targetSdk = 33
         versionCode = 1
         versionName = "1.0"
 
@@ -63,6 +65,23 @@ android {
 
 dependencies {
     implementation(libs.androidx.paging.common.android)
+    implementation(libs.firebase.crashlytics)
+    implementation (platform("com.google.firebase:firebase-bom:33.12.0"))
+    implementation ("com.google.firebase:firebase-auth")
+    implementation ("com.google.firebase:firebase-firestore")
+    implementation("androidx.core:core-ktx:1.15.0")
+    implementation("androidx.collection:collection-ktx:1.5.0")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
+    implementation("androidx.navigation:navigation-runtime-ktx:2.8.9")
+    implementation("androidx.navigation:navigation-fragment-ktx:2.8.9")
+    implementation("androidx.navigation:navigation-ui-ktx:2.8.9")
+    implementation("androidx.lifecycle:lifecycle-reactivestreams-ktx:2.8.7")
+    implementation("androidx.palette:palette-ktx:1.0.0")
+    implementation("androidx.sqlite:sqlite-ktx:2.4.0")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
+    implementation("androidx.compose.material3:material3:1.3.2")
+
     val lifecycle_version = "2.8.7"
 
     val room_version = "2.6.1"

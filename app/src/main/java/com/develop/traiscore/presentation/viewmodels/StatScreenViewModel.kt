@@ -49,7 +49,7 @@ class StatScreenViewModel @Inject constructor(
                 val workoutsWithTypes = workoutTypes.map { workoutType ->
                     WorkoutWithType(
                         workoutModel = workoutType.toWorkoutModel(),
-                        workoutType = workoutType
+                        workoutEntry = workoutType
                     )
                 }
 
@@ -74,8 +74,8 @@ class StatScreenViewModel @Inject constructor(
             return
         }
 
-        val maxWeight = workouts.maxOfOrNull { it.workoutType.weight } ?: 1.0
-        val minWeight = workouts.minOfOrNull { it.workoutType.weight } ?: 0.0
+        val maxWeight = workouts.maxOfOrNull { it.workoutEntry.weight } ?: 1.0
+        val minWeight = workouts.minOfOrNull { it.workoutEntry.weight } ?: 0.0
 
         _progressData.value = workouts.map { (workoutModel, workoutType) ->
             val normalizedWeight =
@@ -95,9 +95,9 @@ class StatScreenViewModel @Inject constructor(
             workoutType.weight * (1 + workoutType.reps / 30.0)
         } ?: 0.0
 
-        val maxReps = workouts.maxOfOrNull { it.workoutType.reps } ?: 0
+        val maxReps = workouts.maxOfOrNull { it.workoutEntry.reps } ?: 0
 
-        val averageRIR = workouts.mapNotNull { it.workoutType.rir }.average().toInt()
+        val averageRIR = workouts.mapNotNull { it.workoutEntry.rir }.average().toInt()
 
         _circularData.value = Triple(oneRepMax, maxReps, averageRIR)
     }

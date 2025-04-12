@@ -8,11 +8,11 @@ data class WorkoutWithExercise(
     @Embedded val workoutModel: WorkoutModel,
     @Relation(
         parentColumn = "id", // Columna en WorkoutModel
-        entityColumn = "id" // Columna en WorkoutType
+        entityColumn = "id" // Columna en WorkoutEntry
     )
-    val workoutType: WorkoutType,
+    val workoutEntry: WorkoutEntry,
     @Relation(
-        parentColumn = "exerciseId", // Columna en WorkoutType
+        parentColumn = "exerciseId", // Columna en WorkoutEntry
         entityColumn = "id" // Columna en ExerciseEntity
     )
     val exerciseEntity: ExerciseEntity

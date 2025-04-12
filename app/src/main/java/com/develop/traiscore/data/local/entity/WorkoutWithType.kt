@@ -10,5 +10,5 @@ data class WorkoutWithType(
         parentColumn = "workoutTypeId",
         entityColumn = "id"
     )
-    val workoutType: WorkoutType
+    val workoutEntry: WorkoutEntry
 )
