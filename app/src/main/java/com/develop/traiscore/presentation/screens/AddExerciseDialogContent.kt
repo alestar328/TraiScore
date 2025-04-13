@@ -92,6 +92,43 @@ fun AddExerciseDialogContent(
 
 
         Spacer(modifier = Modifier.size(16.dp))
+        //Peso ejercicio
+        Column(
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                text = "Peso",
+                color = traiBlue,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = traiBlue, // Color del borde
+                        shape = RoundedCornerShape(12.dp) // Bordes redondeados
+                    )
+                    .padding(3.dp) // Grosor del borde
+            ) {
+                OutlinedTextField(
+                    value = weightText,
+                    onValueChange = { weightText = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = traiBlue,
+                        unfocusedBorderColor = traiBlue,
+                        cursorColor = Color.Black, // Asegura que el cursor sea visible
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
+                    )
+                )
+            }
+        }
+        Spacer(modifier = Modifier.size(16.dp))
 
         //Repeticiones ejercicio
         Column(
@@ -115,52 +152,22 @@ fun AddExerciseDialogContent(
                 OutlinedTextField(
                     value = repsText,
                     onValueChange = { repsText = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.White, RoundedCornerShape(12.dp)),
+                    modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = traiBlue,
-                        unfocusedBorderColor = traiBlue
+                        unfocusedBorderColor = traiBlue,
+                        cursorColor = Color.Black, // Asegura que el cursor sea visible
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White
                     )
                 )
             }
         }
-        Spacer(modifier = Modifier.size(16.dp))
 
-        //Peso ejercicio
-        Column(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(
-                text = "Peso",
-                color = traiBlue,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(
-                        color = traiBlue, // Color del borde
-                        shape = RoundedCornerShape(12.dp) // Bordes redondeados
-                    )
-                    .padding(3.dp) // Grosor del borde
-            ) {
-                OutlinedTextField(
-                    value = weightText,
-                    onValueChange = { weightText = it },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color.White, RoundedCornerShape(12.dp)),
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = traiBlue,
-                        unfocusedBorderColor = traiBlue
-                    )
-                )
-            }
-        }
+
         Spacer(modifier = Modifier.size(16.dp))
 
         //RIR SLIDER

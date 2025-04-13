@@ -48,10 +48,8 @@ fun RIRSlider(
             .pointerInput(sliderWidth) {
                 detectDragGestures { change, dragAmount ->
                     change.consume()
-                    val newPos = (thumbPosition + dragAmount.x).coerceIn(0f, sliderWidth)
-                    thumbPosition = newPos
-
-                    val newValue = ((newPos / sliderWidth) * maxValue).toInt().coerceIn(0, maxValue)
+                    val touchX = change.position.x.coerceIn(0f, sliderWidth)
+                    val newValue = ((touchX / sliderWidth) * maxValue).toInt().coerceIn(0, maxValue)
                     onValueChange(newValue)
                 }
             }
@@ -59,6 +57,7 @@ fun RIRSlider(
         Canvas(modifier = Modifier.fillMaxSize()) {
             sliderWidth = size.width
             val centerY = size.height / 2
+            val thumbX = (value.toFloat() / maxValue) * sliderWidth
 
             drawLine(
                 color = trackColor,
@@ -67,7 +66,6 @@ fun RIRSlider(
                 strokeWidth = 8f
             )
 
-            val thumbX = thumbPosition.coerceIn(0f, sliderWidth)
             drawCircle(
                 color = thumbColor,
                 radius = thumbRadius,

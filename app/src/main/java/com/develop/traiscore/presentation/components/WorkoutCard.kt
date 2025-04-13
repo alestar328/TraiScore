@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
@@ -41,8 +43,8 @@ fun WorkoutCard(
     Box(
         modifier = modifier
             .fillMaxWidth()
-            .background(color = traiBlue, shape = RoundedCornerShape(12.dp))
-            .padding(8.dp)
+            .background(color = Color.DarkGray)
+            .padding(5.dp)
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -52,19 +54,20 @@ fun WorkoutCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
+                    .height(30.dp)
             ) {
                 Text(
                     text = workout.title.uppercase(),
                     fontWeight = FontWeight.Bold,
-                    color = Color.Black,
-                    fontSize = 18.sp
+                    color = Color.White,
+                    fontSize = 13.sp
                 )
                 Row {
                     IconButton(onClick = onEditClick) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Yellow)
+                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Yellow ,  modifier = Modifier.size(17.dp))
                     }
                     IconButton(onClick = onDeleteClick) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red)
+                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red,  modifier = Modifier.size(17.dp))
                     }
                 }
             }
@@ -79,17 +82,11 @@ fun WorkoutCard(
                     horizontalAlignment = Alignment.CenterHorizontally // Centrado opcional
                 ) {
                     Text(
-                        text = "${workout.reps}",
-                        color = Color.Black,
+                        text = "${workout.reps} Reps",
+                        color = Color.White,
                         fontWeight = FontWeight.Bold, // Destacar el número
-                        fontSize = 14.sp // Tamaño más grande para el dato
+                        fontSize = 11.sp // Tamaño más grande para el dato
                     )
-                    Text(
-                        text = "Repes",
-                        color = Color.Black,
-                        fontSize = 12.sp // Tamaño más pequeño para la etiqueta
-                    )
-
                 }
                 Column(
                     modifier = Modifier.weight(1f),
@@ -98,14 +95,9 @@ fun WorkoutCard(
                 ) {
                     Text(
                         text = "${workout.weight} kg",
-                        color = Color.Black,
+                        color = Color.White,
                         fontWeight = FontWeight.Bold, // Destacar el número
-                        fontSize = 14.sp // Tamaño más grande para el dato
-                    )
-                    Text(
-                        text = "Peso",
-                        color = Color.Black,
-                        fontSize = 12.sp // Tamaño más pequeño para la etiqueta
+                        fontSize = 11.sp // Tamaño más grande para el dato
                     )
                 }
                 Column(
@@ -114,22 +106,17 @@ fun WorkoutCard(
 
                 ) {
                     Text(
-                        text = "${workout.rir}",
-                        color = Color.Black,
+                        text = "${workout.rir}  RIR",
+                        color = Color.White,
                         fontWeight = FontWeight.Bold, // Destacar el número
-                        fontSize = 14.sp // Tamaño más grande para el dato
-                    )
-                    Text(
-                        text = "RIR",
-                        color = Color.Black,
-                        fontSize = 12.sp // Tamaño más pequeño para la etiqueta
+                        fontSize = 11.sp // Tamaño más grande para el dato
                     )
                 }
 
                 Text(
                     text = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(workout.timestamp),
-                    fontSize = 12.sp,
-                    color = Color.Black,
+                    fontSize = 11.sp,
+                    color = Color.White,
                     modifier = Modifier.padding(start = 8.dp)
                 )
             }

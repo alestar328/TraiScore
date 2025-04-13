@@ -8,6 +8,8 @@ import com.google.firebase.firestore.firestore
 import java.util.Date
 import androidx.compose.runtime.State
 import com.google.firebase.firestore.Query
+import java.text.SimpleDateFormat
+import java.util.Locale
 import javax.inject.Inject
 
 class WorkoutEntryViewModel @Inject constructor() : ViewModel() {
@@ -72,5 +74,9 @@ class WorkoutEntryViewModel @Inject constructor() : ViewModel() {
             .addOnFailureListener { e ->
                 println("❌ Error al actualizar el documento: ${e.message}")
             }
+    }
+    fun groupWorkoutsByDate(workouts: List<WorkoutEntry>): Map<String, List<WorkoutEntry>> {
+        val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+        return workouts.groupBy { formatter.format(it.timestamp) }
     }
 }

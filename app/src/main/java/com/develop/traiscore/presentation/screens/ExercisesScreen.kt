@@ -33,6 +33,7 @@ import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.data.local.entity.WorkoutWithExercise
 import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.WorkoutCard
+import com.develop.traiscore.presentation.components.WorkoutCardList
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.util.Date
@@ -46,6 +47,7 @@ fun ExercisesScreen(
     val entries = viewModel.entries.value
     val showDialog = remember { mutableStateOf(false) }
     val selectedEntry = remember { mutableStateOf<WorkoutEntry?>(null) }
+    val groupedEntries = viewModel.groupWorkoutsByDate(entries)
 
     Scaffold(
         topBar = {
@@ -75,6 +77,7 @@ fun ExercisesScreen(
                 )
             )
         },
+
         content = { paddingValues ->
             LazyColumn(
                 modifier = Modifier
@@ -85,90 +88,99 @@ fun ExercisesScreen(
                 contentPadding = PaddingValues(bottom = 50.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                groupedEntries.forEach { (date, dailyWorkouts) ->
+                    item {
+                        Text(
+                            text = date,
+                            color = Color.White,
+                            style = MaterialTheme.typography.titleMedium,
+                            modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
+                        )
+                    }
+
+                    item {
+                        WorkoutCardList(
+                            workouts = dailyWorkouts,
+                            onEditClick = { workout ->
+                                selectedEntry.value = workout
+                                showDialog.value = true
+                            },
+                            onDeleteClick = { workout ->
+                                workout.firebaseId?.let { viewModel.deleteWorkoutEntry(it) }
+                            }
+                        )
+                    }
+                }
+            }
+
+            // ⬇️ Este bloque debe ir AQUÍ justo después del Scaffold:
+            if (showDialog.value && selectedEntry.value != null) {
+                AddExerciseDialogContent(
+                    workoutToEdit = selectedEntry.value,
+                    onDismiss = { showDialog.value = false },
+                    onSave = { updatedData ->
+                        selectedEntry.value?.firebaseId?.let { id ->
+                            viewModel.editWorkoutEntry(id, updatedData)
+                            showDialog.value = false
+                        }
+                    }
+                )
+            }
+        }
+    )
+}
+
+    @Preview(
+        name = "ExercisesScreenPreview",
+        showBackground = true
+    )
+    @Composable
+    fun ExercisesScreenPreview() {
+        val workoutEntry = WorkoutEntry(
+            id = 1,
+            exerciseId = 1,
+            title = "Sentadillas",
+            weight = 100.0,
+            reps = 10,
+            rir = 2,
+            series = 0,
+            timestamp = Date()
+        )
+
+        val workoutModel = WorkoutModel(
+            id = 1,
+            exerciseId = 1,
+            title = workoutEntry.title,
+            reps = workoutEntry.reps,
+            weight = workoutEntry.weight,
+            series = 0,
+            timestamp = Date()
+        )
+        val exerciseEntity = ExerciseEntity(
+            id = 1,
+            idIntern = "sentadillas",
+            name = "Sentadillas",
+            isDefault = true
+        )
+        val workoutWithExercise = WorkoutWithExercise(
+            workoutModel = workoutModel,
+            workoutEntry = workoutEntry,
+            exerciseEntity = exerciseEntity
+        )
+
+
+        TraiScoreTheme {
+            LazyColumn {
                 items(
-                    items = entries,
-                    key = { it.id }
-                ) { entry ->
+                    items = listOf(workoutWithExercise),
+                    key = { it.workoutModel.id }
+                ) { exercise ->
                     WorkoutCard(
-                        workoutEntry = entry,
-                        onEditClick = {  selectedEntry.value = entry
-                            showDialog.value = true },
-                        onDeleteClick = { entry.firebaseId?.let { id ->
-                            viewModel.deleteWorkoutEntry(id)
-                        }
-                        }
+                        workoutEntry = workoutEntry,
+                        onEditClick = { println("Edit ${exercise.exerciseEntity.name}") },
+                        onDeleteClick = { println("Delete ${exercise.exerciseEntity.name}") }
                     )
                 }
             }
         }
-    )
-    // ⬇️ Este bloque debe ir AQUÍ justo después del Scaffold:
-    if (showDialog.value && selectedEntry.value != null) {
-        AddExerciseDialogContent(
-            workoutToEdit = selectedEntry.value,
-            onDismiss = { showDialog.value = false },
-            onSave = { updatedData ->
-                selectedEntry.value?.firebaseId?.let { id ->
-                    viewModel.editWorkoutEntry(id, updatedData)
-                    showDialog.value = false
-                }
-            }
-        )
     }
-}
-
-
-@Preview(
-    name = "ExercisesScreenPreview",
-    showBackground = true
-)
-@Composable
-fun ExercisesScreenPreview() {
-    val workoutEntry = WorkoutEntry(
-        id = 1,
-        exerciseId = 1,
-        title = "Sentadillas",
-        weight = 100.0,
-        reps = 10,
-        rir = 2,
-        series = 0,
-        timestamp = Date()
-    )
-
-    val workoutModel = WorkoutModel(
-        id = 1,
-        exerciseId = 1,
-        title = workoutEntry.title,
-        reps = workoutEntry.reps,
-        weight = workoutEntry.weight,
-        series = 0,
-        timestamp = Date()
-    )
-    val exerciseEntity = ExerciseEntity(
-        id = 1,
-        idIntern = "sentadillas",
-        name = "Sentadillas",
-        isDefault = true
-    )
-    val workoutWithExercise = WorkoutWithExercise(
-        workoutModel = workoutModel,
-        workoutEntry = workoutEntry,
-        exerciseEntity = exerciseEntity
-    )
-
-
-    TraiScoreTheme {
-        LazyColumn {
-            items(
-                items = listOf(workoutWithExercise),
-                key = { it.workoutModel.id }
-            ) { exercise ->
-                WorkoutCard(
-                    workoutEntry = workoutEntry,
-                    onEditClick = { println("Edit ${exercise.exerciseEntity.name}") },
-                    onDeleteClick = { println("Delete ${exercise.exerciseEntity.name}") }
-                )
-            }
-        }
-    }
-}
