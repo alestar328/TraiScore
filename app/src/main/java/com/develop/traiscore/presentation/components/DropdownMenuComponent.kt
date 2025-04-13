@@ -3,6 +3,7 @@ package com.develop.traiscore.presentation.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -38,7 +39,7 @@ fun DropdownMenuComponent(
     // Botón desplegable
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { expanded = !expanded }
+        onExpandedChange = { expanded = !expanded },
     ) {
         TextField(
             value = selectedItem,
@@ -68,11 +69,15 @@ fun DropdownMenuComponent(
         )
         ExposedDropdownMenu(
             expanded = expanded,
+            modifier = Modifier
+                .heightIn(max = 200.dp),
             onDismissRequest = { expanded = false }
         ) {
             items.forEach { item ->
                 DropdownMenuItem(
-                    text = { Text(item) },
+                    text = {
+                        Text(item)
+                           },
                     onClick = {
                         selectedItem = item
                         expanded = false

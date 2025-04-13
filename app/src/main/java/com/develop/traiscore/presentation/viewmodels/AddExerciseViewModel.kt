@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.develop.traiscore.data.firebaseData.saveExerciseToFirebase
 import com.develop.traiscore.domain.defaultExerciseEntities
 import com.develop.traiscore.domain.model.Resource
 import com.develop.traiscore.domain.model.WorkoutModel
@@ -56,6 +57,9 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
             .addOnFailureListener {
                 println("❌ Error al guardar entrada: ${it.message}")
             }
+    }
+    fun saveExercise(name: String, category: String) {
+        saveExerciseToFirebase(name, category)
     }
 
 }

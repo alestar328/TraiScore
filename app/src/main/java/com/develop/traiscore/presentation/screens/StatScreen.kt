@@ -33,6 +33,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.R
+import com.develop.traiscore.core.TimeRange
 import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.CircularProgressView
 import com.develop.traiscore.presentation.components.DropdownMenuComponent
@@ -57,18 +58,6 @@ fun StatScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    // Logo en lugar de texto
-                    /*Text(
-                        text = "Estadisticas",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontWeight = FontWeight.ExtraBold,
-                            fontSize = MaterialTheme.typography.titleLarge.fontSize * 2
-                        ), // Estilo del texto
-                        color = traiBlue, // Color del texto
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth(),
-                    )*/
-                       // Logo en lugar de texto
                     Image(
                         painter = painterResource(id = R.drawable.trailogoup),
                         contentDescription = "Logo cabecera",
@@ -118,6 +107,19 @@ fun StatScreen(
                         onItemSelected = { viewModel.onExerciseSelected(it) },
                         placeholder = "Ejercicio",
                         modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    DropdownMenuComponent(
+                        items = TimeRange.entries.map { it.displayName },
+                        onItemSelected = { selectedName ->
+                            val selectedRange = TimeRange.entries.find { it.displayName == selectedName }
+                            viewModel.onTimeRangeSelected(selectedRange)
+                        },
+                        placeholder = "Tiempo",
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(48.dp)
                     )
 
                 }
@@ -194,7 +196,7 @@ fun StatScreen(
                             color = Color.White,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
-                        LineChartView(
+                       /* LineChartView(
                             dataPoints = progressData,
                             lineColor = Color.Cyan, // Puedes personalizar los colores según sea necesario
                             axisColor = Color.Gray,
@@ -203,7 +205,7 @@ fun StatScreen(
                                 .fillMaxWidth()
                                 .height(150.dp)
                                 .padding(horizontal = 16.dp)
-                        )
+                        )*/
                     }
                     item {
                         Text(
@@ -212,7 +214,7 @@ fun StatScreen(
                             color = Color.White,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
-                        LineChartView(
+                    /*    LineChartView(
                             dataPoints = progressData,
                             lineColor = Color.Cyan, // Puedes personalizar los colores según sea necesario
                             axisColor = Color.Gray,
@@ -221,7 +223,7 @@ fun StatScreen(
                                 .fillMaxWidth()
                                 .height(150.dp)
                                 .padding(horizontal = 16.dp)
-                        )
+                        )*/
                     }
                 }
 

@@ -54,8 +54,7 @@ fun AddExerciseDialogContent(
 
     Column(
         modifier = modifier
-            .fillMaxWidth(1f)
-            .padding(16.dp)
+            .fillMaxWidth()
             .background(
                 color = Color.Gray,
                 shape = RoundedCornerShape(16.dp)

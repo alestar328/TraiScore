@@ -4,8 +4,10 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
@@ -22,6 +24,7 @@ import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import com.develop.traiscore.presentation.theme.traiBlue
 
 
@@ -98,15 +101,20 @@ fun FilterableDropdown(
                 alignment = Alignment.TopStart,
                 offset = IntOffset(
                     x = 0,
-                    y = with(LocalDensity.current) { textFieldSize.height.toDp().roundToPx() +40 } // Adding 4dp for spacing
-                )
-            ) {
+                    y = with(LocalDensity.current) { textFieldSize.height.toDp().roundToPx() + 8 }
+                ),
+                properties = PopupProperties(focusable = true, dismissOnClickOutside = true),
+                onDismissRequest = { expanded = false } // Cierra al hacer clic fuera
+
+                ) {
                 Column(
                     modifier = Modifier
                         .width(with(LocalDensity.current) { textFieldSize.width.toDp() })
                         .background(Color.White, RoundedCornerShape(12.dp))
                         .border(2.dp, traiBlue, RoundedCornerShape(12.dp))
                         .padding(4.dp)
+                        .heightIn(max = 200.dp)
+                        .verticalScroll(rememberScrollState())
                 ) {
                     filteredItems.forEach { item ->
                         Box(

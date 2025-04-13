@@ -26,6 +26,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.data.local.entity.ExerciseEntity
 import com.develop.traiscore.domain.model.WorkoutModel
@@ -115,16 +116,20 @@ fun ExercisesScreen(
 
             // ⬇️ Este bloque debe ir AQUÍ justo después del Scaffold:
             if (showDialog.value && selectedEntry.value != null) {
-                AddExerciseDialogContent(
-                    workoutToEdit = selectedEntry.value,
-                    onDismiss = { showDialog.value = false },
-                    onSave = { updatedData ->
-                        selectedEntry.value?.firebaseId?.let { id ->
-                            viewModel.editWorkoutEntry(id, updatedData)
-                            showDialog.value = false
+                Dialog(
+                    onDismissRequest = { showDialog.value = false }
+                ) {
+                    AddExerciseDialogContent(
+                        workoutToEdit = selectedEntry.value,
+                        onDismiss = { showDialog.value = false },
+                        onSave = { updatedData ->
+                            selectedEntry.value?.firebaseId?.let { id ->
+                                viewModel.editWorkoutEntry(id, updatedData)
+                                showDialog.value = false
+                            }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     )
