@@ -106,7 +106,7 @@ fun AddExerciseDialogContent(
                     .fillMaxWidth()
                     .background(
                         color = traiBlue, // Color del borde
-                        shape = RoundedCornerShape(12.dp) // Bordes redondeados
+                        shape = RoundedCornerShape(9.dp) // Bordes redondeados
                     )
                     .padding(3.dp) // Grosor del borde
             ) {
@@ -144,7 +144,7 @@ fun AddExerciseDialogContent(
                     .fillMaxWidth()
                     .background(
                         color = traiBlue, // Color del borde
-                        shape = RoundedCornerShape(12.dp) // Bordes redondeados
+                        shape = RoundedCornerShape(9.dp) // Bordes redondeados
                     )
                     .padding(3.dp) // Grosor del borde
             ) {
@@ -167,16 +167,18 @@ fun AddExerciseDialogContent(
         }
 
 
-        Spacer(modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.size(10.dp))
 
         //RIR SLIDER
         Column(
-            modifier = Modifier.fillMaxWidth()
+            modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally // 👈 Aquí está la clave
+
         ) {
             Text(
-                text = "RIR",
+                text = "RIR: $rirValue",
                 color = traiBlue,
-                fontSize = 16.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
             Spacer(modifier = Modifier.size(8.dp))
@@ -184,16 +186,10 @@ fun AddExerciseDialogContent(
                 value = rirValue,
                 onValueChange = { rirValue = it }
             )
-            Text(
-                text = "RIR: $rirValue",
-                color = traiBlue,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(bottom = 8.dp)
-            )
+
 
         }
-        Spacer(modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.size(20.dp))
 
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),

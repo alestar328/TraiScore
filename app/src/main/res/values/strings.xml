@@ -4,4 +4,11 @@
     <string name="s_logan">Track your trainings</string>
     <string name="app_logo">App logo</string>
     <string name="login">Login</string>
+
+    <string name="category_chest">Pecho</string>
+    <string name="category_back">Espalda</string>
+    <string name="category_legs">Piernas</string>
+    <string name="category_arms">Brazos</string>
+    <string name="category_shoulders">Hombros</string>
+    <string name="category_core">Abdomen</string>
 </resources>

@@ -119,7 +119,6 @@ fun StatScreen(
                         placeholder = "Tiempo",
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(48.dp)
                     )
 
                 }

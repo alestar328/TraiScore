@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -18,6 +20,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -28,7 +31,7 @@ import androidx.compose.ui.window.PopupProperties
 import com.develop.traiscore.presentation.theme.traiBlue
 
 
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilterableDropdown(
     items: List<String>,
@@ -37,100 +40,54 @@ fun FilterableDropdown(
     modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var filterText by remember { mutableStateOf(selectedValue) }
-    val filteredItems = items.filter { it.contains(filterText, ignoreCase = true) }
 
-    var textFieldSize by remember { mutableStateOf(IntSize.Zero) }
+    var filterText by remember { mutableStateOf(TextFieldValue(selectedValue)) }
 
-    Column(modifier = modifier.fillMaxWidth()) {
+    val filteredItems = items.filter {
+        it.contains(filterText.text, ignoreCase = true)
+    }
+
+    ExposedDropdownMenuBox(
+        expanded = expanded && filteredItems.isNotEmpty(),
+        modifier = modifier,
+        onExpandedChange = { expanded = !expanded },
+    ) {
         // Input field
-        Box(
+        OutlinedTextField(
+            value = filterText,
+            onValueChange = {
+                filterText = it
+                expanded = true
+            },
+            trailingIcon = {
+                ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
+            },
+            colors = OutlinedTextFieldDefaults.colors(
+                focusedBorderColor = traiBlue,
+                unfocusedBorderColor = traiBlue,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black,
+                focusedContainerColor = Color.White,
+                unfocusedContainerColor = Color.White
+            ),
             modifier = Modifier
+                .menuAnchor()
                 .fillMaxWidth()
-                .background(Color.White, RoundedCornerShape(12.dp))
-                .border(2.dp, traiBlue, RoundedCornerShape(12.dp))
-                .clickable { expanded = !expanded }
-                .padding(8.dp)
-                .onGloballyPositioned { coordinates ->
-                    textFieldSize = coordinates.size
-                }
+        )
+
+        ExposedDropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                BasicTextField(
-                    value = filterText,
-                    onValueChange = {
-                        filterText = it
-                        expanded = true
-                    },
-                    textStyle = TextStyle(
-                        fontSize = 16.sp,
-                        color = Color.Black
-                    ),
-                    decorationBox = { innerTextField ->
-                        Box(modifier = Modifier.weight(1f)) {
-                            if (filterText.isEmpty()) {
-                                Text(
-                                    text = "Selecciona",
-                                    style = TextStyle(
-                                        fontSize = 16.sp,
-                                        color = Color.Gray
-                                    )
-                                )
-                            }
-                            innerTextField()
-                        }
+            filteredItems.forEach { item ->
+                DropdownMenuItem(
+                    text = { Text(item) },
+                    onClick = {
+                        filterText = TextFieldValue(item)
+                        onItemSelected(item)
+                        expanded = false
                     }
                 )
-                Spacer(modifier = Modifier.weight(1f))
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Dropdown Icon",
-                    tint = traiBlue,
-                    modifier = Modifier
-                        .align(Alignment.CenterVertically)
-                )
-            }
-        }
-
-        // Dropdown menu
-        if (expanded) {
-            Popup(
-                alignment = Alignment.TopStart,
-                offset = IntOffset(
-                    x = 0,
-                    y = with(LocalDensity.current) { textFieldSize.height.toDp().roundToPx() + 8 }
-                ),
-                properties = PopupProperties(focusable = true, dismissOnClickOutside = true),
-                onDismissRequest = { expanded = false } // Cierra al hacer clic fuera
-
-                ) {
-                Column(
-                    modifier = Modifier
-                        .width(with(LocalDensity.current) { textFieldSize.width.toDp() })
-                        .background(Color.White, RoundedCornerShape(12.dp))
-                        .border(2.dp, traiBlue, RoundedCornerShape(12.dp))
-                        .padding(4.dp)
-                        .heightIn(max = 200.dp)
-                        .verticalScroll(rememberScrollState())
-                ) {
-                    filteredItems.forEach { item ->
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    filterText = item
-                                    onItemSelected(item)
-                                    expanded = false
-                                }
-                                .padding(8.dp)
-                        ) {
-                            Text(text = item, fontSize = 16.sp, color = Color.Black)
-                        }
-                    }
-                }
             }
         }
     }
