@@ -79,4 +79,12 @@ class WorkoutEntryViewModel @Inject constructor() : ViewModel() {
         val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
         return workouts.groupBy { formatter.format(it.timestamp) }
     }
+
+    fun groupWorkoutsByDateFiltered(entries: List<WorkoutEntry>, query: String): Map<String, List<WorkoutEntry>> {
+        return entries
+            .filter { it.title.contains(query, ignoreCase = true) }
+            .groupBy {
+                SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(it.timestamp)
+            }
+    }
 }

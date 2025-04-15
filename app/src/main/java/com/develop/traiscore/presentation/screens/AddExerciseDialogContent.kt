@@ -46,10 +46,13 @@ fun AddExerciseDialogContent(
     onSave: (Map<String, Any>) -> Unit
 ) {
     val exerciseNames = viewModel.exerciseNames
-    var selectedExercise by remember { mutableStateOf(workoutToEdit?.title ?: "") }
+    var selectedExercise by remember {
+        mutableStateOf(
+            workoutToEdit?.title ?: viewModel.lastUsedExerciseName.orEmpty()
+        ) }
     var repsText by remember { mutableStateOf(workoutToEdit?.reps?.toString() ?: "") }
     var weightText by remember { mutableStateOf(workoutToEdit?.weight?.toString() ?: "") }
-    var rirValue by remember { mutableStateOf(workoutToEdit?.rir ?: 5) }
+    var rirValue by remember { mutableStateOf(workoutToEdit?.rir ?: 2) }
     val context = LocalContext.current
 
     Column(
@@ -69,7 +72,7 @@ fun AddExerciseDialogContent(
             fontWeight = FontWeight.Bold,
             color = traiBlue
         )
-        Spacer(modifier = Modifier.size(24.dp))
+        Spacer(modifier = Modifier.size(20.dp))
 
         //SELECCIONA del ejericicio
         Column(
@@ -90,7 +93,7 @@ fun AddExerciseDialogContent(
         }
 
 
-        Spacer(modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.size(10.dp))
         //Peso ejercicio
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -127,7 +130,7 @@ fun AddExerciseDialogContent(
                 )
             }
         }
-        Spacer(modifier = Modifier.size(16.dp))
+        Spacer(modifier = Modifier.size(10.dp))
 
         //Repeticiones ejercicio
         Column(
@@ -181,7 +184,6 @@ fun AddExerciseDialogContent(
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.size(8.dp))
             RIRSlider(
                 value = rirValue,
                 onValueChange = { rirValue = it }
@@ -189,7 +191,7 @@ fun AddExerciseDialogContent(
 
 
         }
-        Spacer(modifier = Modifier.size(20.dp))
+        Spacer(modifier = Modifier.size(10.dp))
 
         Column(
             verticalArrangement = Arrangement.spacedBy(8.dp),

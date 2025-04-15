@@ -4,6 +4,7 @@ package com.develop.traiscore.presentation.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -33,10 +34,12 @@ import com.develop.traiscore.domain.model.WorkoutModel
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.data.local.entity.WorkoutWithExercise
 import com.develop.traiscore.presentation.components.CircleDot
+import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.WorkoutCard
 import com.develop.traiscore.presentation.components.WorkoutCardList
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
+import java.io.Console
 import java.util.Date
 
 
@@ -49,6 +52,14 @@ fun ExercisesScreen(
     val showDialog = remember { mutableStateOf(false) }
     val selectedEntry = remember { mutableStateOf<WorkoutEntry?>(null) }
     val groupedEntries = viewModel.groupWorkoutsByDate(entries)
+    val showSearchBar = remember { mutableStateOf(false) }
+    val selectedSearch = remember { mutableStateOf("") }
+
+    val filteredGrouped = if (selectedSearch.value.isNotBlank()) {
+        viewModel.groupWorkoutsByDateFiltered(entries, selectedSearch.value)
+    } else {
+        groupedEntries
+    }
 
     Scaffold(
         topBar = {
@@ -61,7 +72,15 @@ fun ExercisesScreen(
                     )
                 },
                 actions = {
-                    IconButton(onClick = { println("Search clicked") }) {
+                    IconButton(
+                        onClick = {
+                        println("🔍 Icono de busqueda clicado")
+                            showSearchBar.value = !showSearchBar.value
+                            if (!showSearchBar.value) {
+                                selectedSearch.value = "" // 👈 Esto reinicia el filtro al cerrar
+                            }
+
+                    }) {
                         CircleDot(color = traiBlue) {
                             Icon(
                                 imageVector = Icons.Default.Search,
@@ -79,37 +98,56 @@ fun ExercisesScreen(
             )
         },
 
-        content = { paddingValues ->
-            LazyColumn(
+        content = {
+            paddingValues ->
+            Column(
                 modifier = Modifier
-                    .padding(paddingValues)
-                    .background(Color.Black)
                     .fillMaxSize()
-                    .padding(TraiScoreTheme.dimens.paddingMedium),
-                contentPadding = PaddingValues(bottom = 50.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                    .background(Color.Black)
+                    .padding(top = paddingValues.calculateTopPadding()) // Solo top
             ) {
-                groupedEntries.forEach { (date, dailyWorkouts) ->
-                    item {
-                        Text(
-                            text = date,
-                            color = Color.White,
-                            style = MaterialTheme.typography.titleMedium,
-                            modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
-                        )
-                    }
+                if (showSearchBar.value) {
+                    FilterableDropdown(
+                        items = viewModel.entries.value.map { it.title }.distinct(),
+                        selectedValue = selectedSearch.value,
+                        onItemSelected = { selectedSearch.value = it },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Black)
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+                LazyColumn(
+                    modifier = Modifier
+                        .background(Color.Black)
+                        .fillMaxSize()
+                        .padding(TraiScoreTheme.dimens.paddingMedium),
+                    contentPadding = PaddingValues(bottom = 50.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    filteredGrouped.forEach { (date, dailyWorkouts) ->
+                        item {
+                            Text(
+                                text = date,
+                                color = Color.White,
+                                style = MaterialTheme.typography.titleMedium,
+                                modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
+                            )
+                        }
 
-                    item {
-                        WorkoutCardList(
-                            workouts = dailyWorkouts,
-                            onEditClick = { workout ->
-                                selectedEntry.value = workout
-                                showDialog.value = true
-                            },
-                            onDeleteClick = { workout ->
-                                workout.firebaseId?.let { viewModel.deleteWorkoutEntry(it) }
-                            }
-                        )
+
+                        item {
+                            WorkoutCardList(
+                                workouts = dailyWorkouts,
+                                onEditClick = { workout ->
+                                    selectedEntry.value = workout
+                                    showDialog.value = true
+                                },
+                                onDeleteClick = { workout ->
+                                    workout.firebaseId?.let { viewModel.deleteWorkoutEntry(it) }
+                                }
+                            )
+                        }
                     }
                 }
             }

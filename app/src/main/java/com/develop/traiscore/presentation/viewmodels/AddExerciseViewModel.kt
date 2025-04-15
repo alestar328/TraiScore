@@ -24,7 +24,8 @@ import javax.inject.Inject
 class AddExerciseViewModel @Inject constructor() : ViewModel() {
     var exerciseNames by mutableStateOf<List<String>>(emptyList())
         private set
-
+    var lastUsedExerciseName by mutableStateOf<String?>(null)
+        private set
     init {
         // Consulta a la colección "exercises" en Firebase
         Firebase.firestore.collection("exercises")
@@ -53,13 +54,15 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
             .add(workoutData)
             .addOnSuccessListener {
                 println("✅ Entrada de entrenamiento guardada con ID: ${it.id}")
+                updateLastUsedExercise(title)
+
             }
             .addOnFailureListener {
                 println("❌ Error al guardar entrada: ${it.message}")
             }
     }
-    fun saveExercise(name: String, category: String) {
-        saveExerciseToFirebase(name, category)
+    fun updateLastUsedExercise(name: String) {
+        lastUsedExerciseName = name
     }
 
 }

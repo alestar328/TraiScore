@@ -1,5 +1,6 @@
 package com.develop.traiscore.presentation.components
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -26,19 +27,17 @@ fun RIRSlider(
     value: Int,
     onValueChange: (Int) -> Unit,
     modifier: Modifier = Modifier,
-    maxValue: Int = 10,
+    maxValue: Int = 4,
     thumbColor: Color = traiBlue,
     trackColor: Color = Color.LightGray,
 ) {
     var sliderWidth by remember { mutableFloatStateOf(0f) }
-    var thumbPosition by remember { mutableFloatStateOf(0f) }
-
     val thumbRadius = 24f
-    LaunchedEffect(sliderWidth, value) {
-        if (sliderWidth > 0f) {
-            thumbPosition = (value.toFloat() / maxValue) * sliderWidth
-        }
-    }
+
+    val animatedThumbX by animateFloatAsState(
+        targetValue = (value.toFloat() / maxValue) * sliderWidth,
+        label = "Thumb Animation"
+    )
 
     Box(
         modifier = modifier
@@ -46,7 +45,7 @@ fun RIRSlider(
             .height(50.dp)
             .padding(horizontal = 16.dp)
             .pointerInput(sliderWidth) {
-                detectDragGestures { change, dragAmount ->
+                detectDragGestures { change, _ ->
                     change.consume()
                     val touchX = change.position.x.coerceIn(0f, sliderWidth)
                     val newValue = ((touchX / sliderWidth) * maxValue).toInt().coerceIn(0, maxValue)
@@ -69,7 +68,7 @@ fun RIRSlider(
             drawCircle(
                 color = thumbColor,
                 radius = thumbRadius,
-                center = Offset(thumbX, centerY)
+                center = Offset(animatedThumbX, centerY)
             )
         }
     }

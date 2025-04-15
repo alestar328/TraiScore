@@ -48,7 +48,7 @@ fun FilterableDropdown(
     }
 
     ExposedDropdownMenuBox(
-        expanded = expanded && filteredItems.isNotEmpty(),
+        expanded = expanded && filteredItems.isNotEmpty() && filterText.text.length > 0,
         modifier = modifier,
         onExpandedChange = { expanded = !expanded },
     ) {
@@ -57,7 +57,8 @@ fun FilterableDropdown(
             value = filterText,
             onValueChange = {
                 filterText = it
-                expanded = true
+                expanded = it.text.isNotEmpty() // ✅ Solo abre si hay texto
+
             },
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
@@ -76,7 +77,7 @@ fun FilterableDropdown(
         )
 
         ExposedDropdownMenu(
-            expanded = expanded,
+            expanded = expanded && filterText.text.isNotEmpty(),
             onDismissRequest = { expanded = false }
         ) {
             filteredItems.forEach { item ->
