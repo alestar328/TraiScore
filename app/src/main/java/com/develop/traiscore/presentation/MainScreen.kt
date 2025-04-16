@@ -25,12 +25,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
-
 import com.develop.traiscore.presentation.components.NavItem
 import com.develop.traiscore.presentation.screens.AddExerciseDialogContent
 import com.develop.traiscore.presentation.screens.ExercisesScreen
-import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.presentation.screens.FirebaseRoutineScreen
+import com.develop.traiscore.presentation.screens.RoutineData
+import com.develop.traiscore.presentation.screens.RoutineMenu
 import com.develop.traiscore.presentation.screens.RoutineScreen
 import com.develop.traiscore.presentation.screens.SettingsScreen
 import com.develop.traiscore.presentation.screens.StatScreen
@@ -54,6 +54,7 @@ fun MainScreen(
         NavItem("Settings", imageVector =  Icons.Default.Settings,badgeCount = 0)
 
     )
+    var routineScreenState by remember { mutableStateOf(ScreenState.MAIN_ROUTINE_MENU) }
 
     var selectedIndex by remember{
         mutableIntStateOf(0)
@@ -113,14 +114,18 @@ fun MainScreen(
 
             }
         }
-
-
-
     ){ innerPadding ->
         ContenteScreen(
             modifier = Modifier.padding(innerPadding),
             selectedIndex = selectedIndex,
-            exeScreenViewModel = exeScreenViewModel
+            exeScreenViewModel = exeScreenViewModel,
+            routineScreenState = routineScreenState,
+            onRoutineSelected = {
+                routineScreenState = ScreenState.FIREBASE_ROUTINE_SCREEN
+            },
+            onBackToRoutineMenu = {
+                routineScreenState = ScreenState.MAIN_ROUTINE_MENU
+            }
         )
 
     }
@@ -143,17 +148,36 @@ fun MainScreen(
 fun ContenteScreen(
     modifier: Modifier = Modifier,
     selectedIndex : Int,
-    exeScreenViewModel: ExercisesScreenViewModel){
+    exeScreenViewModel: ExercisesScreenViewModel,
+    routineScreenState: ScreenState,
+    onRoutineSelected: (String) -> Unit,
+    onBackToRoutineMenu: () -> Unit
+){
     when(selectedIndex){
             0-> ExercisesScreen()
             1-> StatScreen()
             2->Text("Pantalla Add (opcional)")
-            3 -> FirebaseRoutineScreen(documentId = "XyV1ERd0yYturM1p9Sqp")
+            3 -> {
+                when (routineScreenState) {
+                    ScreenState.MAIN_ROUTINE_MENU -> RoutineMenu(
+                        onRoutineClick = { onRoutineSelected(it) },
+                        onAddClick = { println("Nueva rutina") }
+                    )
+                    ScreenState.FIREBASE_ROUTINE_SCREEN -> FirebaseRoutineScreen(
+                        documentId = "XyV1ERd0yYturM1p9Sqp",
+                        onBack = onBackToRoutineMenu
+                    )
+                }
+            }
             4-> SettingsScreen()
         }
 
 }
 
+enum class ScreenState {
+    MAIN_ROUTINE_MENU,
+    FIREBASE_ROUTINE_SCREEN
+}
 @Preview(
     name = "MainScreenPreview",
     showBackground = true

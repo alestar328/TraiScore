@@ -39,21 +39,26 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.R
 import com.develop.traiscore.data.firebaseData.saveExerciseToFirebase
 import com.develop.traiscore.presentation.components.AddExerciseDialog
 import com.develop.traiscore.presentation.components.AutoResizedText
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
+import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(modifier: Modifier = Modifier) {
     var showDialog by remember { mutableStateOf(false) }
+    val viewModel: AddExerciseViewModel = hiltViewModel()
+
     if (showDialog) {
         AddExerciseDialog(
             onDismiss = { showDialog = false },
             onSave = { name, category ->
                 saveExerciseToFirebase(name, category)
+                viewModel.refreshExercises()
             }
         )
     }

@@ -122,7 +122,9 @@ fun ExercisesScreen(
                         .background(Color.Black)
                         .fillMaxSize()
                         .padding(TraiScoreTheme.dimens.paddingMedium),
-                    contentPadding = PaddingValues(bottom = 50.dp),
+                    contentPadding = PaddingValues(
+                        bottom = paddingValues.calculateBottomPadding() + 100.dp
+                    ),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     filteredGrouped.forEach { (date, dailyWorkouts) ->

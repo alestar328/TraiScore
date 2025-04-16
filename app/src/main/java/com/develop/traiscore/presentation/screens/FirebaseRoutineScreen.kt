@@ -1,7 +1,6 @@
 package com.develop.traiscore.presentation.screens
 
 import android.util.Log
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -15,7 +14,10 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 
 @Composable
-fun FirebaseRoutineScreen (documentId: String){
+fun FirebaseRoutineScreen (
+    documentId: String,
+    onBack: () -> Unit
+){
     var routineDoc by remember { mutableStateOf<FirestoreRoutineDoc?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var createdAtString by remember { mutableStateOf("") }
@@ -85,6 +87,10 @@ fun FirebaseRoutineScreen (documentId: String){
             routine = typedRoutine
         )
         // Llama al composable que muestra la rutina completa, con una tabla por cada tipo.
-        RoutineScreen(routineData = routineData, documentId="XyV1ERd0yYturM1p9Sqp")
+        RoutineScreen(
+            routineData = routineData,
+            documentId="XyV1ERd0yYturM1p9Sqp",
+            onBack = onBack
+        )
     }
 }

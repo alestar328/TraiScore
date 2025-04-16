@@ -64,6 +64,16 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
     fun updateLastUsedExercise(name: String) {
         lastUsedExerciseName = name
     }
+    fun refreshExercises() {
+        Firebase.firestore.collection("exercises")
+            .get()
+            .addOnSuccessListener { snapshot ->
+                exerciseNames = snapshot.documents.mapNotNull { it.getString("name") }
+            }
+            .addOnFailureListener { exception ->
+                println("❌ Error al refrescar ejercicios: ${exception.message}")
+            }
+    }
 
 }
 

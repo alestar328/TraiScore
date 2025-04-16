@@ -11,12 +11,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -39,8 +46,13 @@ data class RoutineData(
     val routine: Map<String, List<SimpleExercise>>
 )
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun RoutineScreen(routineData: RoutineData, documentId: String) {
+fun RoutineScreen(
+    routineData: RoutineData,
+    documentId: String,
+    onBack: () -> Unit
+) {
     val routineViewModel: RoutineViewModel = viewModel()
     val context = LocalContext.current
 
@@ -57,7 +69,33 @@ fun RoutineScreen(routineData: RoutineData, documentId: String) {
         Text("Cargando datos...")
         return
     }
-    Scaffold {
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text(
+                        text = "Mis Rutinas",
+                        color = Color.White
+                    )
+                },
+                navigationIcon = {
+                    IconButton(
+                        onClick = { onBack() }
+                    ) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = Color.White
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = traiBlue
+                )
+            )
+        }
+    )
+    {
         innerPadding ->
 
         LazyColumn(
@@ -170,5 +208,5 @@ fun RoutineScreenPreview() {
     )
 
     // Muestra la pantalla completa con scroll vertical
-    RoutineScreen(routineData = routineData, documentId = "dummyDocumentId")
+    RoutineScreen(routineData = routineData, documentId = "dummyDocumentId", onBack = {})
 }
