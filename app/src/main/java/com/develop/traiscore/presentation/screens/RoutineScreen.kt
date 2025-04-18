@@ -51,6 +51,7 @@ data class RoutineData(
 fun RoutineScreen(
     routineData: RoutineData,
     documentId: String,
+    selectedType: String, // <- nuevo parámetro
     onBack: () -> Unit
 ) {
     val routineViewModel: RoutineViewModel = viewModel()
@@ -69,12 +70,15 @@ fun RoutineScreen(
         Text("Cargando datos...")
         return
     }
+    val filteredExercises = currentRoutineData.routine[selectedType] ?: emptyList()
+
+
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = "Mis Rutinas",
+                        text = "Rutina: $selectedType",
                         color = Color.White
                     )
                 },
@@ -126,19 +130,16 @@ fun RoutineScreen(
                 )
             }
             // Por cada tipo de entrenamiento, se muestra una tabla
-            currentRoutineData.routine.forEach { (trainingType, exercises) ->
-                item {
-                    RoutineTable(
-                        routineType = trainingType,
-                        exercises = exercises,
-                        onRepsChanged = { exerciseIndex, newRep ->
-                            routineViewModel.updateReps(exerciseIndex, trainingType, newRep)
-                        }
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                }
-
+            item {
+                RoutineTable(
+                    exercises = filteredExercises,
+                    onRepsChanged = { exerciseIndex, newRep ->
+                        routineViewModel.updateReps(exerciseIndex, selectedType, newRep)
+                    }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
             }
+
             item {
                 Row(
                     modifier = Modifier
@@ -146,35 +147,25 @@ fun RoutineScreen(
                         .padding(vertical = 16.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
-                ){
+                ) {
                     Button(
                         onClick = {
                             routineViewModel.cleanRoutine()
-                            val message = "Datos eliminados"
-                            Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-
+                            Toast.makeText(context, "Datos eliminados", Toast.LENGTH_SHORT).show()
                         },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Red
-                        )
-
-                    ){
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                    ) {
                         Text("Limpiar")
                     }
+
                     Button(
                         onClick = {
                             routineViewModel.saveRoutine(documentId) { isSuccess ->
-                                val message = if (isSuccess) {
-                                    "Rutina guardada con éxito"
-                                } else {
-                                    "Error al guardar la rutina"
-                                }
+                                val message = if (isSuccess) "Rutina guardada con éxito" else "Error al guardar la rutina"
                                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                             }
                         },
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color.Green
-                        )
+                        colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
                     ) {
                         Text("Guardar")
                     }
@@ -187,26 +178,29 @@ fun RoutineScreen(
 @Preview(showBackground = true)
 @Composable
 fun RoutineScreenPreview() {
-    // Datos dummy de ejemplo replicando la estructura del JSON:
     val routineData = RoutineData(
         clientName = "Daniel",
         createdAt = "2025-04-08T19:40:04.423Z",
         routine = mapOf(
             "Empuje" to listOf(
-                SimpleExercise("Press banca", series = 3, reps = "10", weight = "100", rir = 4),
-                SimpleExercise("Triceps X", series = 4, reps = "", weight = "15", rir = 7)
+                SimpleExercise("Press banca", 3, "10", "100", 4),
+                SimpleExercise("Triceps X", 4, "", "15", 7)
             ),
             "Pierna" to listOf(
-                SimpleExercise("Sentadilla", series = 3, reps = "5", weight = "30", rir = 3),
-                SimpleExercise("Prensa", series = 2, reps = "12", weight = "100", rir = 4)
+                SimpleExercise("Sentadilla", 3, "5", "30", 3),
+                SimpleExercise("Prensa", 2, "12", "100", 4)
             ),
             "Tirón" to listOf(
-                SimpleExercise("Dominadas", series = 5, reps = "8", weight = "16", rir = 1),
-                SimpleExercise("Curl biceps", series = 3, reps = "15", weight = "20", rir = 2)
+                SimpleExercise("Dominadas", 5, "8", "16", 1),
+                SimpleExercise("Curl biceps", 3, "15", "20", 2)
             )
         )
     )
 
-    // Muestra la pantalla completa con scroll vertical
-    RoutineScreen(routineData = routineData, documentId = "dummyDocumentId", onBack = {})
+    RoutineScreen(
+        routineData = routineData,
+        documentId = "dummyDocumentId",
+        selectedType = "Pierna",
+        onBack = {}
+    )
 }

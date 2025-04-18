@@ -45,53 +45,61 @@ import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
 fun MainScreen(
     modifier: Modifier = Modifier,
     exeScreenViewModel: ExercisesScreenViewModel = hiltViewModel()
-){
+) {
     val navItemList = listOf(
-        NavItem("Ejercicio",painter = painterResource(id = R.drawable.routine_icon),badgeCount = 0),
-        NavItem("Stats",painter = painterResource(id = R.drawable.stats_icon),badgeCount = 0),
-        NavItem("Add",painter = painterResource(id = R.drawable.plus_icon),badgeCount = 0),
-        NavItem("Rutina",painter = painterResource(id = R.drawable.pesa_icon),badgeCount = 0),
-        NavItem("Settings", imageVector =  Icons.Default.Settings,badgeCount = 0)
+        NavItem(
+            "Ejercicio",
+            painter = painterResource(id = R.drawable.routine_icon),
+            badgeCount = 0
+        ),
+        NavItem("Stats", painter = painterResource(id = R.drawable.stats_icon), badgeCount = 0),
+        NavItem("Add", painter = painterResource(id = R.drawable.plus_icon), badgeCount = 0),
+        NavItem("Rutina", painter = painterResource(id = R.drawable.pesa_icon), badgeCount = 0),
+        NavItem("Settings", imageVector = Icons.Default.Settings, badgeCount = 0)
 
     )
-    var routineScreenState by remember { mutableStateOf(ScreenState.MAIN_ROUTINE_MENU) }
+    var routineScreenState by remember { mutableStateOf<ScreenState>(ScreenState.MAIN_ROUTINE_MENU) }
 
-    var selectedIndex by remember{
+    var selectedIndex by remember {
         mutableIntStateOf(0)
     }
     var isDialogVisible by remember {
         mutableStateOf(false)
     }
 
-    Scaffold (modifier = Modifier.fillMaxSize(),
+    Scaffold(modifier = Modifier.fillMaxSize(),
         bottomBar = {
             NavigationBar(
                 modifier = Modifier.height(100.dp),
                 containerColor = primaryBlack, // Fondo de la barra de navegación
                 contentColor = primaryWhite // Color por defecto de los íconos
             ) {
-                navItemList.forEachIndexed{index, navItem ->
+                navItemList.forEachIndexed { index, navItem ->
 
                     NavigationBarItem(
                         selected = selectedIndex == index,
                         onClick = {
-                            if(index == 2){
+                            if (index == 2) {
                                 isDialogVisible = true
-                            }else{
+                            } else {
                                 selectedIndex = index
                             }
                         },
                         icon = {
-                            if(navItem.imageVector != null) {
-                                Icon(imageVector = navItem.imageVector,
-                                    contentDescription = "Icon",
-                                    tint = if(selectedIndex == index) traiBlue
-                                    else primaryWhite)
-                            }else if(navItem.painter != null){
-                                Icon(painter = navItem.painter,
+                            if (navItem.imageVector != null) {
+                                Icon(
+                                    imageVector = navItem.imageVector,
                                     contentDescription = "Icon",
                                     tint = if (selectedIndex == index) traiBlue
-                                    else primaryWhite)
+                                    else primaryWhite
+                                )
+                            } else if (navItem.painter != null) {
+                                Icon(
+                                    painter = navItem.painter,
+                                    contentDescription = "Icon",
+                                    tint = if (selectedIndex == index) traiBlue
+                                    else primaryWhite
+                                )
                             }
                         },
                         label = {
@@ -104,24 +112,24 @@ fun MainScreen(
                         alwaysShowLabel = false,
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = traiBlue, // Color del ícono seleccionado
-                        unselectedIconColor = primaryWhite, // Color del ícono no seleccionado
-                        selectedTextColor = traiBlue, // Color del texto seleccionado
-                        unselectedTextColor = primaryWhite, // Color del texto no seleccionado
-                        indicatorColor = Color.Transparent // Elimina el halo de selección
+                            unselectedIconColor = primaryWhite, // Color del ícono no seleccionado
+                            selectedTextColor = traiBlue, // Color del texto seleccionado
+                            unselectedTextColor = primaryWhite, // Color del texto no seleccionado
+                            indicatorColor = Color.Transparent // Elimina el halo de selección
                         )
                     )
                 }
 
             }
         }
-    ){ innerPadding ->
+    ) { innerPadding ->
         ContenteScreen(
             modifier = Modifier.padding(innerPadding),
             selectedIndex = selectedIndex,
             exeScreenViewModel = exeScreenViewModel,
             routineScreenState = routineScreenState,
-            onRoutineSelected = {
-                routineScreenState = ScreenState.FIREBASE_ROUTINE_SCREEN
+            onRoutineSelected = { docId, type ->
+                routineScreenState = ScreenState.FIREBASE_ROUTINE_SCREEN(docId, type)
             },
             onBackToRoutineMenu = {
                 routineScreenState = ScreenState.MAIN_ROUTINE_MENU
@@ -131,53 +139,59 @@ fun MainScreen(
     }
     // Muestra el diálogo si está activo
     if (isDialogVisible) {
-        Dialog (
-            onDismissRequest = {isDialogVisible = false}
-        ){
+        Dialog(
+            onDismissRequest = { isDialogVisible = false }
+        ) {
             AddExerciseDialogContent(onDismiss =
-            {isDialogVisible = false},
+            { isDialogVisible = false },
                 onSave = { updated ->
                     println("🔧 Datos actualizados: $updated")
                 }
             )
-         }
+        }
     }
 }
 
 @Composable
 fun ContenteScreen(
     modifier: Modifier = Modifier,
-    selectedIndex : Int,
+    selectedIndex: Int,
     exeScreenViewModel: ExercisesScreenViewModel,
     routineScreenState: ScreenState,
-    onRoutineSelected: (String) -> Unit,
+    onRoutineSelected: (String, String) -> Unit,  // <- ahora acepta docId y type
     onBackToRoutineMenu: () -> Unit
-){
-    when(selectedIndex){
-            0-> ExercisesScreen()
-            1-> StatScreen()
-            2->Text("Pantalla Add (opcional)")
-            3 -> {
-                when (routineScreenState) {
-                    ScreenState.MAIN_ROUTINE_MENU -> RoutineMenu(
-                        onRoutineClick = { onRoutineSelected(it) },
-                        onAddClick = { println("Nueva rutina") }
-                    )
-                    ScreenState.FIREBASE_ROUTINE_SCREEN -> FirebaseRoutineScreen(
-                        documentId = "XyV1ERd0yYturM1p9Sqp",
-                        onBack = onBackToRoutineMenu
-                    )
-                }
+) {
+    when (selectedIndex) {
+        0 -> ExercisesScreen()
+        1 -> StatScreen()
+        2 -> Text("Pantalla Add (opcional)")
+        3 -> {
+            when (routineScreenState) {
+                is ScreenState.MAIN_ROUTINE_MENU -> RoutineMenu(
+                    onRoutineClick = { docId, type ->
+                        onRoutineSelected(docId, type)
+                    },
+                    onAddClick = { println("Nueva rutina") }
+                )
+                is ScreenState.FIREBASE_ROUTINE_SCREEN -> FirebaseRoutineScreen(
+                    documentId = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).documentId,
+                    selectedType = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).selectedType,
+                    onBack = onBackToRoutineMenu
+                )
             }
-            4-> SettingsScreen()
         }
 
+        4 -> SettingsScreen()
+    }
+
 }
 
-enum class ScreenState {
-    MAIN_ROUTINE_MENU,
-    FIREBASE_ROUTINE_SCREEN
+sealed class ScreenState {
+    object MAIN_ROUTINE_MENU : ScreenState()
+    data class FIREBASE_ROUTINE_SCREEN(val documentId: String, val selectedType: String) :
+        ScreenState()
 }
+
 @Preview(
     name = "MainScreenPreview",
     showBackground = true

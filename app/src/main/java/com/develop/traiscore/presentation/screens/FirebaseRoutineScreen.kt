@@ -14,10 +14,11 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 
 @Composable
-fun FirebaseRoutineScreen (
+fun FirebaseRoutineScreen(
     documentId: String,
+    selectedType: String, // <- añadimos este nuevo parámetro
     onBack: () -> Unit
-){
+) {
     var routineDoc by remember { mutableStateOf<FirestoreRoutineDoc?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var createdAtString by remember { mutableStateOf("") }
@@ -30,28 +31,29 @@ fun FirebaseRoutineScreen (
             .addOnSuccessListener { snapshot ->
                 if (snapshot.exists()) {
                     val clientName = snapshot.getString("clientName") ?: ""
-                    Log.d("FirebaseRoutineScreen", "El clientName obtenido es: $clientName")
-
                     createdAtString = snapshot.getTimestamp("createdAt")?.toDate()?.toString() ?: ""
-                    val routineMap = snapshot.get("routine") as? Map<String, List<Map<String, Any>>>
-                        ?: emptyMap()
+                    val sections = snapshot.get("sections") as? List<Map<String, Any>> ?: emptyList()
 
-                    val typedRoutine = routineMap.mapValues { (_, exerciseList) ->
-                        exerciseList.map { exMap ->
-                            FirestoreExercise(
-                                name = exMap["name"] as? String ?: "",
-                                series = exMap["series"] as? String ?: "",
-                                reps = exMap["reps"] as? String ?: "",
-                                weight = exMap["weight"] as? String ?: "",
-                                rir = (exMap["rir"] as? Number)?.toInt() ?: 0
+                    val grouped = sections.associate { section ->
+                        val type = section["type"] as? String ?: "Otro"
+                        val exercisesRaw = section["exercises"] as? List<Map<String, Any>> ?: emptyList()
+
+                        type to exercisesRaw.map { ex ->
+                            FirestoreExercise( // ✅ Usamos la clase correcta
+                                name = ex["name"] as? String ?: "",
+                                series = ex["series"] as? String ?: "",
+                                reps = ex["reps"] as? String ?: "",
+                                weight = ex["weight"] as? String ?: "",
+                                rir = (ex["rir"] as? Number)?.toInt() ?: 0
                             )
                         }
                     }
+
                     routineDoc = FirestoreRoutineDoc(
                         clientName = clientName,
-                        routine = typedRoutine
+                        routine = grouped
                     )
-                }else {
+                } else {
                     Log.d("FirebaseRoutineScreen", "El documento $documentId no existe.")
                 }
                 isLoading = false
@@ -67,29 +69,26 @@ fun FirebaseRoutineScreen (
     } else if (routineDoc == null) {
         Text("No se encontró la rutina con ID: $documentId")
     } else {
-        // Convertir FirestoreRoutineDoc a RoutineData
-        // Se convierte cada FirestoreExercise a SimpleExercise (nuestra versión para la tabla)
-        val typedRoutine: Map<String, List<SimpleExercise>> = routineDoc!!.routine.mapValues { (_, exerciseList) ->
-            exerciseList.map { fsExe ->
-                SimpleExercise(
-                    name = fsExe.name,
-                    series = fsExe.series.toIntOrNull() ?: 0,
-                    reps = fsExe.reps,
-                    weight = fsExe.weight,
-                    rir = fsExe.rir
-                )
-            }
-        }
-
         val routineData = RoutineData(
             clientName = routineDoc!!.clientName,
             createdAt = createdAtString,
-            routine = typedRoutine
+            routine = routineDoc!!.routine.mapValues { entry ->
+                entry.value.map { fsExercise ->
+                    SimpleExercise(
+                        name = fsExercise.name,
+                        series = fsExercise.series.toIntOrNull() ?: 0,
+                        reps = fsExercise.reps,
+                        weight = fsExercise.weight,
+                        rir = fsExercise.rir
+                    )
+                }
+            }
         )
-        // Llama al composable que muestra la rutina completa, con una tabla por cada tipo.
+
         RoutineScreen(
             routineData = routineData,
-            documentId="XyV1ERd0yYturM1p9Sqp",
+            documentId = documentId,
+            selectedType = selectedType, // <- aquí enviamos el tipo seleccionado
             onBack = onBack
         )
     }

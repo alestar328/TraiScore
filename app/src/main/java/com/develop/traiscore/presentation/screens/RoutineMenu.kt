@@ -1,5 +1,6 @@
 package com.develop.traiscore.presentation.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -23,24 +24,56 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.develop.traiscore.R
+import com.develop.traiscore.data.firebaseData.RoutineTypeItem
 import com.develop.traiscore.presentation.theme.traiBlue
+import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoutineMenu(
-    onRoutineClick: (String) -> Unit,
+    onRoutineClick: (String, String) -> Unit, // acepta docId y type
     onAddClick: () -> Unit
 ) {
+    val routineTypes = remember { mutableStateListOf<RoutineTypeItem>() }
+    val context = LocalContext.current
+
+    LaunchedEffect(Unit) {
+        val db = FirebaseFirestore.getInstance()
+        db.collection("routines")
+            .get()
+            .addOnSuccessListener { result ->
+                val uniqueTypes = mutableSetOf<Pair<String, String>>() // Pair<type, docId>
+                for (document in result) {
+                    val docId = document.id
+                    val clientName = document.getString("clientName") ?: "Cliente"
+                    val sections = document.get("sections") as? List<Map<String, Any>> ?: continue
+
+                    for (section in sections) {
+                        val type = section["type"] as? String ?: continue
+                        if (uniqueTypes.add(Pair(type, docId))) {
+                            routineTypes.add(RoutineTypeItem(type, docId, clientName))
+                        }
+                    }
+                }
+            }
+            .addOnFailureListener {
+                Toast.makeText(context, "Error al cargar rutinas", Toast.LENGTH_SHORT).show()
+            }
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -71,21 +104,15 @@ fun RoutineMenu(
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
                 Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
-                    RoutineItem(
-                        name = "Espalda",
-                        imageResId = R.drawable.back_pic,
-                        onClick = { onRoutineClick("XyV1ERd0yYturM1p9Sqp") }
-                    )
-                    RoutineItem(
-                        name = "Pecho",
-                        imageResId = R.drawable.chest_pic,
-                        onClick = { onRoutineClick("XyV1ERd0yYturM1p9Sqp") }
-                    )
-                    RoutineItem(
-                        name = "Piernas",
-                        imageResId = R.drawable.legs_pic,
-                        onClick = { onRoutineClick("XyV1ERd0yYturM1p9Sqp") }
-                    )
+                    routineTypes.forEach { routine ->
+                        RoutineItem(
+                            name = routine.type,
+                            imageResId = getImageForType(routine.type),
+                            onClick = {
+                                onRoutineClick(routine.documentId, routine.type)
+                            }
+                        )
+                    }
                 }
 
                 ExtendedFloatingActionButton(
@@ -101,9 +128,15 @@ fun RoutineMenu(
             }
         }
     }
-
 }
-
+fun getImageForType(type: String): Int {
+    return when (type.lowercase()) {
+        "espalda", "tirón" -> R.drawable.back_pic
+        "pecho", "empuje" -> R.drawable.chest_pic
+        "pierna" -> R.drawable.legs_pic
+        else -> R.drawable.back_pic // imagen por defecto
+    }
+}
 @Composable
 fun RoutineItem(name: String, imageResId: Int, onClick: () -> Unit) {
     Row(
@@ -134,7 +167,9 @@ fun RoutineItem(name: String, imageResId: Int, onClick: () -> Unit) {
 @Composable
 fun RoutineMenuPreview() {
     RoutineMenu(
-        onRoutineClick = { println("Clicked: $it") },
+        onRoutineClick = { docId, type ->
+            println("Clicked routine with ID: $docId and Type: $type")
+        },
         onAddClick = { println("Add new routine") }
     )
 }

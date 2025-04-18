@@ -32,10 +32,9 @@ data class SimpleExercise(
 
 @Composable
 fun RoutineTable(
-    routineType: String,
     exercises: List<SimpleExercise>,
     modifier: Modifier = Modifier,
-    onRepsChanged: (exerciseIndex: Int, newRep: String) -> Unit,
+    onRepsChanged: (exerciseIndex: Int, newRep: String) -> Unit
 
     ) {
     Column(
@@ -45,27 +44,16 @@ fun RoutineTable(
             .background(Color.DarkGray)
 
     ) {
-        Text(
-            text = routineType,
-            fontSize = 22.sp,
-            color = Color.White,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-
-        // Cabecera de la tabla
         TableHeader()
 
         // Filas: por cada ejercicio, una fila
         exercises.forEachIndexed { index, exercise ->
             TableRow(
                 exercise = exercise,
-                trainingType = routineType,
                 exerciseIndex = index,
                 onRepsChanged = onRepsChanged
             )
 
-            // Línea divisoria entre filas (opcional)
             if (index < exercises.size - 1) {
                 HorizontalDivider(
                     modifier = Modifier.padding(vertical = 4.dp),
@@ -102,11 +90,9 @@ private fun TableHeader() {
 @Composable
 private fun TableRow(
     exercise: SimpleExercise,
-    trainingType: String,
     exerciseIndex: Int,
     onRepsChanged: (exerciseIndex: Int, newRep: String) -> Unit
 ) {
-    // Fila de datos de un ejercicio
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -116,15 +102,11 @@ private fun TableRow(
     ) {
         BodyCell(exercise.name, weight = 1.2f)
         BodyCell(exercise.series.toString(), weight = 0.7f)
-
         RepsCell(
             text = exercise.reps,
-            onValueChange = { newRep ->
-                onRepsChanged(exerciseIndex, newRep)
-            },
+            onValueChange = { newRep -> onRepsChanged(exerciseIndex, newRep) },
             modifier = Modifier
         )
-
         BodyCell(exercise.weight, weight = 0.6f)
         BodyCell(exercise.rir.toString(), weight = 0.6f)
     }
@@ -239,7 +221,6 @@ fun RoutineTablePreview() {
     )
 
     RoutineTable(
-        routineType = "Empuje",
         exercises = dummyExercises,
         onRepsChanged = { exerciseIndex, newRep ->
             // En el preview, puedes dejarlo vacío o imprimir algún log:

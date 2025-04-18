@@ -1,5 +1,7 @@
 package com.develop.traiscore.data.firebaseData
 
+import com.develop.traiscore.presentation.screens.SimpleExercise
+
 data class FirestoreExercise(
     val name: String = "",
     val series: String = "",
@@ -22,4 +24,10 @@ data class ExerciseEditable(
     var reps: String, // mutable
     val weight: String,
     val rir: Int
+)
+
+data class RoutineTypeItem(
+    val type: String,
+    val documentId: String,
+    val clientName: String
 )
