@@ -47,6 +47,8 @@ class RoutineViewModel : ViewModel() {
             }
         )
     }
+
+
     fun cleanRoutine() {
         routineData = routineData?.let { data ->
             // Para cada tipo de rutina, se limpia el campo 'reps' de cada ejercicio

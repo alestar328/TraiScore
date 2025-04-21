@@ -10,10 +10,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -33,6 +36,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.develop.traiscore.core.CategoryVisualMapper
 import com.develop.traiscore.core.DefaultCategoryExer
@@ -41,12 +45,16 @@ import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.presentation.components.AddExeRoutineDialog
 import com.develop.traiscore.presentation.components.AddRestButton
 import com.develop.traiscore.presentation.components.CategoryCard
+import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateRoutineScreen() {
+fun CreateRoutineScreen(
+    onBack: () -> Unit,
+    viewModel: AddExerciseViewModel = hiltViewModel()
+) {
     var exercises by remember {
         mutableStateOf(emptyList<SimpleExercise>())
     }
@@ -61,8 +69,15 @@ fun CreateRoutineScreen() {
     Scaffold(
         topBar = {
             TopAppBar(
-                title = {
-                    Text("Crear Rutina", color = Color.Yellow)
+                title = { Text("Crear Rutina", color = Color.Yellow) },
+                navigationIcon = {                            // ②
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = "Volver",
+                            tint = Color.Yellow
+                        )
+                    }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = Color.DarkGray
@@ -247,7 +262,10 @@ fun CreateRoutineScreen() {
 @Preview(showBackground = true)
 @Composable
 fun CreateRoutineScreenPreview() {
-
-    CreateRoutineScreen()
-
+    // Le pasamos un callback vacío para la flecha
+    TraiScoreTheme {
+        CreateRoutineScreen(
+            onBack = { /* Aquí iría popBackStack() en tu app real */ }
+        )
+    }
 }

@@ -189,7 +189,7 @@ fun ContentScreen(
                     selectedType = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).selectedType,
                     onBack = onBackToRoutineMenu
                 )
-                is ScreenState.CREATE_ROUTINE_SCREEN -> CreateRoutineScreen() // 👈 aquí también
+                is ScreenState.CREATE_ROUTINE_SCREEN -> CreateRoutineScreen( onBack = onBackToRoutineMenu) // 👈 aquí también
             }
         }
 

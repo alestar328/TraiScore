@@ -1,5 +1,6 @@
 package com.develop.traiscore.presentation.screens
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -9,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,20 +25,24 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.R
 import com.develop.traiscore.core.TimeRange
 import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.CircularProgressView
 import com.develop.traiscore.presentation.components.DropdownMenuComponent
+import com.develop.traiscore.presentation.components.LineChartView
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
@@ -48,10 +54,22 @@ fun StatScreen(
     viewModel: StatScreenViewModel = hiltViewModel()
 ) {
     val exerOptions by viewModel.exerciseOptions.collectAsState()
-    val progressData by viewModel.progressData.collectAsState()
+    val weightData by viewModel.weightProgress.collectAsState()
+    val repsData by viewModel.repsProgress.collectAsState()
     val circularData by viewModel.circularData.collectAsState()
+    val selected by viewModel.selectedExercise.collectAsState()
 
     val (oneRepMax, maxReps, averageRIR) = circularData
+    val lastTen = weightData.takeLast(10)
+    val weightByReps = remember(lastTen) {
+        lastTen.map { (_, peso) ->
+            // etiqueta X = peso redondeado a entero
+            peso.toInt().toString() to peso
+        }
+    }
+    LaunchedEffect(selected, weightData, repsData) {
+        Log.d("StatScreen", "Ejercicio=$selected  pesos=$weightData  reps=$repsData")
+    }
 
     Scaffold(
         topBar = {
@@ -87,7 +105,8 @@ fun StatScreen(
             LazyColumn(
                 modifier = Modifier
                     .padding(paddingValues)
-                    .background(Color.DarkGray)
+                    .navigationBarsPadding()
+                    .background(Color.Black)
                     .fillMaxSize()
                     .padding(TraiScoreTheme.dimens.paddingMedium),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
@@ -95,6 +114,7 @@ fun StatScreen(
                 // Filtros
 
                 item {
+
                     Text(
                         text = "Filtrar por:",
                         style = MaterialTheme.typography.titleLarge,
@@ -109,16 +129,6 @@ fun StatScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
 
-                    DropdownMenuComponent(
-                        items = TimeRange.entries.map { it.displayName },
-                        onItemSelected = { selectedName ->
-                            val selectedRange = TimeRange.entries.find { it.displayName == selectedName }
-                            viewModel.onTimeRangeSelected(selectedRange)
-                        },
-                        placeholder = "Tiempo",
-                        modifier = Modifier
-                            .fillMaxWidth()
-                    )
 
                 }
 
@@ -194,16 +204,15 @@ fun StatScreen(
                             color = Color.White,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
-                       /* LineChartView(
-                            dataPoints = progressData,
+                        LineChartView(
+                            dataPoints = weightByReps,
                             lineColor = Color.Cyan, // Puedes personalizar los colores según sea necesario
-                            axisColor = Color.Gray,
                             backgroundChartColor = Color.DarkGray,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(150.dp)
                                 .padding(horizontal = 16.dp)
-                        )*/
+                        )
                     }
                     item {
                         Text(
@@ -212,16 +221,15 @@ fun StatScreen(
                             color = Color.White,
                             modifier = Modifier.padding(bottom = 8.dp)
                         )
-                    /*    LineChartView(
-                            dataPoints = progressData,
+                     LineChartView(
+                            dataPoints = repsData,
                             lineColor = Color.Cyan, // Puedes personalizar los colores según sea necesario
-                            axisColor = Color.Gray,
                             backgroundChartColor = Color.DarkGray,
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(150.dp)
                                 .padding(horizontal = 16.dp)
-                        )*/
+                        )
                     }
                 }
 
