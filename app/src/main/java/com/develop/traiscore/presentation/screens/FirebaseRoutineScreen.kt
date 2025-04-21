@@ -10,6 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.develop.traiscore.data.firebaseData.FirestoreExercise
 import com.develop.traiscore.data.firebaseData.FirestoreRoutineDoc
+import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 

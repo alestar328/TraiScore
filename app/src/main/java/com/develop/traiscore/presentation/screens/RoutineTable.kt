@@ -2,11 +2,23 @@ package com.develop.traiscore.presentation.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.DismissDirection
+import androidx.compose.material.DismissValue
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.SwipeToDismiss
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.rememberDismissState
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -17,23 +29,20 @@ import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.presentation.theme.traiBlue
 
-data class SimpleExercise(
-    val name: String,
-    val series: Int,
-    val reps: String,
-    val weight: String,
-    val rir: Int
-)
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun RoutineTable(
     exercises: List<SimpleExercise>,
+    onDeleteExercise: (index: Int) -> Unit,
     modifier: Modifier = Modifier,
     onRepsChanged: (exerciseIndex: Int, newRep: String) -> Unit,
     backgroundColor: Color = Color.DarkGray,
@@ -62,26 +71,57 @@ fun RoutineTable(
 
         exercises.forEachIndexed { index, exercise ->
             var rowHasFocus by remember { mutableStateOf(false) }
+            val dismissState = rememberDismissState()
+            val isDismissed = dismissState.isDismissed(DismissDirection.EndToStart)
 
-            TableRow(
-                exercise = exercise,
-                exerciseIndex = index,
-                onRepsChanged = onRepsChanged,
-                textColor = bodyTextColor,
-                fontSize = fontSize,
-                fontWeight = fontWeight,
-                inputBorderColor = inputBorderColor,
-                inputFocusedBorderColor = inputFocusedBorderColor,
-                inputCursorColor = inputCursorColor,
-                onFocusChange = { focused -> rowHasFocus = focused }
-            )
-
-            if (index < exercises.size - 1 && rowHasFocus) {
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 4.dp),
-                    thickness = dividerThickness.dp,
-                    color = dividerColor
+            if (!isDismissed) {
+                SwipeToDismiss(
+                    state = dismissState,
+                    directions = setOf(DismissDirection.EndToStart),
+                    background = {
+                        if (dismissState.targetValue != DismissValue.Default) {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Red)
+                                    .padding(end = 20.dp),
+                                contentAlignment = Alignment.CenterEnd
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Eliminar",
+                                    tint = Color.White
+                                )
+                            }
+                        }
+                    },
+                    dismissContent = {
+                        TableRow(
+                            exercise = exercise,
+                            exerciseIndex = index,
+                            onRepsChanged = onRepsChanged,
+                            textColor = bodyTextColor,
+                            fontSize = fontSize,
+                            fontWeight = fontWeight,
+                            inputBorderColor = inputBorderColor,
+                            inputFocusedBorderColor = inputFocusedBorderColor,
+                            inputCursorColor = inputCursorColor,
+                            onFocusChange = { rowHasFocus = it }
+                        )
+                    }
                 )
+
+                LaunchedEffect(isDismissed) {
+                    if (isDismissed) onDeleteExercise(index)
+                }
+
+                if (index < exercises.size - 1 && rowHasFocus) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(vertical = 4.dp),
+                        thickness = dividerThickness.dp,
+                        color = dividerColor
+                    )
+                }
             }
         }
     }
@@ -99,7 +139,13 @@ private fun TableHeader(
             .padding(bottom = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        listOf("Ejercicio" to 1.5f, "Series" to 0.7f, "Peso" to 0.8f,"Reps" to 0.7f, "RIR" to 0.7f).forEach {
+        listOf(
+            "Ejercicio" to 1.5f,
+            "Series" to 0.7f,
+            "Peso" to 0.8f,
+            "Reps" to 0.7f,
+            "RIR" to 0.7f
+        ).forEach {
             HeaderCell(it.first, it.second, textColor, fontWeight, fontSize)
         }
     }
@@ -124,45 +170,15 @@ private fun TableRow(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 3.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        // Nombre del ejercicio (no editable)
-        Box(
-            modifier = Modifier
-                .weight(1.5f)
-                .height(45.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Text(
-                text = exercise.name,
-                fontSize = fontSize.sp,
-                fontWeight = fontWeight,
-                color = textColor,
-                textAlign = TextAlign.Center
-            )
-        }
+        BodyCellStatic(exercise.name, 1.5f, textColor, fontSize, fontWeight)
 
-        // Campos editables con control de entrada
         listOf(
-            Triple(exercise.series.toString(), 0.7f) { input: String ->
-                if (input.matches(Regex("^\\d{0,3}$"))) {
-                    // TODO: actualizar series si se desea
-                }
-            },
-            Triple(exercise.weight, 0.8f) { input: String ->
-                // Peso puede tener coma o punto, por lo que se permite libremente
-            },
-            Triple(exercise.reps, 0.7f) { input: String ->
-                if (input.matches(Regex("^\\d{0,3}$"))) {
-                    onRepsChanged(exerciseIndex, input)
-                }
-            },
-            Triple(exercise.rir.toString(), 0.7f) { input: String ->
-                if (input.matches(Regex("^\\d{0,3}$"))) {
-                    // TODO: actualizar rir si se desea
-                }
-            }
+            Triple(exercise.series.toString(), 0.7f) { input: String -> },
+            Triple(exercise.weight, 0.8f) { input: String -> },
+            Triple(exercise.reps, 0.7f) { input: String -> onRepsChanged(exerciseIndex, input) },
+            Triple(exercise.rir.toString(), 0.7f) { input: String -> }
         ).forEach { (value, weight, onChange) ->
             BodyCell(
                 value = value,
@@ -184,6 +200,30 @@ private fun TableRow(
 }
 
 @Composable
+private fun RowScope.BodyCellStatic(
+    value: String,
+    weight: Float,
+    textColor: Color,
+    fontSize: Int,
+    fontWeight: FontWeight
+) {
+    Box(
+        modifier = Modifier
+            .weight(weight)
+            .height(50.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            text = value,
+            fontSize = fontSize.sp,
+            fontWeight = fontWeight,
+            color = textColor,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
 private fun RowScope.HeaderCell(
     text: String,
     weight: Float,
@@ -192,7 +232,9 @@ private fun RowScope.HeaderCell(
     fontSize: Int
 ) {
     Box(
-        modifier = Modifier.weight(weight).padding(2.dp),
+        modifier = Modifier
+            .weight(weight)
+            .padding(2.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -220,13 +262,6 @@ private fun RowScope.BodyCell(
 ) {
     var localValue by remember { mutableStateOf(value) }
 
-    val width = when (weight) {
-        1.5f -> 120.dp   // Ejercicio
-        0.8f -> 60.dp    // Series / Reps
-        0.7f -> 60.dp    // Peso / RIR
-        else -> 60.dp
-    }
-
     OutlinedTextField(
         value = localValue,
         onValueChange = {
@@ -240,11 +275,14 @@ private fun RowScope.BodyCell(
             textAlign = TextAlign.Center
         ),
         modifier = Modifier
-            .width(width)
+            .weight(weight)
             .height(50.dp)
             .onFocusChanged { onFocusChanged(it.isFocused) },
+        keyboardOptions = KeyboardOptions.Default.copy(
+            keyboardType = KeyboardType.Number
+        ),
         colors = OutlinedTextFieldDefaults.colors(
-            unfocusedBorderColor = Color.Transparent,
+            unfocusedBorderColor = borderColor,
             focusedBorderColor = focusedBorderColor,
             cursorColor = cursorColor,
             focusedContainerColor = Color(0xFF1A1A1A),
@@ -265,6 +303,7 @@ fun RoutineTablePreview() {
 
     RoutineTable(
         exercises = dummyExercises,
+        onDeleteExercise = { index -> println("Eliminar ejercicio $index") },
         onRepsChanged = { exerciseIndex, newRep ->
             println("Ejercicio $exerciseIndex, nuevas reps: $newRep")
         }

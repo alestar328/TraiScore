@@ -4,9 +4,11 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.data.firebaseData.saveExerciseToFirebase
 import com.develop.traiscore.domain.defaultExerciseEntities
 import com.develop.traiscore.domain.model.Resource
@@ -26,6 +28,16 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
         private set
     var lastUsedExerciseName by mutableStateOf<String?>(null)
         private set
+
+    private val firebaseCategoryToEnum = mapOf(
+        "Pecho" to DefaultCategoryExer.CHEST,
+        "Espalda" to DefaultCategoryExer.BACK,
+        "Gluteos" to DefaultCategoryExer.GLUTES,
+        "Pierna" to DefaultCategoryExer.LEGS,
+        "Brazos" to DefaultCategoryExer.ARMS,
+        "Hombros" to DefaultCategoryExer.SHOULDERS,
+        "Abdomen" to DefaultCategoryExer.CORE
+    )
     init {
         // Consulta a la colección "exercises" en Firebase
         Firebase.firestore.collection("exercises")
@@ -64,6 +76,20 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
     fun updateLastUsedExercise(name: String) {
         lastUsedExerciseName = name
     }
+    fun fetchCategoryFor(exerciseName: String, onResult: (DefaultCategoryExer?) -> Unit) {
+        Firebase.firestore.collection("exercises")
+            .whereEqualTo("name", exerciseName)
+            .get()
+            .addOnSuccessListener { snapshot ->
+                val categoryName = snapshot.documents.firstOrNull()?.getString("category")
+                val matchedCategory = firebaseCategoryToEnum[categoryName]
+                onResult(matchedCategory)
+            }
+            .addOnFailureListener {
+                onResult(null)
+            }
+    }
+
     fun refreshExercises() {
         Firebase.firestore.collection("exercises")
             .get()

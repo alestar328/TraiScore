@@ -81,6 +81,7 @@ dependencies {
     implementation("androidx.sqlite:sqlite-ktx:2.4.0")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
     implementation("androidx.compose.material3:material3:1.3.2")
+    implementation("androidx.compose.material:material:1.7.8")
 
     val lifecycle_version = "2.8.7"
 

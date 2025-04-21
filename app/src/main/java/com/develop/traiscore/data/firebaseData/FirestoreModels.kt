@@ -1,6 +1,5 @@
 package com.develop.traiscore.data.firebaseData
 
-import com.develop.traiscore.presentation.screens.SimpleExercise
 
 data class FirestoreExercise(
     val name: String = "",
@@ -30,4 +29,13 @@ data class RoutineTypeItem(
     val type: String,
     val documentId: String,
     val clientName: String
+)
+
+
+data class SimpleExercise(
+    val name: String,
+    val series: Int,
+    val reps: String,
+    val weight: String,
+    val rir: Int
 )

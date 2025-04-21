@@ -11,6 +11,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -43,14 +44,15 @@ fun AddExerciseDialog(
     AlertDialog(
         onDismissRequest = onDismiss,
         confirmButton = {
-            TextButton(onClick = {
-                if (name.isNotBlank() && selectedCategory != null) {
-                    message = "Guardado!";
-                    onSave(name, selectedCategory!!.name)
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                    onDismiss()
-                }
-            },
+            TextButton(
+                onClick = {
+                    if (name.isNotBlank() && selectedCategory != null) {
+                        message = "Guardado!";
+                        onSave(name, selectedCategory!!.name)
+                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        onDismiss()
+                    }
+                },
                 colors = ButtonDefaults.textButtonColors(
                     containerColor = Color(0xFFA8E6CF), // Verde pastel
                     contentColor = Color.Black
@@ -62,12 +64,12 @@ fun AddExerciseDialog(
         },
         dismissButton = {
             TextButton(
-                onClick = onDismiss ,
+                onClick = onDismiss,
                 colors = ButtonDefaults.textButtonColors(
                     containerColor = Color(0xFFFF8A80), // Rojo pastel
                     contentColor = Color.Black
                 )
-                ) {
+            ) {
                 Text("Cancelar")
             }
         },
@@ -79,25 +81,27 @@ fun AddExerciseDialog(
                 Text(
                     text = "Ejercicio",
                     color = traiBlue,
-                    fontSize = 12.sp
+                    fontSize = 18.sp
                 )
                 OutlinedTextField(
                     value = name,
                     onValueChange = { name = it },
                     singleLine = true,
+                    textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = traiBlue,
                         unfocusedBorderColor = Color.White,
                         focusedTextColor = Color.Black,
                         unfocusedTextColor = Color.Black,
                         focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White
+                        unfocusedContainerColor = Color.White,
+                        cursorColor = Color.Black
                     )
                 )
                 Text(
                     text = "Categoría",
                     color = traiBlue,
-                    fontSize = 14.sp
+                    fontSize = 18.sp
                 )
                 ExposedDropdownMenuBox(
                     expanded = expanded,
@@ -108,10 +112,13 @@ fun AddExerciseDialog(
                         value = selectedCategory?.let { stringResource(id = it.stringResId) } ?: "",
                         onValueChange = {},
                         readOnly = true,
+                        textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
                         trailingIcon = {
                             ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
                         },
-                        modifier = Modifier.menuAnchor().fillMaxWidth(),
+                        modifier = Modifier
+                            .menuAnchor()
+                            .fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = traiBlue,
                             unfocusedBorderColor = traiBlue,
@@ -127,7 +134,12 @@ fun AddExerciseDialog(
                     ) {
                         DefaultCategoryExer.entries.forEach { category ->
                             DropdownMenuItem(
-                                text = { Text(text = stringResource(id = category.stringResId)) },
+                                text = {
+                                    Text(
+                                        text = stringResource(id = category.stringResId),
+                                        fontSize = 13.sp
+                                    )
+                                },
                                 onClick = {
                                     selectedCategory = category
                                     expanded = false

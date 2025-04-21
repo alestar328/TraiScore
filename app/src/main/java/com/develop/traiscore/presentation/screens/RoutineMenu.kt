@@ -38,6 +38,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.develop.traiscore.R
+import com.develop.traiscore.core.DefaultCategoryExer
+import com.develop.traiscore.core.DefaultCategoryImageMapper
+import com.develop.traiscore.core.ImageProvider.getImageForType
 import com.develop.traiscore.data.firebaseData.RoutineTypeItem
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.google.firebase.firestore.FirebaseFirestore
@@ -50,6 +53,7 @@ fun RoutineMenu(
 ) {
     val routineTypes = remember { mutableStateListOf<RoutineTypeItem>() }
     val context = LocalContext.current
+    val imageRes = DefaultCategoryImageMapper.getImageFor(DefaultCategoryExer.CHEST)
 
     LaunchedEffect(Unit) {
         val db = FirebaseFirestore.getInstance()
@@ -129,14 +133,7 @@ fun RoutineMenu(
         }
     }
 }
-fun getImageForType(type: String): Int {
-    return when (type.lowercase()) {
-        "espalda", "tirón" -> R.drawable.back_pic
-        "pecho", "empuje" -> R.drawable.chest_pic
-        "pierna" -> R.drawable.legs_pic
-        else -> R.drawable.back_pic // imagen por defecto
-    }
-}
+
 @Composable
 fun RoutineItem(name: String, imageResId: Int, onClick: () -> Unit) {
     Row(

@@ -37,7 +37,6 @@ import com.develop.traiscore.core.TimeRange
 import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.CircularProgressView
 import com.develop.traiscore.presentation.components.DropdownMenuComponent
-import com.develop.traiscore.presentation.components.LineChartView
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel

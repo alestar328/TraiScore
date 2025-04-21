@@ -25,13 +25,15 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.develop.traiscore.presentation.components.NavItem
+import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.screens.AddExerciseDialogContent
+import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.screens.ExercisesScreen
 import com.develop.traiscore.presentation.screens.FirebaseRoutineScreen
-import com.develop.traiscore.presentation.screens.RoutineData
 import com.develop.traiscore.presentation.screens.RoutineMenu
-import com.develop.traiscore.presentation.screens.RoutineScreen
 import com.develop.traiscore.presentation.screens.SettingsScreen
 import com.develop.traiscore.presentation.screens.StatScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
@@ -44,6 +46,7 @@ import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
 @Composable
 fun MainScreen(
     modifier: Modifier = Modifier,
+    navController: NavHostController,
     exeScreenViewModel: ExercisesScreenViewModel = hiltViewModel()
 ) {
     val navItemList = listOf(
@@ -123,9 +126,10 @@ fun MainScreen(
             }
         }
     ) { innerPadding ->
-        ContenteScreen(
+        ContentScreen(
             modifier = Modifier.padding(innerPadding),
             selectedIndex = selectedIndex,
+            navController = navController, // 👈 aquí estaba el error
             exeScreenViewModel = exeScreenViewModel,
             routineScreenState = routineScreenState,
             onRoutineSelected = { docId, type ->
@@ -133,6 +137,9 @@ fun MainScreen(
             },
             onBackToRoutineMenu = {
                 routineScreenState = ScreenState.MAIN_ROUTINE_MENU
+            },
+            onCreateRoutine = {
+                routineScreenState = ScreenState.CREATE_ROUTINE_SCREEN // ✅ estado se cambia aquí
             }
         )
 
@@ -153,13 +160,15 @@ fun MainScreen(
 }
 
 @Composable
-fun ContenteScreen(
+fun ContentScreen(
     modifier: Modifier = Modifier,
     selectedIndex: Int,
+    navController: NavHostController,
     exeScreenViewModel: ExercisesScreenViewModel,
     routineScreenState: ScreenState,
     onRoutineSelected: (String, String) -> Unit,  // <- ahora acepta docId y type
-    onBackToRoutineMenu: () -> Unit
+    onBackToRoutineMenu: () -> Unit,
+    onCreateRoutine: () -> Unit
 ) {
     when (selectedIndex) {
         0 -> ExercisesScreen()
@@ -171,13 +180,16 @@ fun ContenteScreen(
                     onRoutineClick = { docId, type ->
                         onRoutineSelected(docId, type)
                     },
-                    onAddClick = { println("Nueva rutina") }
+                    onAddClick = {
+                        onCreateRoutine() // ✅ aquí llamamos al callback
+                    }
                 )
                 is ScreenState.FIREBASE_ROUTINE_SCREEN -> FirebaseRoutineScreen(
                     documentId = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).documentId,
                     selectedType = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).selectedType,
                     onBack = onBackToRoutineMenu
                 )
+                is ScreenState.CREATE_ROUTINE_SCREEN -> CreateRoutineScreen() // 👈 aquí también
             }
         }
 
@@ -190,6 +202,8 @@ sealed class ScreenState {
     object MAIN_ROUTINE_MENU : ScreenState()
     data class FIREBASE_ROUTINE_SCREEN(val documentId: String, val selectedType: String) :
         ScreenState()
+    object CREATE_ROUTINE_SCREEN : ScreenState() // 👈 nuevo
+
 }
 
 @Preview(
@@ -199,6 +213,7 @@ sealed class ScreenState {
 @Composable
 fun MainScreenPreview() {
     TraiScoreTheme {
-        MainScreen()
+        val fakeNavController = rememberNavController()
+        MainScreen(navController = fakeNavController)
     }
 }

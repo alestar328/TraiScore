@@ -1,5 +1,6 @@
 package com.develop.traiscore.data.firebaseData
 
+import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.presentation.screens.RoutineData
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
@@ -69,3 +70,4 @@ fun saveExerciseToFirebase(name: String, category: String) {
             println("❌ Error al obtener ejercicios existentes: ${e.message}")
         }
 }
+

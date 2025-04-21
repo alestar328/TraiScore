@@ -37,7 +37,16 @@ class RoutineViewModel : ViewModel() {
                 }
         }
     }
-
+    fun deleteExercise(index: Int, type: String) {
+        routineData = routineData?.copy(
+            routine = routineData!!.routine.toMutableMap().apply {
+                val updatedList = this[type]?.toMutableList()?.apply { removeAt(index) }
+                if (updatedList != null) {
+                    this[type] = updatedList
+                }
+            }
+        )
+    }
     fun cleanRoutine() {
         routineData = routineData?.let { data ->
             // Para cada tipo de rutina, se limpia el campo 'reps' de cada ejercicio

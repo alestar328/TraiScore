@@ -37,7 +37,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import androidx.compose.ui.platform.LocalContext
-
+import com.develop.traiscore.data.firebaseData.SimpleExercise
 
 
 data class RoutineData(
@@ -135,6 +135,9 @@ fun RoutineScreen(
                     exercises = filteredExercises,
                     onRepsChanged = { exerciseIndex, newRep ->
                         routineViewModel.updateReps(exerciseIndex, selectedType, newRep)
+                    },
+                    onDeleteExercise = { index ->
+                        routineViewModel.deleteExercise(index, selectedType)
                     }
                 )
                 Spacer(modifier = Modifier.height(16.dp))

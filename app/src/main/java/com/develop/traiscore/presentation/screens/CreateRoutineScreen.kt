@@ -1,10 +1,7 @@
 package com.develop.traiscore.presentation.screens
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -12,14 +9,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -28,47 +29,115 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import com.develop.traiscore.data.firebaseData.FirestoreExercise
-import com.develop.traiscore.presentation.components.FilterableDropdown
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.develop.traiscore.core.CategoryVisualMapper
+import com.develop.traiscore.core.DefaultCategoryExer
+import com.develop.traiscore.core.VisualCategory
+import com.develop.traiscore.data.firebaseData.SimpleExercise
+import com.develop.traiscore.presentation.components.AddExeRoutineDialog
+import com.develop.traiscore.presentation.components.AddRestButton
+import com.develop.traiscore.presentation.components.CategoryCard
+import com.develop.traiscore.presentation.theme.traiBlue
+import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateRoutineScreen() {
     var exercises by remember {
-        mutableStateOf(
-            listOf(
-                SimpleExercise("Press de banca", 3, "12", "50", 2)
-            )
-        )
+        mutableStateOf(emptyList<SimpleExercise>())
     }
-    Box(modifier = Modifier.fillMaxSize()) {
+    var workoutName by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val exerciseVM: AddExerciseViewModel = viewModel()
+    var selectedCategory by remember { mutableStateOf<DefaultCategoryExer?>(null) }
+
+    var selectedVisualCategory by remember { mutableStateOf<VisualCategory?>(null) }
+    var showDialog by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Text("Crear Rutina", color = Color.Yellow)
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.DarkGray
+                )
+            )
+        },
+        containerColor = Color.DarkGray,
+        floatingActionButton = {
+            if (selectedVisualCategory != null) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    // Botón de "Guardar rutina"
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            println("✅ Guardando rutina: $workoutName")
+                        },
+                        icon = { Icon(Icons.Default.Check, contentDescription = "Guardar rutina") },
+                        text = { Text("Guardar rutina") },
+                        containerColor = Color.Green,
+                        contentColor = Color.Black
+                    )
+
+                    // Botón de agregar/restar ejercicio
+                    AddRestButton(
+                        onAdd = { showDialog = true },
+                        onRemove = {
+                            if (exercises.isNotEmpty()) {
+                                exercises = exercises.dropLast(1)
+                            }
+                        }
+                    )
+                }
+            }
+
+            if (showDialog) {
+                AddExeRoutineDialog(
+                    onDismiss = { showDialog = false },
+                    onSave = { name, category ->
+                        val alreadyExists = exercises.any { it.name.equals(name, ignoreCase = true) }
+                        if (!alreadyExists) {
+                            exercises = exercises + SimpleExercise(name, 0, "", "", 0)
+                        }
+                        showDialog = false
+                    },
+                    exerciseNames = exerciseVM.exerciseNames,
+                    selectedCategory = selectedCategory, // 👈 correctamente pasado
+                    onExerciseSelected = { exerciseName ->
+                        exerciseVM.fetchCategoryFor(exerciseName) { category ->
+                            selectedCategory = category
+                        }
+                    },
+                    onCategorySelected = { category ->
+                        selectedCategory = category
+                    }
+                )
+            }
+        }
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
+                .padding(innerPadding)
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
-                Text(
-                    text = "Crear Rutina",
-                    fontSize = 24.sp,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleLarge,
-                    modifier = Modifier
-                        .padding(vertical = 16.dp)
-
-                )
-            }
-            item {
                 Spacer(modifier = Modifier.height(8.dp))
-                var workoutName by remember { mutableStateOf("") }
-
                 Text(
                     text = "Nombre de la rutina",
                     style = MaterialTheme.typography.labelLarge,
+                    color = Color.White,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 4.dp)
@@ -76,132 +145,101 @@ fun CreateRoutineScreen() {
 
                 OutlinedTextField(
                     value = workoutName,
+                    modifier = Modifier
+                        .fillMaxWidth(),
                     onValueChange = { workoutName = it },
-                    placeholder = { Text("PushDay") },
-                    modifier = Modifier.fillMaxWidth()
-
+                    placeholder = { Text("Nombra tu rutina") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = com.develop.traiscore.presentation.theme.traiBlue,
+                        unfocusedBorderColor = com.develop.traiscore.presentation.theme.traiBlue,
+                        focusedTextColor = Color.Black,
+                        unfocusedTextColor = Color.Black,
+                        focusedContainerColor = Color.White,
+                        unfocusedContainerColor = Color.White,
+                        cursorColor = Color.Black
+                    ),
                 )
             }
 
             item {
                 Spacer(modifier = Modifier.height(8.dp))
-                var selectedCategory by remember { mutableStateOf("Selecciona categoria") }
-
                 Text(
-                    text = "Categoria",
+                    text = "Categorías",
                     style = MaterialTheme.typography.labelLarge,
+                    color = Color.White,
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 4.dp)
-                )
-                FilterableDropdown(
-                    items = listOf("Empuje", "Piernas", "Brazos", "Espalda"),
-                    onItemSelected = { selectedCategory = it },
-                    selectedValue = selectedCategory,
-                    modifier = Modifier
-                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
                 )
             }
             item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Ejercicios",
-                    style = MaterialTheme.typography.labelLarge,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 4.dp)
-                )
+                if (selectedVisualCategory != null) {
+                    val selected = selectedVisualCategory!!
+                    val title = stringResource(id = selected.nameResId)
+                    CategoryCard(
+                        imageRes = selected.imageResId,
+                        title = title,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                            .clickable {
+                                selectedVisualCategory = null // <- esto restablece la vista
+                            }
+                    )
 
-                RoutineTable(
-                    exercises = exercises,
-                    onRepsChanged = { index, newRep ->
-                        exercises = exercises.toMutableList().apply {
-                            val current = get(index)
-                            set(index, current.copy(reps = newRep))
+                    RoutineTable(
+                        exercises = exercises,
+                        onDeleteExercise = { index ->
+                            exercises = exercises.toMutableList().apply {
+                                removeAt(index)
+                            }
+                        },
+                        onRepsChanged = { index, newRep ->
+                            exercises = exercises.toMutableList().apply {
+                                this[index] = this[index].copy(reps = newRep)
+                            }
+                        }
+                    )
+
+
+                } else {
+                    val chunked = CategoryVisualMapper.visualCategories.chunked(2)
+                    chunked.forEach { rowItems ->
+                        androidx.compose.foundation.layout.Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 8.dp),
+                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(
+                                16.dp
+                            ),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            rowItems.forEach { visualCategory ->
+                                val title = stringResource(id = visualCategory.nameResId)
+                                CategoryCard(
+                                    imageRes = visualCategory.imageResId,
+                                    title = title,
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .clickable {
+                                            selectedVisualCategory =
+                                                if (selectedVisualCategory == visualCategory) null else visualCategory
+
+                                        }
+                                )
+                            }
+                            if (rowItems.size == 1) {
+                                Spacer(modifier = Modifier.weight(1f))
+                            }
                         }
                     }
-                )
-
+                }
             }
 
-        }
+            item {
+                Spacer(modifier = Modifier.height(100.dp)) // Extra space for FAB
+            }
 
-
-        FloatingActionButton(
-            onClick = {
-                exercises = exercises + SimpleExercise("", 0, "", "", 0)
-            },
-            containerColor = com.develop.traiscore.presentation.theme.traiBlue,
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        ) {
-            Icon(imageVector = Icons.Default.Add, contentDescription = "Agregar ejercicio")
-        }
-    }
-}
-
-@Composable
-fun ExerciseRow(
-    exercise: FirestoreExercise,
-    onUpdate: (FirestoreExercise) -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, Color.LightGray, RoundedCornerShape(8.dp))
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFFF8F8F8))
-                .padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            Text(
-                text = "Exercise",
-                modifier = Modifier
-                    .weight(2f)
-                    .padding(start = 8.dp),
-                style = MaterialTheme.typography.labelSmall
-            )
-            Text(
-                text = "Sets",
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.labelSmall
-            )
-            Text(
-                text = "Reps",
-                modifier = Modifier.weight(1f),
-                style = MaterialTheme.typography.labelSmall
-            )
-        }
-
-        // Inputs row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OutlinedTextField(
-                value = exercise.name,
-                onValueChange = { onUpdate(exercise.copy(name = it)) },
-                placeholder = { Text("e.g. Bench Press") },
-                modifier = Modifier.weight(2f)
-            )
-            OutlinedTextField(
-                value = exercise.series,
-                onValueChange = { onUpdate(exercise.copy(series = it)) },
-                placeholder = { Text("e.g. 3") },
-                modifier = Modifier.weight(1f)
-            )
-            OutlinedTextField(
-                value = exercise.reps,
-                onValueChange = { onUpdate(exercise.copy(reps = it)) },
-                placeholder = { Text("e.g. 10") },
-                modifier = Modifier.weight(1f)
-            )
         }
     }
 }

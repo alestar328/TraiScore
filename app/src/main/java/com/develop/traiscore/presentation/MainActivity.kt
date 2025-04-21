@@ -18,6 +18,7 @@ import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
+import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.screens.LoginScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.google.firebase.FirebaseApp
@@ -67,8 +68,11 @@ fun AppNavigation(navController: NavHostController){
                 }
             })
         }
-        composable(NavigationRoutes.Main.route){
-            MainScreen()
+        composable(NavigationRoutes.Main.route) {
+            MainScreen(navController = navController)
+        }
+        composable(NavigationRoutes.CreateRoutine.route) {
+            CreateRoutineScreen()
         }
 
     }
