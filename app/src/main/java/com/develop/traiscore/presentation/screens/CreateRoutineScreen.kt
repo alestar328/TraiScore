@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
@@ -36,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.develop.traiscore.core.DefaultCategoryExer
-import com.develop.traiscore.core.VisualCategory
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.presentation.components.AddExeRoutineDialog
 import com.develop.traiscore.presentation.components.AddRestButton
@@ -57,9 +57,10 @@ fun CreateRoutineScreen(
     val exerciseVM: AddExerciseViewModel = viewModel()
     var selectedCategory by remember { mutableStateOf<DefaultCategoryExer?>(null) }
 
-    var selectedVisualCategory by remember { mutableStateOf<VisualCategory?>(null) }
     var showDialog by remember { mutableStateOf(false) }
     val categories = DefaultCategoryExer.entries
+
+    val routineId = "iE6uckT33IUTgEgZiQ7Z"
 
     Scaffold(
         topBar = {
@@ -81,7 +82,7 @@ fun CreateRoutineScreen(
         },
         containerColor = Color.DarkGray,
         floatingActionButton = {
-            if (selectedVisualCategory != null) {
+            if (selectedCategory  != null) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -91,7 +92,14 @@ fun CreateRoutineScreen(
                     // Botón de "Guardar rutina"
                     ExtendedFloatingActionButton(
                         onClick = {
-                            println("✅ Guardando rutina: $workoutName")
+                            viewModel.saveSectionToRoutine(
+                                routineId = routineId,
+                                sectionType = selectedCategory!!,
+                                exercises = exercises
+                            ){ success, errorMsg ->
+                                if (success) println("Sección guardada correctamente")
+                                else println("Error al guardar: $errorMsg")
+                            }
                         },
                         icon = { Icon(Icons.Default.Check, contentDescription = "Guardar rutina") },
                         text = { Text("Guardar rutina") },
@@ -140,6 +148,7 @@ fun CreateRoutineScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .navigationBarsPadding()
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -184,17 +193,16 @@ fun CreateRoutineScreen(
                 )
             }
             item {
-                if (selectedVisualCategory != null) {
-                    val sel = selectedVisualCategory!!
+                if (selectedCategory  != null) {
+                    val cat = selectedCategory !!
 
                     CategoryCard(
-                        category = sel.category,
+                        category = cat,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
                             .clickable {
-                                selectedVisualCategory = null
-                                selectedCategory = sel.category
+                                selectedCategory = null
                             }
                     )
 
@@ -215,9 +223,9 @@ fun CreateRoutineScreen(
 
                 } else {
                     // Mostramos el grid usando directamente DefaultCategoryExer
-                    val chunked = categories.chunked(2)
-                    chunked.forEach { rowItems ->
-                        Row(
+                    categories.chunked(2).forEach { rowItems ->
+
+                    Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp),

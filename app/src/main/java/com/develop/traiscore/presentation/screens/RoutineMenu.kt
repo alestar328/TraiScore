@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,10 +16,16 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.DismissDirection
+import androidx.compose.material.DismissValue
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.rememberDismissState
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -42,15 +47,12 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.develop.traiscore.R
 import com.develop.traiscore.core.DefaultCategoryExer
-import com.develop.traiscore.core.DefaultCategoryImageMapper
-import com.develop.traiscore.core.ImageProvider.getImageForType
 import com.develop.traiscore.data.firebaseData.RoutineTypeItem
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.google.firebase.firestore.FirebaseFirestore
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun RoutineMenu(
     onRoutineClick: (String, String) -> Unit, // acepta docId y type
@@ -58,7 +60,6 @@ fun RoutineMenu(
 ) {
     val routineTypes = remember { mutableStateListOf<RoutineTypeItem>() }
     val context = LocalContext.current
-    val imageRes = DefaultCategoryImageMapper.getImageFor(DefaultCategoryExer.CHEST)
 
     LaunchedEffect(Unit) {
         val db = FirebaseFirestore.getInstance()
@@ -118,16 +119,54 @@ fun RoutineMenu(
                 contentPadding = PaddingValues(16.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                items(routineTypes) { routine ->
-                    RoutineItem(
-                        name = routine.type,
-                        imageResId = getImageForType(routine.type),
-                        onClick = { onRoutineClick(routine.documentId, routine.type) }
+                itemsIndexed(routineTypes, key = { _, r -> "${r.documentId}-${r.type}" }) { index, routine ->
+                    // Creamos el estado de swipe
+                    val dismissState = rememberDismissState(
+                        confirmStateChange = { newValue ->
+                            if (newValue == DismissValue.DismissedToEnd || newValue == DismissValue.DismissedToStart) {
+                                routineTypes.removeAt(index)
+                                true
+                            } else false
+                        }
+                    )
+                    SwipeToDismiss(
+                        state = dismissState,
+                        directions = setOf(DismissDirection.EndToStart),
+                        background = {
+                            // Fondo rojo con icono de basura
+                            if (dismissState.targetValue != DismissValue.Default) {
+                                Box(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Red)
+                                        .padding(end = 20.dp),
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Eliminar rutina",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        },
+                        dismissContent = {
+                            RoutineItem(
+                                name = routine.type,
+                                imageResId = try {
+                                    DefaultCategoryExer.valueOf(routine.type.uppercase()).imageCat
+                                } catch (_: Exception) {
+                                    DefaultCategoryExer.BACK.imageCat  // fallback si no coincide
+                                },
+                                onClick = { onRoutineClick(routine.documentId, routine.type) }
+                            )
+                        }
                     )
                 }
-                // Opcional: espacio final para que no choque con el FAB
+
+// Y al final, el espacio para el FAB:
                 item {
-                    Spacer(Modifier.height(80.dp))
+                    Spacer(modifier = Modifier.height(80.dp))
                 }
             }
     }
