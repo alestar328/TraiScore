@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -32,13 +31,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.develop.traiscore.core.CategoryVisualMapper
 import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.core.VisualCategory
 import com.develop.traiscore.data.firebaseData.SimpleExercise
@@ -46,7 +42,6 @@ import com.develop.traiscore.presentation.components.AddExeRoutineDialog
 import com.develop.traiscore.presentation.components.AddRestButton
 import com.develop.traiscore.presentation.components.CategoryCard
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
-import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -59,12 +54,12 @@ fun CreateRoutineScreen(
         mutableStateOf(emptyList<SimpleExercise>())
     }
     var workoutName by remember { mutableStateOf("") }
-    val context = LocalContext.current
     val exerciseVM: AddExerciseViewModel = viewModel()
     var selectedCategory by remember { mutableStateOf<DefaultCategoryExer?>(null) }
 
     var selectedVisualCategory by remember { mutableStateOf<VisualCategory?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    val categories = DefaultCategoryExer.entries
 
     Scaffold(
         topBar = {
@@ -120,7 +115,8 @@ fun CreateRoutineScreen(
                 AddExeRoutineDialog(
                     onDismiss = { showDialog = false },
                     onSave = { name, category ->
-                        val alreadyExists = exercises.any { it.name.equals(name, ignoreCase = true) }
+                        val alreadyExists =
+                            exercises.any { it.name.equals(name, ignoreCase = true) }
                         if (!alreadyExists) {
                             exercises = exercises + SimpleExercise(name, 0, "", "", 0)
                         }
@@ -189,16 +185,16 @@ fun CreateRoutineScreen(
             }
             item {
                 if (selectedVisualCategory != null) {
-                    val selected = selectedVisualCategory!!
-                    val title = stringResource(id = selected.nameResId)
+                    val sel = selectedVisualCategory!!
+
                     CategoryCard(
-                        imageRes = selected.imageResId,
-                        title = title,
+                        category = sel.category,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(vertical = 8.dp)
                             .clickable {
-                                selectedVisualCategory = null // <- esto restablece la vista
+                                selectedVisualCategory = null
+                                selectedCategory = sel.category
                             }
                     )
 
@@ -218,31 +214,28 @@ fun CreateRoutineScreen(
 
 
                 } else {
-                    val chunked = CategoryVisualMapper.visualCategories.chunked(2)
+                    // Mostramos el grid usando directamente DefaultCategoryExer
+                    val chunked = categories.chunked(2)
                     chunked.forEach { rowItems ->
-                        androidx.compose.foundation.layout.Row(
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp),
-                            horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(
-                                16.dp
-                            ),
+                            horizontalArrangement = Arrangement.spacedBy(16.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            rowItems.forEach { visualCategory ->
-                                val title = stringResource(id = visualCategory.nameResId)
+                            rowItems.forEach { cat ->
                                 CategoryCard(
-                                    imageRes = visualCategory.imageResId,
-                                    title = title,
+                                    category = cat,
                                     modifier = Modifier
                                         .weight(1f)
                                         .clickable {
-                                            selectedVisualCategory =
-                                                if (selectedVisualCategory == visualCategory) null else visualCategory
-
+                                            // Al tocar guardamos la categoría seleccionada
+                                            selectedCategory = cat
                                         }
                                 )
                             }
+                            // Si hay un hueco, compensamos
                             if (rowItems.size == 1) {
                                 Spacer(modifier = Modifier.weight(1f))
                             }
@@ -250,11 +243,6 @@ fun CreateRoutineScreen(
                     }
                 }
             }
-
-            item {
-                Spacer(modifier = Modifier.height(100.dp)) // Extra space for FAB
-            }
-
         }
     }
 }

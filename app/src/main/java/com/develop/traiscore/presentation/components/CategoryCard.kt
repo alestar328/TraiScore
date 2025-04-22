@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation.components
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -19,17 +18,17 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.develop.traiscore.R
+import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.presentation.theme.traiBlue
 
 @Composable
 fun CategoryCard(
-    @DrawableRes imageRes: Int,
-    title: String,
+    category: DefaultCategoryExer,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -44,8 +43,8 @@ fun CategoryCard(
         Spacer(modifier = Modifier.height(8.dp))
 
         Image(
-            painter = painterResource(id = imageRes),
-            contentDescription = title,
+            painter   = painterResource(id = category.imageCat),
+            contentDescription = stringResource(category.titleCat),
             contentScale = ContentScale.Crop,
             modifier = Modifier
                 .size(70.dp)
@@ -54,7 +53,7 @@ fun CategoryCard(
 
 
         Text(
-            text = title,
+            text = stringResource(category.titleCat),
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold,
             color = Color.Black,
@@ -67,7 +66,6 @@ fun CategoryCard(
 @Preview(showBackground = true)
 fun CategoryCardPreview() {
     CategoryCard(
-        imageRes = R.drawable.core_pic,
-        title = "Abdomen"
+        category = DefaultCategoryExer.ARMS
     )
 }

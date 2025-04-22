@@ -94,7 +94,7 @@ fun AddExeRoutineDialog(
                 Text("Categoría", color = traiBlue, fontSize = 18.sp)
 
                 OutlinedTextField(
-                    value = selectedCategory?.let { stringResource(it.stringResId) } ?: "Sin categoría",
+                    value = selectedCategory?.let { stringResource(it.titleCat) } ?: "Sin categoría",
                     onValueChange = {},
                     readOnly = true,
                     modifier = Modifier.fillMaxWidth(),

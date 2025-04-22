@@ -109,7 +109,7 @@ fun AddExerciseDialog(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     OutlinedTextField(
-                        value = selectedCategory?.let { stringResource(id = it.stringResId) } ?: "",
+                        value = selectedCategory?.let { stringResource(id = it.titleCat) } ?: "",
                         onValueChange = {},
                         readOnly = true,
                         textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
@@ -136,7 +136,7 @@ fun AddExerciseDialog(
                             DropdownMenuItem(
                                 text = {
                                     Text(
-                                        text = stringResource(id = category.stringResId),
+                                        text = stringResource(id = category.titleCat),
                                         fontSize = 13.sp
                                     )
                                 },

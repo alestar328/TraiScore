@@ -49,6 +49,10 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
 
     private val _repVsWeight = MutableStateFlow<List<Pair<Float, Float>>>(emptyList())
     val repVsWeight: StateFlow<List<Pair<Float, Float>>> = _repVsWeight
+
+    private val _totalWeightSum = MutableStateFlow(0f)
+    val totalWeightSum: StateFlow<Float> = _totalWeightSum
+
     init {
         fetchExerciseOptions()
         // Cuando el usuario elige un ejercicio, recargar historial completo
@@ -58,6 +62,7 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                 .distinctUntilChanged()
                 .collect { ex ->
                     loadAllProgressFor(ex)
+                    calculateTotalWeightLifted(ex)
                 }
         }
     }
@@ -93,8 +98,8 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                     val label = sdf.format(ts)
                     // Adaptar a cómo guardas weight/reps/rir en Firestore:
                     val weight = (doc.getLong("weight") ?: 0L).toFloat()
-                    val reps   = (doc.getLong("reps")   ?: 0L).toFloat()
-                    val rir    = (doc.getLong("rir")    ?: 0L).toInt()
+                    val reps = (doc.getLong("reps") ?: 0L).toFloat()
+                    val rir = (doc.getLong("rir") ?: 0L).toInt()
 
                     wData += label to weight
                     rData += label to reps
@@ -109,17 +114,33 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                 }
 
                 _weightProgress.value = wData
-                _repsProgress.value   = rData
+                _repsProgress.value = rData
 
                 // Calcula: 1RM = _max_ peso, MR = _max_ reps, RIR = avg RIR
-                val oneRm  = wData.maxByOrNull { it.second }?.second ?: 0f
-                val maxRp  = rData.maxByOrNull { it.second }?.second?.toInt() ?: 0
+                val oneRm = wData.maxByOrNull { it.second }?.second ?: 0f
+                val maxRp = rData.maxByOrNull { it.second }?.second?.toInt() ?: 0
                 val avgRir = if (allRir.isNotEmpty()) allRir.average().roundToInt() else 0
 
                 _circularData.value = Triple(oneRm, maxRp, avgRir)
             }
             .addOnFailureListener { e ->
                 Log.e("StatsVM", "no pude cargar workoutEntries para '$exerciseName'", e)
+            }
+    }
+
+    private fun calculateTotalWeightLifted(exerciseName: String) {
+        db.collection("workoutEntries")
+            .whereEqualTo("title", exerciseName)
+            .get()
+            .addOnSuccessListener { snap ->
+                // Sumar el campo "weight" de cada documento
+                val total = snap.documents.fold(0f) { acc, doc ->
+                    acc + (doc.getLong("weight") ?: 0L).toFloat()
+                }
+                _totalWeightSum.value = total
+            }
+            .addOnFailureListener { e ->
+                Log.e("StatsVM", "error sumando totalWeight para '$exerciseName'", e)
             }
     }
 }

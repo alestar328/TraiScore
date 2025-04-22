@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.develop.traiscore.core.DefaultCategoryExer
+import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.data.firebaseData.saveExerciseToFirebase
 import com.develop.traiscore.domain.defaultExerciseEntities
 import com.develop.traiscore.domain.model.Resource
@@ -16,6 +17,7 @@ import com.develop.traiscore.domain.model.WorkoutModel
 import com.develop.traiscore.domain.usecase.SaveWorkoutUseCase
 import com.develop.traiscore.domain.usecase.UpdateWorkoutUseCase
 import com.google.firebase.Firebase
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -28,6 +30,8 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
         private set
     var lastUsedExerciseName by mutableStateOf<String?>(null)
         private set
+
+    private val routinesRef = Firebase.firestore.collection("routines")
 
     private val firebaseCategoryToEnum = mapOf(
         "Pecho" to DefaultCategoryExer.CHEST,
@@ -98,6 +102,35 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
             }
             .addOnFailureListener { exception ->
                 println("❌ Error al refrescar ejercicios: ${exception.message}")
+            }
+    }
+    fun saveSectionToRoutine(
+        routineId: String,
+        sectionType: DefaultCategoryExer,
+        exercises: List<SimpleExercise>,
+        onComplete: (success: Boolean, errorMsg: String?) -> Unit
+    ) {
+        val sectionObject = mapOf(
+            "type" to sectionType.name,
+            "exercises" to exercises.map { exe ->
+                mapOf(
+                    "name"   to exe.name,
+                    "series" to exe.series,
+                    "weight" to exe.weight,
+                    "reps"   to exe.reps,
+                    "rir"    to exe.rir
+                )
+            }
+        )
+        // 2) Hacemos update con arrayUnion para no borrar secciones previas
+        routinesRef
+            .document(routineId)
+            .update("sections", FieldValue.arrayUnion(sectionObject))
+            .addOnSuccessListener {
+                onComplete(true, null)
+            }
+            .addOnFailureListener { e ->
+                onComplete(false, e.localizedMessage)
             }
     }
 

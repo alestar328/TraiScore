@@ -59,6 +59,8 @@ fun StatScreen(
     val circularData by viewModel.circularData.collectAsState()
     val selected by viewModel.selectedExercise.collectAsState()
 
+    val totalKg by viewModel.totalWeightSum.collectAsState()
+
     val (oneRepMax, maxReps, averageRIR) = circularData
     val lastTen = weightData.takeLast(10)
     val weightByReps = remember(lastTen) {
@@ -132,106 +134,114 @@ fun StatScreen(
 
                 }
 
-                    // Detalles del ejercicio
-                    item {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
+                // Detalles del ejercicio
+                item {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Peso
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(8.dp)
                         ) {
-                            // Peso
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(8.dp)
-                            ) {
-                                Text(
-                                    text = "1RM: ${"%.1f".format(oneRepMax)} kg",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = traiBlue
-                                )
-                                CircularProgressView(
-                                    progress = (oneRepMax / 150).toFloat().coerceIn(0f, 1f),
-                                    maxLabel = "${"%.1f".format(oneRepMax)} Kg",
-                                    modifier = Modifier.size(80.dp),
-                                    strokeColor = Color.Cyan,
-                                    backgroundColor = Color.Gray
-                                )
-                            }
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(8.dp)
-                            ) {
-                                Text(
-                                    text = "MR: $maxReps",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = traiBlue
-                                )
-                                CircularProgressView(
-                                    progress = (maxReps / 15f).coerceIn(0f, 1f),
-                                    maxLabel = "$maxReps reps",
-                                    modifier = Modifier.size(80.dp),
-                                    strokeColor = Color.Cyan,
-                                    backgroundColor = Color.Gray
-                                )
-                            }
-                            // RIR
-                            Column(
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                modifier = Modifier.padding(8.dp)
-                            ) {
-                                Text(
-                                    text = "RIR",
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = traiBlue
-                                )
-                                CircularProgressView(
-                                    progress = (averageRIR / 10f).coerceIn(0f, 1f),
-                                    maxLabel = "$averageRIR RIR",
-                                    modifier = Modifier.size(80.dp),
-                                    strokeColor = Color.Cyan,
-                                    backgroundColor = Color.Gray
-                                )
-                            }
+                            Text(
+                                text = "1RM: ${"%.1f".format(oneRepMax)} kg",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = traiBlue
+                            )
+                            CircularProgressView(
+                                progress = (oneRepMax / 150).toFloat().coerceIn(0f, 1f),
+                                maxLabel = "${"%.1f".format(oneRepMax)} Kg",
+                                modifier = Modifier.size(80.dp),
+                                strokeColor = Color.Cyan,
+                                backgroundColor = Color.Gray
+                            )
+                        }
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(8.dp)
+                        ) {
+                            Text(
+                                text = "MR: $maxReps",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = traiBlue
+                            )
+                            CircularProgressView(
+                                progress = (maxReps / 15f).coerceIn(0f, 1f),
+                                maxLabel = "$maxReps reps",
+                                modifier = Modifier.size(80.dp),
+                                strokeColor = Color.Cyan,
+                                backgroundColor = Color.Gray
+                            )
+                        }
+                        // RIR
+                        Column(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            modifier = Modifier.padding(8.dp)
+                        ) {
+                            Text(
+                                text = "RIR",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = traiBlue
+                            )
+                            CircularProgressView(
+                                progress = (averageRIR / 10f).coerceIn(0f, 1f),
+                                maxLabel = "$averageRIR RIR",
+                                modifier = Modifier.size(80.dp),
+                                strokeColor = Color.Cyan,
+                                backgroundColor = Color.Gray
+                            )
                         }
                     }
-
-                    // Gráficas
-                    item {
-                        Text(
-                            text = "Progresión por peso:",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Color.White,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                        LineChartView(
-                            dataPoints = weightByReps,
-                            lineColor = Color.Cyan, // Puedes personalizar los colores según sea necesario
-                            backgroundChartColor = Color.DarkGray,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(150.dp)
-                                .padding(horizontal = 16.dp)
-                        )
-                    }
-                    item {
-                        Text(
-                            text = "Progresión por repeticiones:",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = Color.White,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                     LineChartView(
-                            dataPoints = repsData,
-                            lineColor = Color.Cyan, // Puedes personalizar los colores según sea necesario
-                            backgroundChartColor = Color.DarkGray,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(150.dp)
-                                .padding(horizontal = 16.dp)
-                        )
-                    }
                 }
+
+                // Gráficas
+                item {
+                    Text(
+                        text = "Progresión por peso:",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    LineChartView(
+                        dataPoints = weightByReps,
+                        lineColor = Color.Cyan, // Puedes personalizar los colores según sea necesario
+                        backgroundChartColor = Color.DarkGray,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp)
+                            .padding(horizontal = 16.dp)
+                    )
+                }
+                item {
+                    Text(
+                        text = "Progresión por repeticiones:",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                    LineChartView(
+                        dataPoints = repsData,
+                        lineColor = Color.Cyan, // Puedes personalizar los colores según sea necesario
+                        backgroundChartColor = Color.DarkGray,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(150.dp)
+                            .padding(horizontal = 16.dp)
+                    )
+                }
+                item {
+                    Text(
+                        text = "Haz levantado: $totalKg kg",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.White,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+            }
 
         }
     )
