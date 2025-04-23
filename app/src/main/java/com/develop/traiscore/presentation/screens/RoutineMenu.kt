@@ -50,13 +50,15 @@ import androidx.compose.ui.unit.sp
 import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.data.firebaseData.RoutineTypeItem
 import com.develop.traiscore.presentation.theme.traiBlue
+import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun RoutineMenu(
     onRoutineClick: (String, String) -> Unit, // acepta docId y type
-    onAddClick: () -> Unit
+    onAddClick: () -> Unit,
+    viewModel: RoutineViewModel
 ) {
     val routineTypes = remember { mutableStateListOf<RoutineTypeItem>() }
     val context = LocalContext.current
@@ -124,6 +126,16 @@ fun RoutineMenu(
                     val dismissState = rememberDismissState(
                         confirmStateChange = { newValue ->
                             if (newValue == DismissValue.DismissedToEnd || newValue == DismissValue.DismissedToStart) {
+                                viewModel.deleteRoutineType(
+                                    documentId = routine.documentId,
+                                    type = routine.type
+                                ) { success ->
+                                    if (success) {
+                                        Toast.makeText(context, "Tipo de rutina eliminado", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Error al eliminar tipo de rutina", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
                                 routineTypes.removeAt(index)
                                 true
                             } else false
@@ -204,6 +216,7 @@ fun RoutineMenuPreview() {
         onRoutineClick = { docId, type ->
             println("Clicked routine with ID: $docId and Type: $type")
         },
-        onAddClick = { println("Add new routine") }
+        onAddClick = { println("Add new routine") },
+        viewModel = RoutineViewModel()
     )
 }

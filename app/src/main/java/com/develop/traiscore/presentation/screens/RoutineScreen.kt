@@ -137,7 +137,13 @@ fun RoutineScreen(
                         routineViewModel.updateReps(exerciseIndex, selectedType, newRep)
                     },
                     onDeleteExercise = { index ->
-                        routineViewModel.deleteExercise(index, selectedType)
+                        routineViewModel.deleteRoutineType(documentId, selectedType) { isSuccess ->
+                            if (isSuccess) {
+                                Toast.makeText(context, "Tipo de rutina eliminado", Toast.LENGTH_SHORT).show()
+                            } else {
+                                Toast.makeText(context, "Error al eliminar el tipo de rutina", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
                 )
                 Spacer(modifier = Modifier.height(16.dp))

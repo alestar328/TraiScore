@@ -1,5 +1,6 @@
 package com.develop.traiscore.presentation.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -32,10 +33,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.presentation.components.AddExeRoutineDialog
@@ -48,6 +53,7 @@ import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 @Composable
 fun CreateRoutineScreen(
     onBack: () -> Unit,
+    navController: NavHostController,
     viewModel: AddExerciseViewModel = hiltViewModel()
 ) {
     var exercises by remember {
@@ -82,7 +88,7 @@ fun CreateRoutineScreen(
         },
         containerColor = Color.DarkGray,
         floatingActionButton = {
-            if (selectedCategory  != null) {
+            if (selectedCategory != null) {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -96,9 +102,23 @@ fun CreateRoutineScreen(
                                 routineId = routineId,
                                 sectionType = selectedCategory!!,
                                 exercises = exercises
-                            ){ success, errorMsg ->
-                                if (success) println("Sección guardada correctamente")
-                                else println("Error al guardar: $errorMsg")
+                            ) { success, errorMsg ->
+                                if (success) {
+                                    Toast.makeText(
+                                        navController.context,
+                                        "Rutina guardada con éxito",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    navController.popBackStack()
+                                    println("Sección guardada correctamente")
+                                } else {
+                                    Toast.makeText(
+                                        navController.context,
+                                        "Error al guardar: $errorMsg",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    println("Error al guardar: $errorMsg")
+                                }
                             }
                         },
                         icon = { Icon(Icons.Default.Check, contentDescription = "Guardar rutina") },
@@ -193,8 +213,8 @@ fun CreateRoutineScreen(
                 )
             }
             item {
-                if (selectedCategory  != null) {
-                    val cat = selectedCategory !!
+                if (selectedCategory != null) {
+                    val cat = selectedCategory!!
 
                     CategoryCard(
                         category = cat,
@@ -225,7 +245,7 @@ fun CreateRoutineScreen(
                     // Mostramos el grid usando directamente DefaultCategoryExer
                     categories.chunked(2).forEach { rowItems ->
 
-                    Row(
+                        Row(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .padding(vertical = 8.dp),
@@ -258,10 +278,11 @@ fun CreateRoutineScreen(
 @Preview(showBackground = true)
 @Composable
 fun CreateRoutineScreenPreview() {
-    // Le pasamos un callback vacío para la flecha
+    val context = LocalContext.current
     TraiScoreTheme {
         CreateRoutineScreen(
-            onBack = { /* Aquí iría popBackStack() en tu app real */ }
+            onBack = { /* Aquí iría popBackStack() en tu app real */ },
+            navController = rememberNavController()
         )
     }
 }

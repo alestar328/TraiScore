@@ -73,7 +73,8 @@ fun AppNavigation(navController: NavHostController){
         }
         composable(NavigationRoutes.CreateRoutine.route) {
             CreateRoutineScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                navController = navController
             )
         }
 

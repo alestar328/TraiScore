@@ -41,13 +41,15 @@ import com.develop.traiscore.presentation.theme.primaryBlack
 import com.develop.traiscore.presentation.theme.primaryWhite
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
+import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 
 
 @Composable
 fun MainScreen(
     modifier: Modifier = Modifier,
     navController: NavHostController,
-    exeScreenViewModel: ExercisesScreenViewModel = hiltViewModel()
+    exeScreenViewModel: ExercisesScreenViewModel = hiltViewModel(),
+    routineViewModel: RoutineViewModel = hiltViewModel()
 ) {
     val navItemList = listOf(
         NavItem(
@@ -140,7 +142,9 @@ fun MainScreen(
             },
             onCreateRoutine = {
                 routineScreenState = ScreenState.CREATE_ROUTINE_SCREEN // ✅ estado se cambia aquí
-            }
+            },
+            routineViewModel = routineViewModel // Pass the viewModel here
+
         )
 
     }
@@ -168,7 +172,8 @@ fun ContentScreen(
     routineScreenState: ScreenState,
     onRoutineSelected: (String, String) -> Unit,  // <- ahora acepta docId y type
     onBackToRoutineMenu: () -> Unit,
-    onCreateRoutine: () -> Unit
+    onCreateRoutine: () -> Unit,
+    routineViewModel: RoutineViewModel
 ) {
     when (selectedIndex) {
         0 -> ExercisesScreen()
@@ -181,15 +186,19 @@ fun ContentScreen(
                         onRoutineSelected(docId, type)
                     },
                     onAddClick = {
-                        onCreateRoutine() // ✅ aquí llamamos al callback
-                    }
+                        onCreateRoutine()
+                    },
+                    viewModel = routineViewModel // Pass the viewModel to RoutineMenu
                 )
                 is ScreenState.FIREBASE_ROUTINE_SCREEN -> FirebaseRoutineScreen(
                     documentId = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).documentId,
                     selectedType = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).selectedType,
                     onBack = onBackToRoutineMenu
                 )
-                is ScreenState.CREATE_ROUTINE_SCREEN -> CreateRoutineScreen( onBack = onBackToRoutineMenu) // 👈 aquí también
+                is ScreenState.CREATE_ROUTINE_SCREEN -> CreateRoutineScreen(
+                    onBack = onBackToRoutineMenu,
+                    navController = navController
+                )
             }
         }
 
