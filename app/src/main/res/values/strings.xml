@@ -12,4 +12,6 @@
     <string name="category_arms">Brazos</string>
     <string name="category_shoulders">Hombros</string>
     <string name="category_core">Abdomen</string>
+    
+    <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
 </resources>

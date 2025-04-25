@@ -19,7 +19,7 @@ android {
     defaultConfig {
         applicationId = "com.develop.traiscore"
         minSdk = 30
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -64,6 +64,10 @@ android {
 }
 
 dependencies {
+    implementation("androidx.credentials:credentials:1.5.0")
+    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation(libs.androidx.paging.common.android)
     implementation(libs.firebase.crashlytics)
     implementation (platform("com.google.firebase:firebase-bom:33.12.0"))

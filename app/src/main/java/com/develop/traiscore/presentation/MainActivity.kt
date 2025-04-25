@@ -1,5 +1,6 @@
 package com.develop.traiscore.presentation
 
+import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -15,18 +16,38 @@ import androidx.navigation.compose.rememberNavController
 
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.credentials.CredentialManager
+import androidx.credentials.CustomCredential
+import androidx.credentials.GetCredentialRequest
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
+import com.develop.traiscore.R
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.screens.LoginScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInClient
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.libraries.identity.googleid.GetGoogleIdOption
+import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
+import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
+import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.auth.auth
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
+import java.security.MessageDigest
+import java.util.UUID
+
 
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    private lateinit var googleSignInClient: GoogleSignInClient
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -35,13 +56,19 @@ class MainActivity : ComponentActivity() {
 
         FirebaseApp.initializeApp(this)
 
+        val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+            .requestIdToken(getString(R.string.web_client_id))
+            .requestEmail()
+            .build()
+        googleSignInClient = GoogleSignIn.getClient(this, gso)
+
         setContent {
             //Creamos esta variable
             val windowSize = calculateWindowSizeClass(this)
             //Insertamos la propiedad aqui
-            TraiScoreTheme (
+            TraiScoreTheme(
                 windowSize = windowSize.widthSizeClass
-            ){
+            ) {
                 val navController = rememberNavController()
                 // A surface container using the 'background' color from the theme
                 Surface(
@@ -56,15 +83,15 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-fun AppNavigation(navController: NavHostController){
+fun AppNavigation(navController: NavHostController) {
     NavHost(
         navController = navController,
         startDestination = NavigationRoutes.Login.route
-    ){
-        composable(NavigationRoutes.Login.route){
+    ) {
+        composable(NavigationRoutes.Login.route) {
             LoginScreen(onLoginClicked = {
-                navController.navigate(NavigationRoutes.Main.route){
-                    popUpTo(NavigationRoutes.Login.route){ inclusive = true}
+                navController.navigate(NavigationRoutes.Main.route) {
+                    popUpTo(NavigationRoutes.Login.route) { inclusive = true }
                 }
             })
         }
@@ -79,4 +106,94 @@ fun AppNavigation(navController: NavHostController){
         }
 
     }
+}
+
+
+class AuthenticationManager(
+    val context: Context
+) {
+    private val auth = Firebase.auth
+
+    fun createAccountWithEmail(email: String, password: String): Flow<AuthResponse> = callbackFlow {
+        auth.createUserWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    trySend(AuthResponse.Success)
+                } else {
+                    trySend(AuthResponse.Error(message = task.exception?.message ?: ""))
+                }
+
+            }
+    }
+
+    fun loginWithEmail(email: String, password: String): Flow<AuthResponse> = callbackFlow {
+        auth.signInWithEmailAndPassword(email, password)
+            .addOnCompleteListener { task ->
+                if (task.isSuccessful) {
+                    trySend(AuthResponse.Success)
+                } else {
+                    trySend(AuthResponse.Error(message = task.exception?.message ?: ""))
+                }
+            }
+        awaitClose()
+    }
+
+    private fun createNonce(): String {
+        val rawNonce = UUID.randomUUID().toString()
+        val bytes = rawNonce.toByteArray()
+        val md = MessageDigest.getInstance("SHA-256")
+        val digest = md.digest(bytes)
+
+        return digest.fold("") { str, it ->
+            str + "%02x".format(it)
+
+        }
+    }
+
+    fun signInWithGoogle(): Flow<AuthResponse> = callbackFlow {
+        try {
+            val request = GetCredentialRequest.Builder()
+                .addCredentialOption(
+                    GetGoogleIdOption.Builder()
+                        .setServerClientId(context.getString(R.string.web_client_id))
+                        .build()
+                )
+                .build()
+
+            val response = CredentialManager.create(context)
+                .getCredential(context, request)
+
+            // detecta directamente el credential que retorna la librería
+            val googleCred = response.credential as? GoogleIdTokenCredential
+                ?: run {
+                    trySend(AuthResponse.Error("Credencial Google no reconocida"))
+                    close()
+                    return@callbackFlow
+                }
+
+            // extrae el ID token y pásalo a Firebase
+            val firebaseCred = GoogleAuthProvider
+                .getCredential(googleCred.idToken, null)
+
+            auth.signInWithCredential(firebaseCred)
+                .addOnCompleteListener { task ->
+                    if (task.isSuccessful) {
+                        trySend(AuthResponse.Success)
+                    } else {
+                        trySend(AuthResponse.Error(task.exception?.message ?: "Error desconocido"))
+                    }
+                    close()  // cerramos el flujo tras enviar el resultado
+                }
+        } catch (e: Exception) {
+            trySend(AuthResponse.Error(e.message ?: "Excepción inesperada"))
+            close()
+        }
+
+        awaitClose { /* nada que limpiar */ }
+    }
+}
+
+interface AuthResponse {
+    data object Success : AuthResponse
+    data class Error(val message: String) : AuthResponse
 }

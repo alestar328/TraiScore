@@ -19,17 +19,17 @@ import com.develop.traiscore.presentation.theme.unfocusedTextFieldText
 fun LoginTextField(
     modifier: Modifier = Modifier,
     label: String,
+    value: String,
+    onValueChange: (String) -> Unit,
     trailing: String
-){
-    val uiColor = if(isSystemInDarkTheme()) Color.White else Black
+) {
+    val uiColor = if (isSystemInDarkTheme()) Color.White else Black
 
     TextField(
         modifier = modifier,
-        value = "",
-        onValueChange = {},
-        label = {
-            Text(text = label, style = MaterialTheme.typography.labelMedium, color = uiColor)
-        },
+        value = value,
+        onValueChange = onValueChange,
+        label = { Text(text = label, style = MaterialTheme.typography.labelMedium, color = uiColor) },
         colors = TextFieldDefaults.colors(
             unfocusedPlaceholderColor = MaterialTheme.colorScheme.unfocusedTextFieldText,
             focusedPlaceholderColor = MaterialTheme.colorScheme.focusedTextFieldText,
@@ -37,12 +37,14 @@ fun LoginTextField(
             focusedContainerColor = MaterialTheme.colorScheme.textFieldContainer,
         ),
         trailingIcon = {
-            TextButton(onClick = {/*TODO*/}) {
-                Text(
-                    text = trailing,
-                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
-                    color = uiColor
-                )
+            if (trailing.isNotEmpty()) {
+                TextButton(onClick = { /* TODO: Forgot password flow */ }) {
+                    Text(
+                        text = trailing,
+                        style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium),
+                        color = uiColor
+                    )
+                }
             }
         }
     )
