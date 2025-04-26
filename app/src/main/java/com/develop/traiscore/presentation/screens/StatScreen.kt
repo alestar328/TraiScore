@@ -43,6 +43,7 @@ import com.develop.traiscore.presentation.components.CircularProgressView
 import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.LineChartView
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
+import com.develop.traiscore.presentation.theme.traiBackgroundDay
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.theme.traiOrange
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
@@ -108,7 +109,7 @@ fun StatScreen(
                 modifier = Modifier
                     .padding(paddingValues)
                     .navigationBarsPadding()
-                    .background(Color.Black)
+                    .background(traiBackgroundDay)
                     .fillMaxSize()
                     .padding(TraiScoreTheme.dimens.paddingMedium),
                 verticalArrangement = Arrangement.spacedBy(16.dp)

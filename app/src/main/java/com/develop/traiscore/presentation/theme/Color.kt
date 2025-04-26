@@ -19,6 +19,11 @@ val gray = Color(0XFF888888);
 val lightGray = Color(0XFFCCCCCC);
 
 val traiBlue = Color(0xFF3AF2FF)
+val traiBackgroundDark = Color(0xFF1C1C1C)
+val traiBackgroundDay = Color(0xFFAFB6C0)
+
+val navbarDay = Color(0xFF9EADA8)
+val navbarDark = Color(0xFFAFB6C0)
 
 val Black = Color(0xFF000113)
 val LightBlueWhite = Color(0xFFF1F5F9) //Social media background

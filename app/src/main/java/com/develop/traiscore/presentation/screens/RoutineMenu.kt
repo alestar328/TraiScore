@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.data.firebaseData.RoutineTypeItem
+import com.develop.traiscore.presentation.theme.traiBackgroundDay
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.google.firebase.firestore.FirebaseFirestore
@@ -115,7 +116,7 @@ fun RoutineMenu(
             LazyColumn (
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.DarkGray)
+                    .background(traiBackgroundDay)
                     .padding(innerPadding)
                     .navigationBarsPadding(),          // evita que el contenido quede tras la nav‐bar
                 contentPadding = PaddingValues(16.dp),

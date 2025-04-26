@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
@@ -33,10 +34,12 @@ import com.develop.traiscore.presentation.screens.AddExerciseDialogContent
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.screens.ExercisesScreen
 import com.develop.traiscore.presentation.screens.FirebaseRoutineScreen
+import com.develop.traiscore.presentation.screens.ProfileScreen
 import com.develop.traiscore.presentation.screens.RoutineMenu
 import com.develop.traiscore.presentation.screens.SettingsScreen
 import com.develop.traiscore.presentation.screens.StatScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
+import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.theme.primaryBlack
 import com.develop.traiscore.presentation.theme.primaryWhite
 import com.develop.traiscore.presentation.theme.traiBlue
@@ -60,7 +63,7 @@ fun MainScreen(
         NavItem("Stats", painter = painterResource(id = R.drawable.stats_icon), badgeCount = 0),
         NavItem("Add", painter = painterResource(id = R.drawable.plus_icon), badgeCount = 0),
         NavItem("Rutina", painter = painterResource(id = R.drawable.pesa_icon), badgeCount = 0),
-        NavItem("Settings", imageVector = Icons.Default.Settings, badgeCount = 0)
+        NavItem("Profile", imageVector = Icons.Default.Person, badgeCount = 0)
 
     )
     var routineScreenState by remember { mutableStateOf<ScreenState>(ScreenState.MAIN_ROUTINE_MENU) }
@@ -76,8 +79,8 @@ fun MainScreen(
         bottomBar = {
             NavigationBar(
                 modifier = Modifier.height(100.dp),
-                containerColor = primaryBlack, // Fondo de la barra de navegación
-                contentColor = primaryWhite // Color por defecto de los íconos
+                containerColor = navbarDay, // Fondo de la barra de navegación
+                contentColor = Color.Black // Color por defecto de los íconos
             ) {
                 navItemList.forEachIndexed { index, navItem ->
 
@@ -96,14 +99,14 @@ fun MainScreen(
                                     imageVector = navItem.imageVector,
                                     contentDescription = "Icon",
                                     tint = if (selectedIndex == index) traiBlue
-                                    else primaryWhite
+                                    else primaryBlack
                                 )
                             } else if (navItem.painter != null) {
                                 Icon(
                                     painter = navItem.painter,
                                     contentDescription = "Icon",
                                     tint = if (selectedIndex == index) traiBlue
-                                    else primaryWhite
+                                    else primaryBlack
                                 )
                             }
                         },
@@ -111,15 +114,15 @@ fun MainScreen(
                             Text(
                                 text = navItem.label,
                                 color = if (selectedIndex == index) traiBlue
-                                else primaryWhite,
+                                else primaryBlack,
                             )
                         },
                         alwaysShowLabel = false,
                         colors = NavigationBarItemDefaults.colors(
                             selectedIconColor = traiBlue, // Color del ícono seleccionado
-                            unselectedIconColor = primaryWhite, // Color del ícono no seleccionado
+                            unselectedIconColor = primaryBlack, // Color del ícono no seleccionado
                             selectedTextColor = traiBlue, // Color del texto seleccionado
-                            unselectedTextColor = primaryWhite, // Color del texto no seleccionado
+                            unselectedTextColor = primaryBlack, // Color del texto no seleccionado
                             indicatorColor = Color.Transparent // Elimina el halo de selección
                         )
                     )
@@ -202,7 +205,7 @@ fun ContentScreen(
             }
         }
 
-        4 -> SettingsScreen()
+        4 -> ProfileScreen()
     }
 
 }

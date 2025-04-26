@@ -37,6 +37,7 @@ import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.WorkoutCard
 import com.develop.traiscore.presentation.components.WorkoutCardList
+import com.develop.traiscore.presentation.theme.traiBackgroundDay
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.io.Console
@@ -119,7 +120,7 @@ fun ExercisesScreen(
                 }
                 LazyColumn(
                     modifier = Modifier
-                        .background(Color.Black)
+                        .background(traiBackgroundDay)
                         .fillMaxSize()
                         .padding(TraiScoreTheme.dimens.paddingMedium),
                     contentPadding = PaddingValues(
