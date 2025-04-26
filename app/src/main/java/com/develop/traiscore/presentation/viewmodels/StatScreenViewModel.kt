@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.develop.traiscore.core.TimeRange
 import com.google.firebase.Firebase
+import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -55,6 +56,7 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
 
     init {
         fetchExerciseOptions()
+        fetchLastWorkoutEntry()
         // Cuando el usuario elige un ejercicio, recargar historial completo
         viewModelScope.launch {
             _selectedExercise
@@ -141,6 +143,24 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
             }
             .addOnFailureListener { e ->
                 Log.e("StatsVM", "error sumando totalWeight para '$exerciseName'", e)
+            }
+    }
+
+    private fun fetchLastWorkoutEntry() {
+        db.collection("workoutEntries")
+            .orderBy("timestamp", Query.Direction.DESCENDING)
+            .limit(1)
+            .get()
+            .addOnSuccessListener { snap ->
+                val lastTitle = snap.documents
+                    .firstOrNull()
+                    ?.getString("title")
+                lastTitle?.let {
+                    _selectedExercise.value = it
+                }
+            }
+            .addOnFailureListener { e ->
+                // opcional: maneja el fallo
             }
     }
 }

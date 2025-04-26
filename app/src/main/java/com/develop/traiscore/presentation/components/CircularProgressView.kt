@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.develop.traiscore.presentation.theme.traiOrange
 
 @Composable
 fun CircularProgressView(
@@ -27,7 +28,7 @@ fun CircularProgressView(
     maxLabel: String, // Etiqueta dentro del círculo (como "54Kg")
     modifier: Modifier = Modifier,
     strokeColor: Color = Color.Cyan,
-    backgroundColor: Color = Color.Gray,
+    backgroundColor: Color = traiOrange,
     strokeWidth: Float = 16f
 ) {
     // Animar el progreso
@@ -69,7 +70,7 @@ fun CircularProgressView(
         Text(
             text = maxLabel,
             fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
+            fontWeight = FontWeight.Normal,
             color = strokeColor
         )
     }
@@ -88,7 +89,7 @@ fun CircularProgressViewPreview() {
             maxLabel = "54Kg",
             modifier = Modifier.size(120.dp),
             strokeColor = Color.Cyan,
-            backgroundColor = Color.Gray
+            backgroundColor = traiOrange
         )
     }
 }

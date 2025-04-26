@@ -40,11 +40,11 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.R
 import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.CircularProgressView
-import com.develop.traiscore.presentation.components.DropdownMenuComponent
 import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.LineChartView
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBlue
+import com.develop.traiscore.presentation.theme.traiOrange
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -128,7 +128,8 @@ fun StatScreen(
                         selectedValue= selected ?: "",
                         placeholder  = "Ejercicio",
                         onItemSelected = { viewModel.onExerciseSelected(it) },
-                        modifier     = Modifier.fillMaxWidth()
+                        modifier     = Modifier
+                            .fillMaxWidth()
                     )
                     Spacer(modifier = Modifier.height(4.dp))
 
@@ -150,16 +151,18 @@ fun StatScreen(
                             modifier = Modifier.padding(8.dp)
                         ) {
                             Text(
-                                text = "1RM: ${"%.1f".format(oneRepMax)} kg",
+                                text = "1RM: ${"%.1f".format(oneRepMax)}",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = traiBlue
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
+
                             CircularProgressView(
                                 progress = (oneRepMax / 150).toFloat().coerceIn(0f, 1f),
                                 maxLabel = "${"%.1f".format(oneRepMax)} Kg",
                                 modifier = Modifier.size(80.dp),
                                 strokeColor = Color.Cyan,
-                                backgroundColor = Color.Gray
+                                backgroundColor = traiOrange
                             )
                         }
                         Column(
@@ -171,12 +174,14 @@ fun StatScreen(
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = traiBlue
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
+
                             CircularProgressView(
                                 progress = (maxReps / 15f).coerceIn(0f, 1f),
                                 maxLabel = "$maxReps reps",
                                 modifier = Modifier.size(80.dp),
                                 strokeColor = Color.Cyan,
-                                backgroundColor = Color.Gray
+                                backgroundColor = traiOrange
                             )
                         }
                         // RIR
@@ -185,16 +190,18 @@ fun StatScreen(
                             modifier = Modifier.padding(8.dp)
                         ) {
                             Text(
-                                text = "RIR",
+                                text = "Esfuerzo",
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = traiBlue
                             )
+                            Spacer(modifier = Modifier.height(8.dp))
+
                             CircularProgressView(
                                 progress = (averageRIR / 10f).coerceIn(0f, 1f),
                                 maxLabel = "$averageRIR RIR",
                                 modifier = Modifier.size(80.dp),
                                 strokeColor = Color.Cyan,
-                                backgroundColor = Color.Gray
+                                backgroundColor = traiOrange
                             )
                         }
                     }
@@ -236,12 +243,34 @@ fun StatScreen(
                     )
                 }
                 item {
-                    Text(
-                        text = "Haz levantado: $totalKg kg",
-                        style = MaterialTheme.typography.titleLarge,
-                        color = Color.White,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.DarkGray, RoundedCornerShape(8.dp))
+                            .padding(16.dp)           // el mismo padding que tus otras secciones
+                    ) {
+                        Text(
+                            text = "Haz levantado: $totalKg kg",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.White,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        Text(
+                            text = "Haz levantado: Un elefante!",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.White,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+
+                        Text(
+                            text = "Energía consumida: 1000 kCal",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = Color.White,
+                            modifier = Modifier.padding(bottom = 8.dp)
+                        )
+                    }
+
                 }
             }
 
