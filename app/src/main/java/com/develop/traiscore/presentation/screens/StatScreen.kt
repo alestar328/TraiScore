@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -35,13 +36,12 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.R
-import com.develop.traiscore.core.TimeRange
 import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.CircularProgressView
 import com.develop.traiscore.presentation.components.DropdownMenuComponent
+import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.LineChartView
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBlue
@@ -62,9 +62,9 @@ fun StatScreen(
     val totalKg by viewModel.totalWeightSum.collectAsState()
 
     val (oneRepMax, maxReps, averageRIR) = circularData
-    val lastTen = weightData.takeLast(10)
-    val weightByReps = remember(lastTen) {
-        lastTen.map { (_, peso) ->
+    val lastTwelve = weightData.takeLast(12)
+    val weightByReps = remember(lastTwelve) {
+        lastTwelve.map { (_, peso) ->
             // etiqueta X = peso redondeado a entero
             peso.toInt().toString() to peso
         }
@@ -123,24 +123,26 @@ fun StatScreen(
                         color = Color.White,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
-                    DropdownMenuComponent(
-                        items = exerOptions,
+                    FilterableDropdown(
+                        items        = exerOptions,
+                        selectedValue= selected ?: "",
+                        placeholder  = "Ejercicio",
                         onItemSelected = { viewModel.onExerciseSelected(it) },
-                        placeholder = "Ejercicio",
-                        modifier = Modifier.fillMaxWidth()
+                        modifier     = Modifier.fillMaxWidth()
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(4.dp))
 
 
                 }
 
                 // Detalles del ejercicio
                 item {
-                    Spacer(modifier = Modifier.height(8.dp))
                     Row(
                         horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.DarkGray, RoundedCornerShape(8.dp)) // fondo + esquinas
+                            .padding(10.dp)
                     ) {
                         // Peso
                         Column(
@@ -201,7 +203,7 @@ fun StatScreen(
                 // Gráficas
                 item {
                     Text(
-                        text = "Progresión por peso:",
+                        text = "Por peso:",
                         style = MaterialTheme.typography.titleLarge,
                         color = Color.White,
                         modifier = Modifier.padding(bottom = 8.dp)
@@ -212,13 +214,13 @@ fun StatScreen(
                         backgroundChartColor = Color.DarkGray,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(150.dp)
-                            .padding(horizontal = 16.dp)
+                            .height(120.dp)
+                            .padding(horizontal = 0.dp)
                     )
                 }
                 item {
                     Text(
-                        text = "Progresión por repeticiones:",
+                        text = "Por repeticiones:",
                         style = MaterialTheme.typography.titleLarge,
                         color = Color.White,
                         modifier = Modifier.padding(bottom = 8.dp)
@@ -229,8 +231,8 @@ fun StatScreen(
                         backgroundChartColor = Color.DarkGray,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(150.dp)
-                            .padding(horizontal = 16.dp)
+                            .height(120.dp)
+                            .padding(horizontal = 0.dp)
                     )
                 }
                 item {

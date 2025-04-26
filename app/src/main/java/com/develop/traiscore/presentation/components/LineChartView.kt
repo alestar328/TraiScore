@@ -33,11 +33,11 @@ import kotlin.math.abs
 fun LineChartView(
     dataPoints: List<Pair<String, Float>>, // (etiqueta, valor)
     lineColor: Color = Color(0xFF00BCD4),   // un turquesa similar a Cyan
-    axisColor: Color = Color.Gray.copy(alpha = 0.3f),
+    axisColor: Color = Color.White.copy(alpha = 0.5f),
     backgroundChartColor: Color = Color.DarkGray,
     modifier: Modifier = Modifier
 ) {
-    val pts = dataPoints.takeLast(12)
+    val pts = dataPoints
     if (pts.size < 2) {
         Box(
             modifier
@@ -54,101 +54,86 @@ fun LineChartView(
             .then(modifier)
     ) {
         Canvas(Modifier.fillMaxSize()) {
+
+
             val paddingX = 12.dp.toPx()
-            val paddingY = 20.dp.toPx()
+            val paddingY = 30.dp.toPx()
             val chartWidth = size.width - paddingX * 2
             val chartHeight = size.height - paddingY * 2
             val stepX = chartWidth / (pts.size - 1)
 
-            // Dibujamos eje X
-            drawLine(
-                color = axisColor,
-                start = Offset(paddingX, size.height - paddingY),
-                end = Offset(size.width - paddingX, size.height - paddingY),
-                strokeWidth = 1.dp.toPx()
-            )
-
             // Calculamos rango Y
             val maxV = pts.maxOf { it.second }
-            val minV = pts.minOf { it.second }
+            val minV = 0f
             val range = (maxV - minV).takeIf { it > 0f } ?: 1f
 
-            // Creamos la Path de la curva con cubicTo para suavizarla
-            val curvePath = Path().apply {
-                var x0 = paddingX
-                var y0 = size.height - paddingY - ((pts[0].second - minV) / range) * chartHeight
-                moveTo(x0, y0)
-
-                for (i in 1 until pts.size) {
-                    val x1 = paddingX + stepX * i
-                    val y1 = size.height - paddingY - ((pts[i].second - minV) / range) * chartHeight
-
-                    // control points para cubic Bezier
-                    val midX = (x0 + x1) / 2f
+            val coords = pts.mapIndexed { i, (_, v) ->
+                val x = paddingX + stepX * i
+                val y = size.height - paddingY - ((v - minV) / range) * chartHeight
+                x to y
+            }
+            val smoothPath = Path().apply {
+                val (startX, startY) = coords.first()
+                moveTo(startX, startY)
+                coords.zipWithNext { (xA, yA), (xB, yB) ->
+                    // usamos el punto medio en X como handle de control
+                    val midX = (xA + xB) / 2f
                     cubicTo(
-                        midX, y0,
-                        midX, y1,
-                        x1, y1
+                        midX, yA,  // primer handle (alineado horizontalmente con A)
+                        midX, yB,  // segundo handle (alineado horizontalmente con B)
+                        xB, yB   // destino
                     )
-
-                    x0 = x1
-                    y0 = y1
                 }
             }
-
-            // Path de relleno
+            // Creamos la Path de la curva con cubicTo para suavizarla
+            val yAxis = size.height - paddingY
             val fillPath = Path().apply {
-                addPath(curvePath)
-                lineTo(paddingX + chartWidth, size.height - paddingY)
-                lineTo(paddingX, size.height - paddingY)
+                addPath(smoothPath)
+                lineTo(coords.last().first, yAxis)
+                lineTo(coords.first().first, yAxis)
                 close()
             }
 
-            // Degradado bajo la curva
+            // Dibujamos eje X
             drawPath(
-                path = fillPath,
+                fillPath,
                 brush = Brush.verticalGradient(
                     colors = listOf(lineColor.copy(alpha = 0.3f), Color.Transparent),
                     startY = paddingY,
-                    endY = size.height - paddingY
+                    endY = yAxis
                 )
             )
-
-            // Trazo de la curva
+            // Degradado bajo la curva
             drawPath(
-                path = curvePath,
+                smoothPath,
                 color = lineColor,
                 style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
             )
-
-            // Dibujamos puntos y etiquetas
-            pts.forEachIndexed { i, (_, v) ->
-                val x = paddingX + stepX * i
-                val y = size.height - paddingY - ((v - minV) / range) * chartHeight
-
-                // punto
-                drawCircle(
-                    color = lineColor,
-                    radius = 5.dp.toPx(),
-                    center = Offset(x, y)
-                )
-
-                // etiqueta de valor centrada bajo el eje X
-                drawContext.canvas.nativeCanvas.apply {
-                    val text = v.toInt().toString()
-                    val paint = android.graphics.Paint().apply {
+            // — puntos
+            coords.forEach { (x, y) ->
+                drawCircle(lineColor, radius = 5.dp.toPx(), center = Offset(x, y))
+            }
+            // — ejes y etiquetas (igual que antes)
+            drawLine(
+                axisColor,
+                Offset(paddingX, yAxis),
+                Offset(size.width - paddingX, yAxis),
+                strokeWidth = 1.dp.toPx()
+            )
+            coords.forEachIndexed { i, (_, _) ->
+                val x = coords[i].first
+                // etiqueta en yAxis + offset
+                drawContext.canvas.nativeCanvas.drawText(
+                    pts[i].second.toInt().toString(),
+                    x,
+                    yAxis + 14.dp.toPx(),
+                    android.graphics.Paint().apply {
                         color = axisColor.toArgb()
                         textSize = 10.sp.toPx()
                         textAlign = android.graphics.Paint.Align.CENTER
                         isAntiAlias = true
                     }
-                    drawText(
-                        text,
-                        x,
-                        size.height - paddingY + 14.dp.toPx(),
-                        paint
-                    )
-                }
+                )
             }
         }
     }
