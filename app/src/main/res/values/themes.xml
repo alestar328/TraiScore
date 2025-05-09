@@ -1,8 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 1) Launch/Splash theme -->
+    <style name="Theme.TraiScore.Splash" parent="Theme.SplashScreen">
+        <!-- background color while the icon animates -->
+        <item name="windowSplashScreenBackground">@color/black</item>
+        <!-- your logo or Lottie drawable -->
+        <item name="windowSplashScreenAnimatedIcon">@drawable/splashiness</item>
+        <!-- how long the default fade-out takes (ms) -->
+        <item name="windowSplashScreenAnimationDuration">3000</item>
+        <!-- when the splash is over, switch to your real theme: -->
+        <item name="postSplashScreenTheme">@style/Theme.TraiScore</item>
+    </style>
+
+    <!-- 2) Your normal app theme, no splash attributes here -->
     <style name="Theme.TraiScore" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowSplashScreenBackground">@color/black</item>
-        <item name="android:windowSplashScreenAnimatedIcon">@drawable/splashiness</item>
-        <item name="android:windowSplashScreenAnimationDuration">3000</item>
+        <!-- all your usual colors, typography, etc. -->
     </style>
 </resources>
