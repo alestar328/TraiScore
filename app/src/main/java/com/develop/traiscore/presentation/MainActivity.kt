@@ -34,6 +34,7 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenParsingException
 import com.google.firebase.Firebase
 import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
 import dagger.hilt.android.AndroidEntryPoint
@@ -84,9 +85,15 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun AppNavigation(navController: NavHostController) {
+    val auth = FirebaseAuth.getInstance()
+    val startRoute = if (auth.currentUser != null) {
+        NavigationRoutes.Main.route
+    } else {
+        NavigationRoutes.Login.route
+    }
     NavHost(
         navController = navController,
-        startDestination = NavigationRoutes.Login.route
+        startDestination = startRoute
     ) {
         composable(NavigationRoutes.Login.route) {
             LoginScreenRoute(

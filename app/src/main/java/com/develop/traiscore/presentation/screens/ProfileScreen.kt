@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,13 +21,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.NavigationBar
-import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -49,6 +49,8 @@ import androidx.compose.ui.unit.sp
 import com.develop.traiscore.R
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBackgroundDay
+import com.develop.traiscore.presentation.theme.traiBlue
+import com.develop.traiscore.presentation.theme.traiOrange
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -135,9 +137,23 @@ fun ProfileScreen() {
             Spacer(Modifier.height(24.dp))
 
             // Botones grandes
-            ProfileButton(text = "Mis medidas", onClick = { /* … */ })
+            ProfileButton(
+                text = "Mis medidas",
+                containerColor = traiBlue,
+                contentColor = Color.Black,
+                onClick = { /* … */ })
             Spacer(Modifier.height(12.dp))
-            ProfileButton(text = "Favoritos", onClick = { /* … */ })
+            ProfileButton(
+                text = "Favoritos",
+                containerColor = traiOrange,
+                contentColor = Color.Black,
+                onClick = { /* … */ })
+            Spacer(Modifier.height(12.dp))
+            ProfileButton(
+                text = "Cerrar sesion",
+                containerColor = Color.Red,
+                contentColor = Color.White,
+                onClick = { /* … */ })
         }
     }
 }
@@ -151,17 +167,30 @@ private fun ProfileStat(count: String, label: String) {
 }
 
 @Composable
-private fun ProfileButton(text: String, onClick: () -> Unit) {
-    Box(
-        modifier = Modifier
+fun ProfileButton(
+    text: String,
+    modifier: Modifier = Modifier,
+    containerColor: Color = Color(0xFFE0E0E0),
+    contentColor: Color = Color.Black,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier
             .fillMaxWidth(0.9f)
-            .height(56.dp)
-            .clip(RoundedCornerShape(12.dp))
-            .background(Color(0xFFE0E0E0))
-            .clickable(onClick = onClick),
-        contentAlignment = Alignment.Center
+            .height(56.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = containerColor,
+            contentColor = contentColor
+        ),
+        contentPadding = PaddingValues() // centers the text nicely
     ) {
-        Text(text = text, fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+        Text(
+            text = text,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.SemiBold
+        )
     }
 }
 
