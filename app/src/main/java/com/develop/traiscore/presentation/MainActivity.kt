@@ -89,11 +89,17 @@ fun AppNavigation(navController: NavHostController) {
         startDestination = NavigationRoutes.Login.route
     ) {
         composable(NavigationRoutes.Login.route) {
-            LoginScreen(onLoginClicked = {
-                navController.navigate(NavigationRoutes.Main.route) {
-                    popUpTo(NavigationRoutes.Login.route) { inclusive = true }
+            LoginScreenRoute(
+                onLoginSuccess = {
+                    navController.navigate(NavigationRoutes.Main.route) {
+                        popUpTo(NavigationRoutes.Login.route) { inclusive = true }
+                    }
+                },
+                onRegisterClick = {
+                    // si tienes una ruta para crear cuenta, navega aquí
+                    navController.navigate(NavigationRoutes.Register.route)
                 }
-            })
+            )
         }
         composable(NavigationRoutes.Main.route) {
             MainScreen(navController = navController)
@@ -114,29 +120,6 @@ class AuthenticationManager(
 ) {
     private val auth = Firebase.auth
 
-    fun createAccountWithEmail(email: String, password: String): Flow<AuthResponse> = callbackFlow {
-        auth.createUserWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    trySend(AuthResponse.Success)
-                } else {
-                    trySend(AuthResponse.Error(message = task.exception?.message ?: ""))
-                }
-
-            }
-    }
-
-    fun loginWithEmail(email: String, password: String): Flow<AuthResponse> = callbackFlow {
-        auth.signInWithEmailAndPassword(email, password)
-            .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
-                    trySend(AuthResponse.Success)
-                } else {
-                    trySend(AuthResponse.Error(message = task.exception?.message ?: ""))
-                }
-            }
-        awaitClose()
-    }
 
     private fun createNonce(): String {
         val rawNonce = UUID.randomUUID().toString()

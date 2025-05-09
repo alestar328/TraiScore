@@ -5,5 +5,6 @@ sealed class NavigationRoutes(val route: String) {
     object Main : NavigationRoutes("main")
     object Routines : NavigationRoutes("routines")
     object CreateRoutine : NavigationRoutes("createroutine")
+    object Register : NavigationRoutes("register")
 
 }

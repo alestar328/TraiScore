@@ -13,24 +13,15 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
@@ -41,37 +32,21 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.develop.traiscore.R
-import com.develop.traiscore.presentation.AuthResponse
-import com.develop.traiscore.presentation.AuthenticationManager
-import com.develop.traiscore.presentation.components.LoginTextField
 import com.develop.traiscore.presentation.components.SocialMediaLogIn
 import com.develop.traiscore.presentation.theme.Black
-import com.develop.traiscore.presentation.theme.BlueGray
 import com.develop.traiscore.presentation.theme.Roboto
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
-import kotlinx.coroutines.launch
 
 @Composable
-fun LoginScreen(onLoginClicked: () -> Unit){
-
-    var email by remember{
-        mutableStateOf("")
-    }
-
-    var password by remember{
-        mutableStateOf("")
-    }
-    var errorMsg by remember { mutableStateOf<String?>(null) }
-
-    val context = LocalContext.current
-
-    val authenticationManager = remember {
-        AuthenticationManager(context)
-    }
-
-    val coroutineScope = rememberCoroutineScope()
-
-
+fun LoginScreen(
+    email: String,
+    onEmailChange: (String) -> Unit,
+    password: String,
+    onPasswordChange: (String) -> Unit,
+    errorMsg: String?,
+    onGoogleClick: () -> Unit,
+    onRegisterClick: () -> Unit
+){
 
     Surface {
         Column(modifier = Modifier.fillMaxSize()) {
@@ -83,47 +58,9 @@ fun LoginScreen(onLoginClicked: () -> Unit){
                     .fillMaxSize()
                     .padding(horizontal = 30.dp)
             ) {
-                LoginSection(
-                    email = email,
-                    onEmailChange = { email = it },
-                    password = password,
-                    onPasswordChange = { password = it },
-                    onLoginClick = {
-                        // 3) Al hacer clic, lanzamos corrutina y recogemos el flujo
-                        coroutineScope.launch {
-                            authenticationManager.loginWithEmail(email, password)
-                                .collect { response ->
-                                    when (response) {
-                                        AuthResponse.Success -> onLoginClicked()
-                                        is AuthResponse.Error -> {
-                                            errorMsg = response.message
-                                        }
-                                    }
-                                }
-                        }
-                    }
-                )
-                Spacer(modifier = Modifier.height(30.dp))
-                errorMsg?.let { msg ->
-                    Text(
-                        text = msg,
-                        color = Color.Red,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
-                }
-                SocialMediaSection(
-                    onGoogleClick = {
-                        coroutineScope.launch {
-                            authenticationManager.signInWithGoogle()
-                                .collect { response: AuthResponse ->
-                                    when (response) {
-                                        AuthResponse.Success -> onLoginClicked()
-                                        is AuthResponse.Error -> errorMsg = response.message
-                                    }
-                                }
-                        }
-                    }
-                )
+
+                SocialMediaSection(onGoogleClick = onGoogleClick)
+
 
                 val uiColor = if (isSystemInDarkTheme()) Color.White else Black
 
@@ -168,11 +105,7 @@ private fun SocialMediaSection(
     onGoogleClick: () -> Unit
 ) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(
-            text = "O continúa con",
-            style = MaterialTheme.typography.labelMedium.copy(color = Color(0xFF64748B))
-        )
-        Spacer(modifier = Modifier.height(20.dp))
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
@@ -185,59 +118,12 @@ private fun SocialMediaSection(
                 onGoogleClick()
             }
             Spacer(modifier = Modifier.width(20.dp))
-            SocialMediaLogIn(
-                icon = R.drawable.facebook,
-                text = "Facebook",
-                modifier = Modifier.weight(1f)
-            ) {
-                // Aquí podrías llamar a otro método: authManager.signInWithFacebook()
-            }
+
         }
     }
 }
 
 
-@Composable
-private fun LoginSection(
-    email: String,
-    onEmailChange: (String) -> Unit,
-    password: String,
-    onPasswordChange: (String) -> Unit,
-    onLoginClick: () -> Unit
-) {
-    LoginTextField(
-        label = "Email",
-        value = email,
-        onValueChange = onEmailChange,
-        trailing = "",
-        modifier = Modifier.fillMaxWidth()
-    )
-    Spacer(modifier = Modifier.height(15.dp))
-    LoginTextField(
-        label = "Password",
-        value = password,
-        onValueChange = onPasswordChange,
-        trailing = "Forgot?",
-        modifier = Modifier.fillMaxWidth()
-    )
-    Spacer(modifier = Modifier.height(20.dp))
-    Button(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(40.dp),
-        onClick = onLoginClick,
-        colors = ButtonDefaults.buttonColors(
-            containerColor = if (isSystemInDarkTheme()) BlueGray else Black,
-            contentColor = Color.White
-        ),
-        shape = RoundedCornerShape(4.dp)
-    ) {
-        Text(
-            text = "Log in",
-            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.Medium)
-        )
-    }
-}
 
 @Composable
 private fun TopSection() {
@@ -300,6 +186,14 @@ private fun TopSection() {
 @Composable
 fun LoginScreenPreview() {
     TraiScoreTheme {
-        LoginScreen(onLoginClicked = {})
+        LoginScreen(
+            email = "",
+            onEmailChange = {},
+            password = "",
+            onPasswordChange = {},
+            errorMsg = null,
+            onGoogleClick = {},
+            onRegisterClick = {}
+        )
     }
 }
