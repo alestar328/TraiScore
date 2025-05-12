@@ -205,7 +205,7 @@ fun ContentScreen(
             }
         }
 
-        4 -> ProfileScreen()
+        4 -> ProfileScreen(navController = navController)
     }
 
 }

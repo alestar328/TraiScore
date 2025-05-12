@@ -22,6 +22,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
 import com.develop.traiscore.R
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
+import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -45,7 +46,7 @@ import java.util.UUID
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
-    private lateinit var googleSignInClient: GoogleSignInClient
+    lateinit var googleSignInClient: GoogleSignInClient
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -114,9 +115,13 @@ fun AppNavigation(navController: NavHostController) {
                 navController = navController
             )
         }
+        composable(NavigationRoutes.Measurements.route) {
+            BodyMeasurementsScreen(onBack = { navController.popBackStack() })
+        }
 
     }
 }
+
 
 
 class AuthenticationManager(

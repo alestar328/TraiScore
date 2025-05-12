@@ -278,7 +278,6 @@ fun CreateRoutineScreen(
 @Preview(showBackground = true)
 @Composable
 fun CreateRoutineScreenPreview() {
-    val context = LocalContext.current
     TraiScoreTheme {
         CreateRoutineScreen(
             onBack = { /* Aquí iría popBackStack() en tu app real */ },

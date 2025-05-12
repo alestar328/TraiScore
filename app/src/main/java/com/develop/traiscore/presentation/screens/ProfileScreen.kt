@@ -35,28 +35,44 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.develop.traiscore.R
+import com.develop.traiscore.presentation.MainActivity
+import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBackgroundDay
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.theme.traiOrange
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen() {
+fun ProfileScreen(
+    navController: NavHostController
+) {
     var selectedTab by remember { mutableStateOf(2) /* 0:Explorar,1:Mapa,2:Perfil */ }
-
+    val auth = FirebaseAuth.getInstance()
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    val googleSignInClient = remember {
+        val mainActivity = context as? MainActivity
+        mainActivity?.googleSignInClient
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -141,7 +157,10 @@ fun ProfileScreen() {
                 text = "Mis medidas",
                 containerColor = traiBlue,
                 contentColor = Color.Black,
-                onClick = { /* … */ })
+                onClick = {
+                    navController.navigate(NavigationRoutes.Measurements.route)
+
+                })
             Spacer(Modifier.height(12.dp))
             ProfileButton(
                 text = "Favoritos",
@@ -153,7 +172,17 @@ fun ProfileScreen() {
                 text = "Cerrar sesion",
                 containerColor = Color.Red,
                 contentColor = Color.White,
-                onClick = { /* … */ })
+                onClick = {
+                    scope.launch {
+                        auth.signOut()
+                        googleSignInClient?.signOut()?.addOnCompleteListener {
+                            navController.navigate(NavigationRoutes.Login.route) {
+                                popUpTo(navController.graph.id) { inclusive = true }
+                            }
+                        }
+                    }
+                })
+
         }
     }
 }
@@ -233,6 +262,7 @@ private fun HexagonBadge(number: String, modifier: Modifier = Modifier) {
 @Composable
 fun ProfileScreenPreview() {
     TraiScoreTheme {
-        ProfileScreen()
+        val navController = rememberNavController()
+        ProfileScreen(navController = navController)
     }
 }
