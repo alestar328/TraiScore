@@ -1,6 +1,5 @@
 package com.develop.traiscore.data.local.entity
 
-import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import java.util.Date
@@ -9,7 +8,7 @@ import java.util.Date
 @Entity(tableName = "workout_entry")
 data class WorkoutEntry(
     @PrimaryKey(autoGenerate = true) val id: Int = 0, // Clave primaria
-    val firebaseId: String? = null, // <-- Este será el ID real de Firebase
+    val uid: String? = null, // <-- Este será el ID real de Firebase
     val exerciseId: Int,
     val title: String,
     val weight: Double,

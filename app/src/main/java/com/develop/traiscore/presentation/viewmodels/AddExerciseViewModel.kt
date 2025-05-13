@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,7 +48,14 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
         weight: Double,
         rir: Int
     ) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId == null) {
+            println("❌ Usuario no autenticado")
+            return
+        }
+
         val workoutData = hashMapOf(
+            "uid" to userId,
             "title" to title,
             "reps" to reps,
             "weight" to weight,
@@ -55,15 +63,17 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
             "timestamp" to Date()
         )
 
-        Firebase.firestore.collection("workoutEntries")
+        // Guardar la entrada de entrenamiento en la subcolección workoutEntries del usuario
+        Firebase.firestore.collection("users")
+            .document(userId)  // Usamos el UID del usuario autenticado
+            .collection("workoutEntries")
             .add(workoutData)
             .addOnSuccessListener {
                 println("✅ Entrada de entrenamiento guardada con ID: ${it.id}")
                 updateLastUsedExercise(title)
-
             }
-            .addOnFailureListener {
-                println("❌ Error al guardar entrada: ${it.message}")
+            .addOnFailureListener { exception ->
+                println("❌ Error al guardar entrada: ${exception.message}")
             }
     }
     fun updateLastUsedExercise(name: String) {

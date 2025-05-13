@@ -7,6 +7,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import java.util.Date
 import androidx.compose.runtime.State
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.Query
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -22,7 +23,15 @@ class WorkoutEntryViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun listenToWorkoutEntries() {
-        Firebase.firestore.collection("workoutEntries")
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId == null) {
+            println("❌ Usuario no autenticado")
+            return
+        }
+
+        Firebase.firestore.collection("users")
+            .document(userId)  // Usamos el UID del usuario autenticado
+            .collection("workoutEntries")
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
@@ -38,7 +47,7 @@ class WorkoutEntryViewModel @Inject constructor() : ViewModel() {
                     val timestamp = doc.getDate("timestamp") ?: Date()
 
                     WorkoutEntry(
-                        firebaseId = doc.id, // Guardamos el ID real
+                        uid = doc.id,
                         id = doc.id.hashCode(),
                         title = title,
                         reps = reps,
@@ -53,6 +62,7 @@ class WorkoutEntryViewModel @Inject constructor() : ViewModel() {
                 _entries.value = result
             }
     }
+
 
     fun deleteWorkoutEntry(firebaseId: String) {
         Firebase.firestore.collection("workoutEntries").document(firebaseId)

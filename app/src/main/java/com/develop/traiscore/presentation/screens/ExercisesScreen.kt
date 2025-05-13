@@ -40,7 +40,6 @@ import com.develop.traiscore.presentation.components.WorkoutCardList
 import com.develop.traiscore.presentation.theme.traiBackgroundDay
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
-import java.io.Console
 import java.util.Date
 
 
@@ -147,7 +146,7 @@ fun ExercisesScreen(
                                     showDialog.value = true
                                 },
                                 onDeleteClick = { workout ->
-                                    workout.firebaseId?.let { viewModel.deleteWorkoutEntry(it) }
+                                    workout.uid?.let { viewModel.deleteWorkoutEntry(it) }
                                 }
                             )
                         }
@@ -164,7 +163,7 @@ fun ExercisesScreen(
                         workoutToEdit = selectedEntry.value,
                         onDismiss = { showDialog.value = false },
                         onSave = { updatedData ->
-                            selectedEntry.value?.firebaseId?.let { id ->
+                            selectedEntry.value?.uid?.let { id ->
                                 viewModel.editWorkoutEntry(id, updatedData)
                                 showDialog.value = false
                             }
