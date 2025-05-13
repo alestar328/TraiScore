@@ -116,7 +116,8 @@ fun AppNavigation(navController: NavHostController) {
             )
         }
         composable(NavigationRoutes.Measurements.route) {
-            BodyMeasurementsScreen(onBack = { navController.popBackStack() })
+            BodyMeasurementsScreen(onBack = { navController.popBackStack() },
+                navController = navController)
         }
 
     }

@@ -31,6 +31,7 @@ import androidx.navigation.compose.rememberNavController
 import com.develop.traiscore.presentation.components.NavItem
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.screens.AddExerciseDialogContent
+import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.screens.ExercisesScreen
 import com.develop.traiscore.presentation.screens.FirebaseRoutineScreen
@@ -146,6 +147,9 @@ fun MainScreen(
             onCreateRoutine = {
                 routineScreenState = ScreenState.CREATE_ROUTINE_SCREEN // ✅ estado se cambia aquí
             },
+            onMeasurementsClick = {
+                routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
+            },
             routineViewModel = routineViewModel // Pass the viewModel here
 
         )
@@ -165,7 +169,14 @@ fun MainScreen(
         }
     }
 }
+sealed class ScreenState {
+    object MAIN_ROUTINE_MENU : ScreenState()
+    data class FIREBASE_ROUTINE_SCREEN(val documentId: String, val selectedType: String) :
+        ScreenState()
+    object CREATE_ROUTINE_SCREEN : ScreenState() // 👈 nuevo
+    object BODY_MEASUREMENTS_SCREEN : ScreenState()
 
+}
 @Composable
 fun ContentScreen(
     modifier: Modifier = Modifier,
@@ -176,6 +187,7 @@ fun ContentScreen(
     onRoutineSelected: (String, String) -> Unit,  // <- ahora acepta docId y type
     onBackToRoutineMenu: () -> Unit,
     onCreateRoutine: () -> Unit,
+    onMeasurementsClick: () -> Unit,
     routineViewModel: RoutineViewModel
 ) {
     when (selectedIndex) {
@@ -202,20 +214,22 @@ fun ContentScreen(
                     onBack = onBackToRoutineMenu,
                     navController = navController
                 )
+                else -> Unit
             }
         }
-
-        4 -> ProfileScreen(navController = navController)
+        4 -> {
+            when (routineScreenState) {
+                is ScreenState.BODY_MEASUREMENTS_SCREEN -> BodyMeasurementsScreen(
+                    onBack = onBackToRoutineMenu,
+                    navController = navController
+                )
+                else -> ProfileScreen(
+                    navController = navController,
+                    onMeasurementsClick = onMeasurementsClick
+                )
+            }
+        }
     }
-
-}
-
-sealed class ScreenState {
-    object MAIN_ROUTINE_MENU : ScreenState()
-    data class FIREBASE_ROUTINE_SCREEN(val documentId: String, val selectedType: String) :
-        ScreenState()
-    object CREATE_ROUTINE_SCREEN : ScreenState() // 👈 nuevo
-
 }
 
 @Preview(

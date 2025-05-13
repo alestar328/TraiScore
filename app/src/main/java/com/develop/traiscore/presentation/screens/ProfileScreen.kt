@@ -63,7 +63,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
-    navController: NavHostController
+    navController: NavHostController,
+    onMeasurementsClick: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf(2) /* 0:Explorar,1:Mapa,2:Perfil */ }
     val auth = FirebaseAuth.getInstance()
@@ -157,10 +158,8 @@ fun ProfileScreen(
                 text = "Mis medidas",
                 containerColor = traiBlue,
                 contentColor = Color.Black,
-                onClick = {
-                    navController.navigate(NavigationRoutes.Measurements.route)
-
-                })
+                onClick = onMeasurementsClick
+            )
             Spacer(Modifier.height(12.dp))
             ProfileButton(
                 text = "Favoritos",
@@ -252,17 +251,3 @@ private fun HexagonBadge(number: String, modifier: Modifier = Modifier) {
     }
 }
 
-@Preview(
-    name = "ProfileScreen Preview",
-    showBackground = true,
-    backgroundColor = 0xFFF5F5F5, // mismo gris claro de fondo
-    widthDp = 360,
-    heightDp = 640
-)
-@Composable
-fun ProfileScreenPreview() {
-    TraiScoreTheme {
-        val navController = rememberNavController()
-        ProfileScreen(navController = navController)
-    }
-}

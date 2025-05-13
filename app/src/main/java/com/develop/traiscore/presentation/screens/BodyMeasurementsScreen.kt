@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -36,6 +38,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.develop.traiscore.presentation.theme.traiBlue
 
 
@@ -43,7 +46,8 @@ import com.develop.traiscore.presentation.theme.traiBlue
 @Composable
 fun BodyMeasurementsScreen(
     modifier: Modifier = Modifier,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    navController: NavHostController
 ) {
     var selectedGender by remember { mutableStateOf("Male") }
     val genders = listOf("Male", "Female", "Other")
@@ -53,71 +57,79 @@ fun BodyMeasurementsScreen(
         mutableStateMapOf(
             "Height" to "180",
             "Weight" to "75",
-            "Neck"   to "40",
-            "Chest"  to "100",
-            "Arms"   to "35",
-            "Waist"  to "80",
-            "Thigh"  to "60",
-            "Calf"   to "40"
+            "Neck" to "40",
+            "Chest" to "100",
+            "Arms" to "35",
+            "Waist" to "80",
+            "Thigh" to "60",
+            "Calf" to "40"
         )
     }
-
-    Column( // Usamos Column en lugar de Scaffold
-        modifier = modifier.fillMaxSize()
-    ) {
-        TopAppBar(
-            title = { Text("Body Measurements", fontSize = 20.sp , color = traiBlue)},
-            navigationIcon = {
-                IconButton(onClick = onBack) {
-                    Icon(Icons.Filled.ArrowBack,
-                        contentDescription = "Back",)
-                }
-            },
-            colors = TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Gray
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Body Measurements", fontSize = 20.sp, color = traiBlue) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(
+                            Icons.Filled.ArrowBack,
+                            contentDescription = "Back",
+                        )
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = Color.Gray
+                )
             )
-        )
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 24.dp),
-            contentPadding = PaddingValues(vertical = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(24.dp)
-        ) {
-            // 1) Gender selector
-            item {
-                Text("Gender",
-                    color = Color.Black,
-                    style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                    genders.forEach { gender ->
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            RadioButton(
-                                selected = (selectedGender == gender),
-                                onClick = { selectedGender = gender }
-                            )
-                            Spacer(Modifier.width(4.dp))
-                            Text(gender,
-                                color = Color.Black)
+        },
+        content = { innerPadding ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .navigationBarsPadding()
+                    .padding(innerPadding),
+                contentPadding = PaddingValues(vertical = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+            ) {
+                // 1) Gender selector
+                item {
+                    Text(
+                        "Gender",
+                        color = Color.Black,
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(Modifier.height(8.dp))
+                    Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                        genders.forEach { gender ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(
+                                    selected = (selectedGender == gender),
+                                    onClick = { selectedGender = gender }
+                                )
+                                Spacer(Modifier.width(4.dp))
+                                Text(
+                                    gender,
+                                    color = Color.Black
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            // 2) Measurement fields
-            items(measurements.entries.toList()) { (label, value) ->
-                val unit = if (label == "Weight") "kg" else "cm"
-                OutlinedTextField(
-                    value = value,
-                    onValueChange = { new -> measurements[label] = new },
-                    label = { Text(label) },
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    trailingIcon = { Text(unit) },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                // 2) Measurement fields
+                items(measurements.entries.toList()) { (label, value) ->
+                    val unit = if (label == "Weight") "kg" else "cm"
+                    OutlinedTextField(
+                        value = value,
+                        onValueChange = { new -> measurements[label] = new },
+                        label = { Text(label) },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        trailingIcon = { Text(unit) },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
-    }
+    )
 }
