@@ -35,6 +35,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.auth.auth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
@@ -121,72 +122,4 @@ fun AppNavigation(navController: NavHostController) {
         }
 
     }
-}
-
-
-
-class AuthenticationManager(
-    val context: Context
-) {
-    private val auth = Firebase.auth
-
-
-    private fun createNonce(): String {
-        val rawNonce = UUID.randomUUID().toString()
-        val bytes = rawNonce.toByteArray()
-        val md = MessageDigest.getInstance("SHA-256")
-        val digest = md.digest(bytes)
-
-        return digest.fold("") { str, it ->
-            str + "%02x".format(it)
-
-        }
-    }
-
-    fun signInWithGoogle(): Flow<AuthResponse> = callbackFlow {
-        try {
-            val request = GetCredentialRequest.Builder()
-                .addCredentialOption(
-                    GetGoogleIdOption.Builder()
-                        .setServerClientId(context.getString(R.string.web_client_id))
-                        .build()
-                )
-                .build()
-
-            val response = CredentialManager.create(context)
-                .getCredential(context, request)
-
-            // detecta directamente el credential que retorna la librería
-            val googleCred = response.credential as? GoogleIdTokenCredential
-                ?: run {
-                    trySend(AuthResponse.Error("Credencial Google no reconocida"))
-                    close()
-                    return@callbackFlow
-                }
-
-            // extrae el ID token y pásalo a Firebase
-            val firebaseCred = GoogleAuthProvider
-                .getCredential(googleCred.idToken, null)
-
-            auth.signInWithCredential(firebaseCred)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful) {
-                        trySend(AuthResponse.Success)
-                    } else {
-                        trySend(AuthResponse.Error(task.exception?.message ?: "Error desconocido"))
-                    }
-                    close()  // cerramos el flujo tras enviar el resultado
-                }
-        } catch (e: Exception) {
-            trySend(AuthResponse.Error(e.message ?: "Excepción inesperada"))
-            close()
-        }
-
-        awaitClose { /* nada que limpiar */ }
-    }
-}
-
-interface AuthResponse {
-    data object Success : AuthResponse
-    data class Error(val message: String) : AuthResponse
 }

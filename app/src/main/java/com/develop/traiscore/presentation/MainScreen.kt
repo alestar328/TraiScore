@@ -6,7 +6,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -29,7 +28,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.develop.traiscore.presentation.components.NavItem
-import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.screens.AddExerciseDialogContent
 import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
@@ -37,12 +35,10 @@ import com.develop.traiscore.presentation.screens.ExercisesScreen
 import com.develop.traiscore.presentation.screens.FirebaseRoutineScreen
 import com.develop.traiscore.presentation.screens.ProfileScreen
 import com.develop.traiscore.presentation.screens.RoutineMenu
-import com.develop.traiscore.presentation.screens.SettingsScreen
 import com.develop.traiscore.presentation.screens.StatScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.theme.primaryBlack
-import com.develop.traiscore.presentation.theme.primaryWhite
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
