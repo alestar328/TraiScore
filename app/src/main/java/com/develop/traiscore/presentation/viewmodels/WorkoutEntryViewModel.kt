@@ -65,7 +65,16 @@ class WorkoutEntryViewModel @Inject constructor() : ViewModel() {
 
 
     fun deleteWorkoutEntry(firebaseId: String) {
-        Firebase.firestore.collection("workoutEntries").document(firebaseId)
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: run {
+            println("❌ Usuario no autenticado")
+            return
+        }
+
+        Firebase.firestore
+            .collection("users")
+            .document(userId)
+            .collection("workoutEntries")
+            .document(firebaseId)
             .delete()
             .addOnSuccessListener {
                 println("✅ Documento eliminado correctamente.")
@@ -76,7 +85,16 @@ class WorkoutEntryViewModel @Inject constructor() : ViewModel() {
     }
 
     fun editWorkoutEntry(firebaseId: String, newData: Map<String, Any>) {
-        Firebase.firestore.collection("workoutEntries").document(firebaseId)
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId == null) {
+            println("❌ Usuario no autenticado")
+            return
+        }
+        Firebase.firestore
+            .collection("users")
+            .document(userId)
+            .collection("workoutEntries")
+            .document(firebaseId)
             .update(newData)
             .addOnSuccessListener {
                 println("✅ Documento actualizado correctamente.")

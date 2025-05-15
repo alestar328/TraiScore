@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.develop.traiscore.core.TimeRange
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.Query
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -70,10 +71,18 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun fetchExerciseOptions() {
+        // Queremos tanto logging como un posible estado de error en UI
         db.collection("exercises")
+            .orderBy("name", Query.Direction.ASCENDING)
             .get()
             .addOnSuccessListener { snap ->
-                _exerciseOptions.value = snap.documents.mapNotNull { it.getString("name") }
+                _exerciseOptions.value = snap.documents
+                    .mapNotNull { it.getString("name") }
+            }
+            .addOnFailureListener { e ->
+                Log.e("StatsVM", "No se pudo cargar la lista de ejercicios", e)
+                // Aquí podrías actualizar un StateFlow de error, p.ej.:
+                // _loadError.value = "Error al cargar ejercicios"
             }
     }
 
@@ -83,7 +92,15 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
 
 
     private fun loadAllProgressFor(exerciseName: String) {
-        db.collection("workoutEntries")
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId == null) {
+            Log.e("StatsVM", "Usuario no autenticado, no puedo cargar progreso")
+            return
+        }
+
+        db.collection("users")
+            .document(userId)
+            .collection("workoutEntries")
             .whereEqualTo("title", exerciseName)
             .orderBy("timestamp")
             .limit(10)
@@ -93,7 +110,6 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                 val wData = mutableListOf<Pair<String, Float>>()
                 val rData = mutableListOf<Pair<String, Float>>()
                 val allRir = mutableListOf<Int>()
-                val docs = snap.documents.reversed()
 
                 for (doc in snap.documents) {
                     val ts = doc.getDate("timestamp") ?: continue
@@ -131,7 +147,14 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun calculateTotalWeightLifted(exerciseName: String) {
-        db.collection("workoutEntries")
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId == null) {
+            Log.e("StatsVM", "Usuario no autenticado, no puedo calcular total weight")
+            return
+        }
+        db.collection("users")
+            .document(userId)
+            .collection("workoutEntries")
             .whereEqualTo("title", exerciseName)
             .get()
             .addOnSuccessListener { snap ->
@@ -147,7 +170,14 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun fetchLastWorkoutEntry() {
-        db.collection("workoutEntries")
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId == null) {
+            Log.e("StatsVM", "Usuario no autenticado, no puedo cargar la última entrada")
+            return
+        }
+        db.collection("users")
+            .document(userId)
+            .collection("workoutEntries")
             .orderBy("timestamp", Query.Direction.DESCENDING)
             .limit(1)
             .get()
