@@ -56,6 +56,8 @@ fun CreateRoutineScreen(
     navController: NavHostController,
     viewModel: AddExerciseViewModel = hiltViewModel()
 ) {
+    val context = LocalContext.current
+
     var exercises by remember {
         mutableStateOf(emptyList<SimpleExercise>())
     }
@@ -98,30 +100,48 @@ fun CreateRoutineScreen(
                     // Botón de "Guardar rutina"
                     ExtendedFloatingActionButton(
                         onClick = {
-                            viewModel.saveSectionToRoutine(
-                                routineId = routineId,
-                                sectionType = selectedCategory!!,
-                                exercises = exercises
-                            ) { success, errorMsg ->
-                                if (success) {
+                            viewModel.createRoutine(
+                                clientName = workoutName,
+                                trainerId = null // o tu lógica de trainerId
+                            ) { newRoutineId, createError ->
+                                if (createError != null || newRoutineId == null) {
                                     Toast.makeText(
-                                        navController.context,
-                                        "Rutina guardada con éxito",
+                                        context,
+                                        "Error creando rutina: $createError",
                                         Toast.LENGTH_SHORT
                                     ).show()
-                                    navController.popBackStack()
-                                    println("Sección guardada correctamente")
-                                } else {
-                                    Toast.makeText(
-                                        navController.context,
-                                        "Error al guardar: $errorMsg",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                    println("Error al guardar: $errorMsg")
+                                    return@createRoutine
+                                }
+                                viewModel.saveSectionToRoutine(
+                                    routineId = routineId,
+                                    sectionType = selectedCategory!!,
+                                    exercises = exercises
+                                ) { success, errorMsg ->
+                                    if (success) {
+                                        Toast.makeText(
+                                            navController.context,
+                                            "Rutina guardada con éxito",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        navController.popBackStack()
+                                        println("Sección guardada correctamente")
+                                    } else {
+                                        Toast.makeText(
+                                            navController.context,
+                                            "Error al guardar: $errorMsg",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        println("Error al guardar: $errorMsg")
+                                    }
                                 }
                             }
                         },
-                        icon = { Icon(Icons.Default.Check, contentDescription = "Guardar rutina") },
+                        icon = {
+                            Icon(
+                                Icons.Default.Check,
+                                contentDescription = "Guardar rutina"
+                            )
+                        },
                         text = { Text("Guardar rutina") },
                         containerColor = Color.Green,
                         contentColor = Color.Black

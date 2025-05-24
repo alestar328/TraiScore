@@ -42,7 +42,7 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.R
 import com.develop.traiscore.data.firebaseData.saveExerciseToFirebase
-import com.develop.traiscore.presentation.components.AddExerciseDialog
+import com.develop.traiscore.presentation.components.AddExerciseDialogToDB
 import com.develop.traiscore.presentation.components.AutoResizedText
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
@@ -54,7 +54,7 @@ fun SettingsScreen(modifier: Modifier = Modifier) {
     val viewModel: AddExerciseViewModel = hiltViewModel()
 
     if (showDialog) {
-        AddExerciseDialog(
+        AddExerciseDialogToDB(
             onDismiss = { showDialog = false },
             onSave = { name, category ->
                 saveExerciseToFirebase(name, category)

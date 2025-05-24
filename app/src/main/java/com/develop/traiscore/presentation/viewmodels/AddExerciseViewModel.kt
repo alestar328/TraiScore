@@ -20,8 +20,13 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
         private set
     var lastUsedExerciseName by mutableStateOf<String?>(null)
         private set
+    private val userId = FirebaseAuth.getInstance().currentUser!!.uid
 
-    private val routinesRef = Firebase.firestore.collection("routines")
+    private val routinesRef = Firebase.firestore
+        .collection("users")
+        .document(userId)
+        .collection("routines")
+
 
     private val firebaseCategoryToEnum = mapOf(
         "Pecho" to DefaultCategoryExer.CHEST,
@@ -102,6 +107,23 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
             .addOnFailureListener { exception ->
                 println("❌ Error al refrescar ejercicios: ${exception.message}")
             }
+    }
+    fun createRoutine(
+        clientName: String,
+        trainerId: String? = null,
+        onComplete: (routineId: String?, error: String?) -> Unit
+    ) {
+        val docRef = routinesRef.document()
+        val base = mapOf(
+            "userId"     to userId,
+            "trainerId"  to trainerId,
+            "clientName" to clientName,
+            "createdAt"  to com.google.firebase.Timestamp.now(),
+            "sections"   to emptyList<Map<String,Any>>()
+        )
+        docRef.set(base)
+            .addOnSuccessListener { onComplete(docRef.id, null) }
+            .addOnFailureListener { e -> onComplete(null, e.message) }
     }
     fun saveSectionToRoutine(
         routineId: String,

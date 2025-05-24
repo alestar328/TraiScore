@@ -22,14 +22,21 @@ fun FilterableDropdown(
 ) {
     var expanded by remember { mutableStateOf(false) }
 
-    var filterText by remember { mutableStateOf(TextFieldValue(selectedValue.ifBlank { "" })) }
+    var filterText by remember { mutableStateOf(TextFieldValue("")) }
 
+    LaunchedEffect(selectedValue) {
+        filterText = if (selectedValue.isNotBlank())
+            TextFieldValue(selectedValue)
+        else
+            TextFieldValue("")
+
+    }
     val filteredItems = items.filter {
         it.lowercase().startsWith(filterText.text.lowercase())
     }
 
     ExposedDropdownMenuBox(
-        expanded = expanded && filteredItems.isNotEmpty(),
+        expanded = expanded,
         modifier = modifier,
         onExpandedChange = { expanded = !expanded },
     ) {

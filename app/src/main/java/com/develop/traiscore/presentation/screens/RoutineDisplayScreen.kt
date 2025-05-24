@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,10 +23,15 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -56,18 +62,37 @@ fun RoutineScreen(
 ) {
     val routineViewModel: RoutineViewModel = viewModel()
     val context = LocalContext.current
+    var showEmptyDialog by remember { mutableStateOf(false) }
 
     // Inicializa el estado del ViewModel con los datos iniciales solo una vez
     LaunchedEffect(routineData) {
         if (routineViewModel.routineData == null) {
             routineViewModel.routineData = routineData
         }
+        // Si no hay ninguna sección en la rutina, mostramos el diálogo
+        if (routineData.routine.isEmpty()) {
+            showEmptyDialog = true
+        }
     }
+
 
     // Si el ViewModel no tiene datos aún, muestra un mensaje de carga
     val currentRoutineData  = routineViewModel.routineData
     if (currentRoutineData  == null) {
         Text("Cargando datos...")
+        return
+    }
+    if (showEmptyDialog) {
+        AlertDialog(
+            onDismissRequest = { onBack() },
+            title = { Text("Sin rutinas") },
+            text = { Text("No tienes rutinas guardadas") },
+            confirmButton = {
+                TextButton(onClick = { onBack() }) {
+                    Text("Aceptar")
+                }
+            }
+        )
         return
     }
     val filteredExercises = currentRoutineData.routine[selectedType] ?: emptyList()

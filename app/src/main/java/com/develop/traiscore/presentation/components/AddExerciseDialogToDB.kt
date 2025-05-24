@@ -32,7 +32,7 @@ import com.develop.traiscore.presentation.theme.traiBlue
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddExerciseDialog(
+fun AddExerciseDialogToDB(
     onDismiss: () -> Unit,
     onSave: (String, String) -> Unit // nombre, categoría
 ) {

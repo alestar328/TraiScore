@@ -26,17 +26,22 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.rememberDismissState
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,10 +68,15 @@ fun RoutineMenu(
 ) {
     val routineTypes = remember { mutableStateListOf<RoutineTypeItem>() }
     val context = LocalContext.current
+    var isLoading by remember { mutableStateOf(true) }
+    var showEmptyDialog by remember { mutableStateOf(false) }
+
 
     LaunchedEffect(Unit) {
         val db = FirebaseFirestore.getInstance()
-        db.collection("routines")
+        db.collection("users")
+            .document(/* aquí el clientId */)
+            .collection("routines")
             .get()
             .addOnSuccessListener { result ->
                 val uniqueTypes = mutableSetOf<Pair<String, String>>() // Pair<type, docId>
@@ -82,10 +92,30 @@ fun RoutineMenu(
                         }
                     }
                 }
+                isLoading = false
+                if (routineTypes.isEmpty()) {
+                    showEmptyDialog = true
+                }
             }
             .addOnFailureListener {
                 Toast.makeText(context, "Error al cargar rutinas", Toast.LENGTH_SHORT).show()
+                isLoading = false
+                showEmptyDialog = true
             }
+    }
+    // Si no hay rutinas, mostramos el diálogo y salimos
+    if (showEmptyDialog && !isLoading) {
+        AlertDialog(
+            onDismissRequest = { showEmptyDialog = false },
+            title = { Text("Sin rutinas") },
+            text = { Text("No tienes rutinas guardadas") },
+            confirmButton = {
+                TextButton(onClick = { showEmptyDialog = false }) {
+                    Text("Aceptar")
+                }
+            }
+        )
+        return
     }
     Scaffold(
         topBar = {

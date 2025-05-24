@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -29,6 +30,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextAlign
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.presentation.components.FilterableDropdown
@@ -53,6 +55,10 @@ fun AddExerciseDialogContent(
     var repsText by remember { mutableStateOf(workoutToEdit?.reps?.toString() ?: "") }
     var weightText by remember { mutableStateOf(workoutToEdit?.weight?.toString() ?: "") }
     var rirValue by remember { mutableStateOf(workoutToEdit?.rir ?: 2) }
+    var repsError by remember { mutableStateOf(false) }
+    var weightError by remember { mutableStateOf(false) }
+
+
     val context = LocalContext.current
 
     Column(
@@ -111,11 +117,16 @@ fun AddExerciseDialogContent(
                         color = traiBlue, // Color del borde
                         shape = RoundedCornerShape(9.dp) // Bordes redondeados
                     )
-                    .padding(3.dp) // Grosor del borde
             ) {
                 OutlinedTextField(
                     value = weightText,
-                    onValueChange = { weightText = it },
+                    onValueChange = {newValue ->
+                        if(newValue.length <=6 && !newValue.startsWith("-") && !newValue.startsWith("0")  && !newValue.startsWith(".")
+                            && !newValue.contains("-") && !newValue.contains(" ") && !newValue.contains("..")
+                            && !(newValue.startsWith("0") && newValue.length>1)){
+                            weightText = newValue
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -127,6 +138,7 @@ fun AddExerciseDialogContent(
                         focusedContainerColor = Color.White,
                         unfocusedContainerColor = Color.White
                     )
+
                 )
             }
         }
@@ -149,11 +161,18 @@ fun AddExerciseDialogContent(
                         color = traiBlue, // Color del borde
                         shape = RoundedCornerShape(9.dp) // Bordes redondeados
                     )
-                    .padding(3.dp) // Grosor del borde
             ) {
                 OutlinedTextField(
                     value = repsText,
-                    onValueChange = { repsText = it },
+                    onValueChange = { newValue ->
+                        if(newValue.length <=2 && !newValue.startsWith("-") && !newValue.startsWith("0")
+                            && !newValue.contains("-") && !newValue.contains(".") && !newValue.contains(" ")
+                            && !(newValue.startsWith("0") && newValue.length>1)){
+                            repsText = newValue
+                        }
+
+
+                    },
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -166,6 +185,7 @@ fun AddExerciseDialogContent(
                         unfocusedContainerColor = Color.White
                     )
                 )
+
             }
         }
 
