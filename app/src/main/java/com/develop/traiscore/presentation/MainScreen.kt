@@ -34,7 +34,7 @@ import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.screens.ExercisesScreen
 import com.develop.traiscore.presentation.screens.FirebaseRoutineScreen
 import com.develop.traiscore.presentation.screens.ProfileScreen
-import com.develop.traiscore.presentation.screens.RoutineMenu
+import com.develop.traiscore.presentation.screens.RoutineMenuScreen
 import com.develop.traiscore.presentation.screens.StatScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.navbarDay
@@ -192,7 +192,7 @@ fun ContentScreen(
         2 -> Text("Pantalla Add (opcional)")
         3 -> {
             when (routineScreenState) {
-                is ScreenState.MAIN_ROUTINE_MENU -> RoutineMenu(
+                is ScreenState.MAIN_ROUTINE_MENU -> RoutineMenuScreen(
                     onRoutineClick = { docId, type ->
                         onRoutineSelected(docId, type)
                     },

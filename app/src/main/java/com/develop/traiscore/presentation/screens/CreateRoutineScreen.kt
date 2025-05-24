@@ -68,7 +68,6 @@ fun CreateRoutineScreen(
     var showDialog by remember { mutableStateOf(false) }
     val categories = DefaultCategoryExer.entries
 
-    val routineId = "iE6uckT33IUTgEgZiQ7Z"
 
     Scaffold(
         topBar = {
@@ -113,7 +112,7 @@ fun CreateRoutineScreen(
                                     return@createRoutine
                                 }
                                 viewModel.saveSectionToRoutine(
-                                    routineId = routineId,
+                                    routineId = newRoutineId,
                                     sectionType = selectedCategory!!,
                                     exercises = exercises
                                 ) { success, errorMsg ->
@@ -163,11 +162,8 @@ fun CreateRoutineScreen(
                 AddExeRoutineDialog(
                     onDismiss = { showDialog = false },
                     onSave = { name, category ->
-                        val alreadyExists =
-                            exercises.any { it.name.equals(name, ignoreCase = true) }
-                        if (!alreadyExists) {
                             exercises = exercises + SimpleExercise(name, 0, "", "", 0)
-                        }
+
                         showDialog = false
                     },
                     exerciseNames = exerciseVM.exerciseNames,

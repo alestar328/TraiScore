@@ -57,11 +57,12 @@ import com.develop.traiscore.data.firebaseData.RoutineTypeItem
 import com.develop.traiscore.presentation.theme.traiBackgroundDay
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
-fun RoutineMenu(
+fun RoutineMenuScreen(
     onRoutineClick: (String, String) -> Unit, // acepta docId y type
     onAddClick: () -> Unit,
     viewModel: RoutineViewModel
@@ -71,11 +72,16 @@ fun RoutineMenu(
     var isLoading by remember { mutableStateOf(true) }
     var showEmptyDialog by remember { mutableStateOf(false) }
 
-
     LaunchedEffect(Unit) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        if (userId == null) {
+            showEmptyDialog = true
+            isLoading = false
+            return@LaunchedEffect
+        }
         val db = FirebaseFirestore.getInstance()
         db.collection("users")
-            .document(/* aquí el clientId */)
+            .document(userId)
             .collection("routines")
             .get()
             .addOnSuccessListener { result ->
@@ -93,7 +99,7 @@ fun RoutineMenu(
                     }
                 }
                 isLoading = false
-                if (routineTypes.isEmpty()) {
+                if (result.isEmpty && !viewModel.hasShownEmptyDialog) {
                     showEmptyDialog = true
                 }
             }
@@ -110,7 +116,12 @@ fun RoutineMenu(
             title = { Text("Sin rutinas") },
             text = { Text("No tienes rutinas guardadas") },
             confirmButton = {
-                TextButton(onClick = { showEmptyDialog = false }) {
+                TextButton(
+                    onClick = {
+                        showEmptyDialog = false
+                        viewModel.markEmptyDialogShown()
+                    })
+                {
                     Text("Aceptar")
                 }
             }
@@ -194,20 +205,26 @@ fun RoutineMenu(
                             }
                         },
                         dismissContent = {
-                            RoutineItem(
-                                name = routine.type,
-                                imageResId = try {
-                                    DefaultCategoryExer.valueOf(routine.type.uppercase()).imageCat
-                                } catch (_: Exception) {
-                                    DefaultCategoryExer.BACK.imageCat  // fallback si no coincide
-                                },
-                                onClick = { onRoutineClick(routine.documentId, routine.type) }
-                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onRoutineClick(routine.documentId, routine.type) }
+                            ) {
+                                RoutineItem(
+                                    name = routine.type,
+                                    imageResId = try {
+                                        DefaultCategoryExer.valueOf(routine.type.uppercase()).imageCat
+                                    } catch (_: Exception) {
+                                        DefaultCategoryExer.BACK.imageCat  // fallback si no coincide
+                                    },
+                                    onClick = { onRoutineClick(routine.documentId, routine.type) }
+                                )
+                            }
+
                         }
                     )
                 }
 
-// Y al final, el espacio para el FAB:
                 item {
                     Spacer(modifier = Modifier.height(80.dp))
                 }
@@ -243,7 +260,7 @@ fun RoutineItem(name: String, imageResId: Int, onClick: () -> Unit) {
 @Preview(showBackground = true)
 @Composable
 fun RoutineMenuPreview() {
-    RoutineMenu(
+    RoutineMenuScreen(
         onRoutineClick = { docId, type ->
             println("Clicked routine with ID: $docId and Type: $type")
         },

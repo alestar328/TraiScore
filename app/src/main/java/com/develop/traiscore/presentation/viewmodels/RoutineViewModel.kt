@@ -12,6 +12,12 @@ import com.google.firebase.firestore.FirebaseFirestore
 class RoutineViewModel : ViewModel() {
     // La rutina se almacena y actualiza aquí:
     var routineData by mutableStateOf<RoutineData?>(null)
+    var hasShownEmptyDialog by mutableStateOf(false)
+        private set
+
+    fun markEmptyDialogShown() {
+        hasShownEmptyDialog = true
+    }
 
     fun updateReps(exerciseIndex: Int, trainingType: String, newReps: String) {
         routineData = routineData?.let { data ->

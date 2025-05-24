@@ -12,6 +12,7 @@ import com.develop.traiscore.data.firebaseData.FirestoreExercise
 import com.develop.traiscore.data.firebaseData.FirestoreRoutineDoc
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.firestore
 
 @Composable
@@ -23,10 +24,13 @@ fun FirebaseRoutineScreen(
     var routineDoc by remember { mutableStateOf<FirestoreRoutineDoc?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var createdAtString by remember { mutableStateOf("") }
+    val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
     LaunchedEffect(documentId) {
         val db = Firebase.firestore
-        db.collection("routines")
+        db.collection("users")
+            .document(userId)
+            .collection("routines")      // ← aquí
             .document(documentId)
             .get()
             .addOnSuccessListener { snapshot ->
