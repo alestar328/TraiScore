@@ -127,25 +127,7 @@ fun RoutineScreen(
             contentPadding = PaddingValues(bottom = 60.dp)
         ) {
             // Encabezado general de la rutina
-            item {
-                Text(
-                    text = "Rutina para: ${currentRoutineData.clientName}",
-                    color = Color.Red,
-                    style = MaterialTheme.typography.titleLarge,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 30.sp,
-                    modifier = Modifier.padding(
-                        top = 16.dp,
-                        start = 16.dp,
-                        end = 16.dp
-                    )
-                )
-                HorizontalDivider(
-                    modifier = Modifier.padding(vertical = 8.dp),
-                    thickness = 3.dp,
-                    color = traiBlue
-                )
-            }
+
             // Por cada tipo de entrenamiento, se muestra una tabla
             item {
                 RoutineTable(

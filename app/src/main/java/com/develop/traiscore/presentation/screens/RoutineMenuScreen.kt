@@ -64,7 +64,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun RoutineMenuScreen(
-    onRoutineClick: (String, String) -> Unit, // acepta docId y type
+    onRoutineClick: (String, String) -> Unit,
     onAddClick: () -> Unit,
     viewModel: RoutineViewModel
 ) {
@@ -72,6 +72,8 @@ fun RoutineMenuScreen(
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
     var showEmptyDialog by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
+    var routineToDelete by remember { mutableStateOf<Pair<Int, RoutineDocument>?>(null) }
 
     LaunchedEffect(Unit) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
@@ -88,12 +90,13 @@ fun RoutineMenuScreen(
             .addOnSuccessListener { result ->
                 val uniqueTypes = mutableSetOf<Pair<String, String>>() // Pair<type, docId>
                 for (document in result) {
-                    val docId        = document.id
-                    val clientName   = document.getString("clientName") ?: "Cliente"
-                    val routineName  = document.getString("routineName") ?: clientName
-                    val createdAt    = document.getTimestamp("createdAt")
-                    val trainerId    = document.getString("trainerId")  // puede ser null
-                    val sectionsRaw  = document.get("sections") as? List<Map<String,Any>> ?: emptyList()
+                    val docId = document.id
+                    val clientName = document.getString("clientName") ?: "Cliente"
+                    val routineName = document.getString("routineName") ?: clientName
+                    val createdAt = document.getTimestamp("createdAt")
+                    val trainerId = document.getString("trainerId")  // puede ser null
+                    val sectionsRaw =
+                        document.get("sections") as? List<Map<String, Any>> ?: emptyList()
 
                     for (section in sectionsRaw) { // Fixed: was 'sections' instead of 'sectionsRaw'
                         val type = section["type"] as? String ?: continue
@@ -101,12 +104,12 @@ fun RoutineMenuScreen(
                             // Create a RoutineDocument with the new structure
                             routineTypes.add(
                                 RoutineDocument(
-                                    userId      = userId,
-                                    trainerId   = trainerId,
-                                    type        = type,
-                                    documentId  = docId,
-                                    createdAt   = createdAt,
-                                    clientName  = clientName,
+                                    userId = userId,
+                                    trainerId = trainerId,
+                                    type = type,
+                                    documentId = docId,
+                                    createdAt = createdAt,
+                                    clientName = clientName,
                                     routineName = routineName,
                                     routineExer = emptyMap()       // solo menú, sin ejercicios
                                 )
@@ -125,6 +128,64 @@ fun RoutineMenuScreen(
                 showEmptyDialog = true
             }
     }
+
+    // Diálogo de confirmación para eliminar rutina
+    if (showDeleteDialog && routineToDelete != null) {
+        AlertDialog(
+            onDismissRequest = {
+                showDeleteDialog = false
+                routineToDelete = null
+            },
+            title = {
+                Text(
+                    text = "Confirmar eliminación",
+                    color = Color.Black
+                )
+            },
+            text = {
+                Text(
+                    text = "¿Estás seguro de que quieres eliminar la rutina '${routineToDelete?.second?.clientName}'?",
+                    color = Color.Black
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        routineToDelete?.let { (index, routine) ->
+                            viewModel.deleteRoutineType(routine.documentId) { success ->
+                                if (success) {
+                                    routineTypes.removeAt(index)
+                                    Toast.makeText(context, "Rutina eliminada", LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Error al eliminar rutina",
+                                        LENGTH_SHORT
+                                    ).show()
+                                }
+                            }
+                        }
+                        showDeleteDialog = false
+                        routineToDelete = null
+                    }
+                ) {
+                    Text("Eliminar", color = Color.Red)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = {
+                        showDeleteDialog = false
+                        routineToDelete = null
+                    }
+                ) {
+                    Text("Cancelar", color = traiBlue)
+                }
+            }
+        )
+    }
+
+
     // Si no hay rutinas, mostramos el diálogo y salimos
     if (showEmptyDialog && !isLoading) {
         AlertDialog(
@@ -182,25 +243,14 @@ fun RoutineMenuScreen(
             itemsIndexed(
                 routineTypes,
                 key = { _, r -> "${r.documentId}-${r.type}" }) { index, routine ->
-                // Creamos el estado de swipe
                 val dismissState = rememberDismissState(
                     confirmStateChange = { newValue ->
                         if (newValue == DismissValue.DismissedToStart) {
-                            viewModel.deleteRoutineType(routine.documentId) { success ->
-                                if (success) {
-                                    routineTypes.removeAt(index)
-                                    Toast.makeText(context, "Rutina eliminada", LENGTH_SHORT)
-                                        .show()
-                                } else {
-                                    Toast.makeText(
-                                        context,
-                                        "Error al eliminar rutina",
-                                        LENGTH_SHORT
-                                    ).show()
-                                }
-                            }
+                            // En lugar de eliminar directamente, mostramos el diálogo
+                            routineToDelete = Pair(index, routine)
+                            showDeleteDialog = true
                         }
-
+                        // Siempre retornamos false para que el elemento regrese a su posición
                         false
                     }
                 )

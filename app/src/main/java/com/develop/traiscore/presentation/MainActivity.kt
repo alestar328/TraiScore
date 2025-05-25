@@ -33,6 +33,7 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     lateinit var googleSignInClient: GoogleSignInClient
+
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -106,8 +107,15 @@ fun AppNavigation(navController: NavHostController) {
             )
         }
         composable(NavigationRoutes.Measurements.route) {
-            BodyMeasurementsScreen(onBack = { navController.popBackStack() },
-                navController = navController)
+            BodyMeasurementsScreen(
+                onBack = { navController.popBackStack() },
+                onSave = { gender, data ->
+                    navController.popBackStack()
+                },
+                initialData = emptyMap() // o tus valores precargados
+
+
+            )
         }
 
     }

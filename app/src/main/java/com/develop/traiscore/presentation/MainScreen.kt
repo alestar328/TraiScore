@@ -71,58 +71,62 @@ fun MainScreen(
     var isDialogVisible by remember {
         mutableStateOf(false)
     }
+    val showNavBar =
+        !(selectedIndex == 4 && routineScreenState is ScreenState.BODY_MEASUREMENTS_SCREEN)
 
     Scaffold(modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            NavigationBar(
-                modifier = Modifier.height(100.dp),
-                containerColor = navbarDay, // Fondo de la barra de navegación
-                contentColor = Color.Black // Color por defecto de los íconos
-            ) {
-                navItemList.forEachIndexed { index, navItem ->
+            if (showNavBar) {
+                NavigationBar(
+                    modifier = Modifier.height(100.dp),
+                    containerColor = navbarDay, // Fondo de la barra de navegación
+                    contentColor = Color.Black // Color por defecto de los íconos
+                ) {
+                    navItemList.forEachIndexed { index, navItem ->
 
-                    NavigationBarItem(
-                        selected = selectedIndex == index,
-                        onClick = {
-                            if (index == 2) {
-                                isDialogVisible = true
-                            } else {
-                                selectedIndex = index
-                            }
-                        },
-                        icon = {
-                            if (navItem.imageVector != null) {
-                                Icon(
-                                    imageVector = navItem.imageVector,
-                                    contentDescription = "Icon",
-                                    tint = if (selectedIndex == index) traiBlue
-                                    else primaryBlack
+                        NavigationBarItem(
+                            selected = selectedIndex == index,
+                            onClick = {
+                                if (index == 2) {
+                                    isDialogVisible = true
+                                } else {
+                                    selectedIndex = index
+                                }
+                            },
+                            icon = {
+                                if (navItem.imageVector != null) {
+                                    Icon(
+                                        imageVector = navItem.imageVector,
+                                        contentDescription = "Icon",
+                                        tint = if (selectedIndex == index) traiBlue
+                                        else primaryBlack
+                                    )
+                                } else if (navItem.painter != null) {
+                                    Icon(
+                                        painter = navItem.painter,
+                                        contentDescription = "Icon",
+                                        tint = if (selectedIndex == index) traiBlue
+                                        else primaryBlack
+                                    )
+                                }
+                            },
+                            label = {
+                                Text(
+                                    text = navItem.label,
+                                    color = if (selectedIndex == index) traiBlue
+                                    else primaryBlack,
                                 )
-                            } else if (navItem.painter != null) {
-                                Icon(
-                                    painter = navItem.painter,
-                                    contentDescription = "Icon",
-                                    tint = if (selectedIndex == index) traiBlue
-                                    else primaryBlack
-                                )
-                            }
-                        },
-                        label = {
-                            Text(
-                                text = navItem.label,
-                                color = if (selectedIndex == index) traiBlue
-                                else primaryBlack,
+                            },
+                            alwaysShowLabel = false,
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = traiBlue, // Color del ícono seleccionado
+                                unselectedIconColor = primaryBlack, // Color del ícono no seleccionado
+                                selectedTextColor = traiBlue, // Color del texto seleccionado
+                                unselectedTextColor = primaryBlack, // Color del texto no seleccionado
+                                indicatorColor = Color.Transparent // Elimina el halo de selección
                             )
-                        },
-                        alwaysShowLabel = false,
-                        colors = NavigationBarItemDefaults.colors(
-                            selectedIconColor = traiBlue, // Color del ícono seleccionado
-                            unselectedIconColor = primaryBlack, // Color del ícono no seleccionado
-                            selectedTextColor = traiBlue, // Color del texto seleccionado
-                            unselectedTextColor = primaryBlack, // Color del texto no seleccionado
-                            indicatorColor = Color.Transparent // Elimina el halo de selección
                         )
-                    )
+                    }
                 }
 
             }
@@ -165,14 +169,17 @@ fun MainScreen(
         }
     }
 }
+
 sealed class ScreenState {
     object MAIN_ROUTINE_MENU : ScreenState()
     data class FIREBASE_ROUTINE_SCREEN(val documentId: String, val selectedType: String) :
         ScreenState()
+
     object CREATE_ROUTINE_SCREEN : ScreenState() // 👈 nuevo
     object BODY_MEASUREMENTS_SCREEN : ScreenState()
 
 }
+
 @Composable
 fun ContentScreen(
     modifier: Modifier = Modifier,
@@ -201,6 +208,7 @@ fun ContentScreen(
                     },
                     viewModel = routineViewModel // Pass the viewModel to RoutineMenu
                 )
+
                 is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
                     // <-- Aquí!
                     RoutineScreen(
@@ -209,19 +217,26 @@ fun ContentScreen(
                         onBack = onBackToRoutineMenu
                     )
                 }
+
                 is ScreenState.CREATE_ROUTINE_SCREEN -> CreateRoutineScreen(
                     onBack = onBackToRoutineMenu,
                     navController = navController
                 )
+
                 else -> Unit
             }
         }
+
         4 -> {
             when (routineScreenState) {
                 is ScreenState.BODY_MEASUREMENTS_SCREEN -> BodyMeasurementsScreen(
                     onBack = onBackToRoutineMenu,
-                    navController = navController
+                    onSave = { gender, data ->
+                        println("Guardar gender=$gender, medidas=$data")
+                        onBackToRoutineMenu()
+                    },
                 )
+
                 else -> ProfileScreen(
                     navController = navController,
                     onMeasurementsClick = onMeasurementsClick
