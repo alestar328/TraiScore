@@ -10,8 +10,34 @@ enum class SubscriptionPlan(
 ) {
     FREE("free", 4, 0.0, listOf("Hasta 4 registros de medidas", "Rutinas básicas")),
     PREMIUM("premium", -1, 9.99, listOf("Registros de medidas ilimitados", "Rutinas avanzadas", "Historial completo")),
-    PRO("pro", -1, 19.99, listOf("Todo Premium", "Acceso trainer", "Analytics avanzados"))
+    PRO("pro", -1, 19.99, listOf("Todo Premium", "Acceso trainer", "Analytics avanzados"));
+
+    companion object {
+        /**
+         * Convierte un planId string a SubscriptionPlan de forma segura
+         */
+        fun fromPlanId(planId: String?): SubscriptionPlan {
+            return when (planId?.lowercase()) {
+                "free" -> FREE
+                "premium" -> PREMIUM
+                "pro" -> PRO
+                else -> FREE // valor por defecto si no se encuentra
+            }
+        }
+
+        /**
+         * Convierte usando valueOf pero de forma segura
+         */
+        fun safeValueOf(name: String?): SubscriptionPlan {
+            return try {
+                valueOf(name?.uppercase() ?: "FREE")
+            } catch (e: IllegalArgumentException) {
+                FREE // valor por defecto
+            }
+        }
+    }
 }
+
 
 data class UserSubscription(
     val userId: String,

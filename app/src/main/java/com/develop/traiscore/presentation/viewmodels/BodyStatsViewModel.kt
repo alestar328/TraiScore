@@ -5,6 +5,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.develop.traiscore.domain.model.BodyMeasurementProgressBuilder
+import com.develop.traiscore.domain.model.BodyMeasurementProgressData
+import com.develop.traiscore.domain.model.BodyMeasurementType
+import com.develop.traiscore.domain.model.MeasurementSummary
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
@@ -302,5 +306,93 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
         selectedGender = "Male"
         errorMessage = null
         isLoading = false
+    }
+
+    fun getBodyMeasurementProgressData(
+        onComplete: (success: Boolean, data: BodyMeasurementProgressData?, error: String?) -> Unit
+    ) {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            onComplete(false, null, "Usuario no autenticado")
+            return
+        }
+
+        userStatsRef?.orderBy("createdAt", com.google.firebase.firestore.Query.Direction.ASCENDING)
+            ?.get()
+            ?.addOnSuccessListener { querySnapshot ->
+                try {
+                    val builder = BodyMeasurementProgressBuilder()
+
+                    querySnapshot.documents.forEach { document ->
+                        document.data?.let { data ->
+                            builder.addFirebaseDocument(data)
+                        }
+                    }
+
+                    val progressData = builder.build(userId)
+                    Log.d("BodyStatsVM", "✅ Datos de progreso generados: ${progressData.getTotalRecords()} registros")
+                    onComplete(true, progressData, null)
+
+                } catch (exception: Exception) {
+                    Log.e("BodyStatsVM", "Error procesando datos de progreso", exception)
+                    onComplete(false, null, "Error procesando datos: ${exception.message}")
+                }
+            }
+            ?.addOnFailureListener { exception ->
+                val errorMsg = "Error al obtener datos de progreso: ${exception.message}"
+                Log.e("BodyStatsVM", "Error obteniendo progreso", exception)
+                onComplete(false, null, errorMsg)
+            }
+    }
+
+    /**
+     * Obtiene datos de progreso para una medida específica
+     */
+    fun getProgressDataForMeasurement(
+        measurementType: BodyMeasurementType,
+        onComplete: (success: Boolean, chartData: List<Pair<String, Float>>?, summary: MeasurementSummary?, error: String?) -> Unit
+    ) {
+        getBodyMeasurementProgressData { success, progressData, error ->
+            if (success && progressData != null) {
+                val chartData = progressData.getChartDataFor(measurementType)
+                val summary = progressData.getProgressSummary()[measurementType]
+                onComplete(true, chartData, summary, null)
+            } else {
+                onComplete(false, null, null, error)
+            }
+        }
+    }
+
+    /**
+     * Obtiene lista de medidas disponibles para graficar
+     */
+    fun getAvailableMetricsForCharts(
+        onComplete: (success: Boolean, metrics: List<BodyMeasurementType>?, error: String?) -> Unit
+    ) {
+        getBodyMeasurementProgressData { success, progressData, error ->
+            if (success && progressData != null) {
+                val availableMetrics = progressData.getAvailableMetricsForChart()
+                onComplete(true, availableMetrics, null)
+            } else {
+                onComplete(false, null, error)
+            }
+        }
+    }
+
+    /**
+     * Verifica si hay suficientes datos para mostrar gráficas
+     */
+    fun hasEnoughDataForCharts(
+        onComplete: (hasData: Boolean, totalRecords: Int) -> Unit
+    ) {
+        getBodyMeasurementProgressData { success, progressData, _ ->
+            if (success && progressData != null) {
+                val hasData = progressData.hasAnyData()
+                val totalRecords = progressData.getTotalRecords()
+                onComplete(hasData, totalRecords)
+            } else {
+                onComplete(false, 0)
+            }
+        }
     }
 }

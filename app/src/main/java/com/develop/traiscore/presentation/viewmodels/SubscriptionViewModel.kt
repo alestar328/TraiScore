@@ -55,8 +55,8 @@ class SubscriptionViewModel @Inject constructor() : ViewModel() {
                     val data = document.data!!
                     userSubscription = UserSubscription(
                         userId = userId,
-                        currentPlan = SubscriptionPlan.valueOf(
-                            data["currentPlan"] as? String ?: "FREE"
+                        currentPlan = SubscriptionPlan.fromPlanId(
+                            data["currentPlan"] as? String
                         ),
                         subscriptionId = data["subscriptionId"] as? String,
                         startDate = data["startDate"] as? Timestamp,
