@@ -42,6 +42,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.theme.traiBlue
 
 
@@ -81,7 +82,9 @@ fun BodyMeasurementsScreen(
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = Color.White)
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = navbarDay
+                )
             )
         },
         bottomBar = {
@@ -89,6 +92,7 @@ fun BodyMeasurementsScreen(
                 onClick = { onSave(selectedGender, measurements) },
                 modifier = Modifier
                     .fillMaxWidth()
+                    .navigationBarsPadding()
                     .padding(16.dp),
                 text = { Text("Save") },
                 icon = {
@@ -114,7 +118,7 @@ fun BodyMeasurementsScreen(
             ) {
                 // 1) Selector de género
                 item {
-                    Text("Gender", style = MaterialTheme.typography.titleMedium)
+                    Text("Gender", style = MaterialTheme.typography.titleLarge)
                     Spacer(Modifier.height(8.dp))
                     Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
                         genders.forEach { gender ->
