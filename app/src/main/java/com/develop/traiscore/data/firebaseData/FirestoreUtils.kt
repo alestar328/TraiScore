@@ -8,25 +8,31 @@ import com.google.firebase.firestore.firestore
 
 fun updateRoutineInFirebase(documentId: String, routineDoc: RoutineDocument): Task<Void> {
     val db = Firebase.firestore
-    val updateMap = mapOf(
+    val routineMap = mapOf(
         "clientName" to routineDoc.clientName,
         "routineName" to routineDoc.routineName,
         "createdAt" to FieldValue.serverTimestamp(),
-        "routine" to routineDoc.routineExer.mapValues { (_, exercises) ->
-            exercises.map { exercise ->
-                mapOf(
-                    "name" to exercise.name,
-                    "series" to exercise.series.toString(),
-                    "reps" to exercise.reps,
-                    "weight" to exercise.weight,
-                    "rir" to exercise.rir
-                )
-            }
+        "trainerId" to routineDoc.trainerId,
+        "sections" to routineDoc.routineExer.map { (type, exercises) ->
+            mapOf(
+                "type" to type,
+                "exercises" to exercises.map { exercise ->
+                    mapOf(
+                        "name" to exercise.name,
+                        "series" to exercise.series,  // ✅ Debe guardarse
+                        "reps" to exercise.reps,      // ✅ Ya se guarda
+                        "weight" to exercise.weight,  // ✅ Debe guardarse
+                        "rir" to exercise.rir         // ✅ Debe guardarse
+                    )
+                }
+            )
         }
     )
-    return db.collection("routines")
+    return db.collection("users")
+        .document(routineDoc.userId)
+        .collection("routines")
         .document(documentId)
-        .set(updateMap, SetOptions.merge())
+        .set(routineMap)
 }
 
 fun saveExerciseToFirebase(name: String, category: String) {

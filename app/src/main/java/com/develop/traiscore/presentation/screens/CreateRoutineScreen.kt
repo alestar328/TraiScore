@@ -41,6 +41,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.develop.traiscore.core.ColumnType
 import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.presentation.components.AddExeRoutineDialog
@@ -48,6 +49,7 @@ import com.develop.traiscore.presentation.components.AddRestButton
 import com.develop.traiscore.presentation.components.CategoryCard
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
+import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -57,6 +59,7 @@ fun CreateRoutineScreen(
     viewModel: AddExerciseViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
+    val routineVM: RoutineViewModel = hiltViewModel()
 
     var exercises by remember {
         mutableStateOf(emptyList<SimpleExercise>())
@@ -69,6 +72,16 @@ fun CreateRoutineScreen(
     var showDialog by remember { mutableStateOf(false) }
     val categories = DefaultCategoryExer.entries
 
+    fun updateExerciseField(index: Int, columnType: ColumnType, newValue: String) {
+        exercises = exercises.toMutableList().apply {
+            this[index] = when(columnType) {
+                ColumnType.SERIES -> this[index].copy(series = newValue.toIntOrNull() ?: 0)
+                ColumnType.WEIGHT -> this[index].copy(weight = newValue)
+                ColumnType.REPS   -> this[index].copy(reps = newValue)
+                ColumnType.RIR    -> this[index].copy(rir = newValue.toIntOrNull() ?: 0)
+            }
+        }
+    }
     fun validateRoutineName(name: String): String? {
         return when {
             name.isBlank() -> "El nombre no puede estar vacío"
@@ -301,12 +314,23 @@ fun CreateRoutineScreen(
                                 removeAt(index)
                             }
                         },
-                        onRepsChanged = { index, newRep ->
-                            exercises = exercises.toMutableList().apply {
-                                this[index] = this[index].copy(reps = newRep)
-                            }
+                        onSeriesChanged = { index, newSeries ->
+                            updateExerciseField(index, ColumnType.SERIES, newSeries)
                         },
-                        enableSwipe      = true
+                        onWeightChanged = { index, newWeight ->
+                            updateExerciseField(index, ColumnType.WEIGHT, newWeight)
+                        },
+                        onRepsChanged = { index, newReps ->
+                            updateExerciseField(index, ColumnType.REPS, newReps)
+                        },
+                        onRirChanged = { index, newRir ->
+                            updateExerciseField(index, ColumnType.RIR, newRir)
+                        },
+                        onFieldChanged = { exerciseIndex, columnType, newValue ->
+                            updateExerciseField(exerciseIndex, columnType, newValue)
+                        },
+                        enableSwipe = true,
+                        validateInput = routineVM::validateInput
                     )
 
 

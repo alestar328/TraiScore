@@ -118,6 +118,7 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
             "userId"     to userId,
             "trainerId"  to trainerId,
             "clientName" to clientName,
+            "routineName" to clientName, // AGREGAR ESTE CAMPO
             "createdAt"  to com.google.firebase.Timestamp.now(),
             "sections"   to emptyList<Map<String,Any>>()
         )
@@ -125,6 +126,9 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
             .addOnSuccessListener { onComplete(docRef.id, null) }
             .addOnFailureListener { e -> onComplete(null, e.message) }
     }
+
+
+
     fun saveSectionToRoutine(
         routineId: String,
         sectionType: DefaultCategoryExer,

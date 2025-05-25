@@ -43,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import androidx.compose.ui.platform.LocalContext
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.data.firebaseData.RoutineDocument
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.google.firebase.auth.FirebaseAuth
@@ -57,6 +58,7 @@ fun RoutineScreen(
     selectedType: String, // <- nuevo parámetro
     onBack: () -> Unit
 ) {
+    val routineVM: RoutineViewModel = hiltViewModel()
 
     val context = LocalContext.current
     var showEmptyDialog by remember { mutableStateOf(false) }
@@ -132,12 +134,41 @@ fun RoutineScreen(
             item {
                 RoutineTable(
                     exercises = filteredExercises,
+                    onSeriesChanged = { exerciseIndex, newSeries ->
+                        routineViewModel.updateExerciseFieldInMemory(
+                            exerciseIndex, selectedType,
+                            com.develop.traiscore.core.ColumnType.SERIES, newSeries
+                        )
+                    },
+                    onWeightChanged = { exerciseIndex, newWeight ->
+                        routineViewModel.updateExerciseFieldInMemory(
+                            exerciseIndex, selectedType,
+                            com.develop.traiscore.core.ColumnType.WEIGHT, newWeight
+                        )
+                    },
                     onRepsChanged = { exerciseIndex, newRep ->
-                        routineViewModel.updateReps(exerciseIndex, selectedType, newRep)
+                        routineViewModel.updateExerciseFieldInMemory(
+                            exerciseIndex, selectedType,
+                            com.develop.traiscore.core.ColumnType.REPS, newRep
+                        )
                     },
-                    onDeleteExercise = {
+                    onRirChanged = { exerciseIndex, newRir ->
+                        routineViewModel.updateExerciseFieldInMemory(
+                            exerciseIndex, selectedType,
+                            com.develop.traiscore.core.ColumnType.RIR, newRir
+                        )
                     },
-                    enableSwipe      = false
+                    onFieldChanged = { idx, columnType, newValue ->
+                        routineViewModel.updateExerciseFieldInMemory(
+                            exerciseIndex = idx,
+                            trainingType  = selectedType,
+                            columnType    = columnType,
+                            newValue      = newValue
+                        )
+                    },
+                    onDeleteExercise = {},
+                    enableSwipe = false,
+                    validateInput = routineVM::validateInput
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -162,9 +193,10 @@ fun RoutineScreen(
 
                     Button(
                         onClick = {
-                            routineViewModel.saveRoutine(documentId) { isSuccess ->
+                            routineViewModel.saveRoutineToFirebase(documentId) { isSuccess ->
                                 val message =
-                                    if (isSuccess) "Rutina guardada con éxito" else "Error al guardar la rutina"
+                                    if (isSuccess) "Rutina guardada con éxito"
+                                    else "Error al guardar la rutina"
                                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                             }
                         },

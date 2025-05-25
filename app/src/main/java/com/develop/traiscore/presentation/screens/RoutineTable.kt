@@ -32,9 +32,13 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.develop.traiscore.core.ColumnType
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.presentation.theme.traiBlue
+import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 
+data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
@@ -42,7 +46,11 @@ fun RoutineTable(
     exercises: List<SimpleExercise>,
     onDeleteExercise: (index: Int) -> Unit,
     modifier: Modifier = Modifier,
-    onRepsChanged: (exerciseIndex: Int, newRep: String) -> Unit,
+    onSeriesChanged: (Int, String) -> Unit = { _, _ -> },
+    onWeightChanged: (Int, String) -> Unit = { _, _ -> },
+    onRepsChanged:    (Int, String) -> Unit = { _, _ -> },
+    onRirChanged:     (Int, String) -> Unit = { _, _ -> },
+    onFieldChanged: (exerciseIndex: Int, columnType: ColumnType, newValue: String) -> Unit,
     backgroundColor: Color = Color.DarkGray,
     headerTextColor: Color = Color.Yellow,
     bodyTextColor: Color = Color.White,
@@ -54,8 +62,10 @@ fun RoutineTable(
     inputBorderColor: Color = Color.Transparent,
     inputFocusedBorderColor: Color = traiBlue,
     inputCursorColor: Color = Color.Yellow,
-    enableSwipe: Boolean = true
+    enableSwipe: Boolean = true,
+    validateInput: (String, ColumnType) -> String
 ) {
+
     Column(
         modifier = modifier
             .fillMaxWidth()
@@ -100,13 +110,17 @@ fun RoutineTable(
                                 exercise = exercise,
                                 exerciseIndex = index,
                                 onRepsChanged = onRepsChanged,
+                                onSeriesChanged = onSeriesChanged,
+                                onWeightChanged = onWeightChanged,
+                                onRirChanged = onRirChanged,
                                 textColor = bodyTextColor,
                                 fontSize = fontSize,
                                 fontWeight = fontWeight,
                                 inputBorderColor = inputBorderColor,
                                 inputFocusedBorderColor = inputFocusedBorderColor,
                                 inputCursorColor = inputCursorColor,
-                                onFocusChange = { rowHasFocus = it }
+                                onFocusChange = { rowHasFocus = it },
+                                validateInput = validateInput
                             )
                         }
                     )
@@ -121,13 +135,17 @@ fun RoutineTable(
                     exercise = exercise,
                     exerciseIndex = index,
                     onRepsChanged = onRepsChanged,
+                    onSeriesChanged = onSeriesChanged,
+                    onWeightChanged = onWeightChanged,
+                    onRirChanged = onRirChanged,
                     textColor = bodyTextColor,
                     fontSize = fontSize,
                     fontWeight = fontWeight,
                     inputBorderColor = inputBorderColor,
                     inputFocusedBorderColor = inputFocusedBorderColor,
                     inputCursorColor = inputCursorColor,
-                    onFocusChange = { rowHasFocus = it }
+                    onFocusChange = { rowHasFocus = it },
+                    validateInput = validateInput
                 )
             }
                     if (index < exercises.size - 1 && rowHasFocus) {
@@ -170,14 +188,18 @@ fun RoutineTable(
     private fun TableRow(
         exercise: SimpleExercise,
         exerciseIndex: Int,
+        onSeriesChanged: (Int, String) -> Unit,
+        onWeightChanged: (Int, String) -> Unit,
         onRepsChanged: (Int, String) -> Unit,
+        onRirChanged: (Int, String) -> Unit,
         textColor: Color,
         fontSize: Int,
         fontWeight: FontWeight,
         inputBorderColor: Color,
         inputFocusedBorderColor: Color,
         inputCursorColor: Color,
-        onFocusChange: (Boolean) -> Unit
+        onFocusChange: (Boolean) -> Unit,
+        validateInput: (String, ColumnType) -> String
     ) {
         var isAnyFieldFocused by remember { mutableStateOf(false) }
 
@@ -189,31 +211,40 @@ fun RoutineTable(
         ) {
             BodyCellStatic(exercise.name, 1.5f, textColor, fontSize, fontWeight)
 
-            listOf(
-                Triple(exercise.series.toString(), 0.7f) { input: String -> },
-                Triple(exercise.weight, 0.8f) { input: String -> },
-                Triple(exercise.reps, 0.7f) { input: String ->
-                    onRepsChanged(
-                        exerciseIndex,
-                        input
-                    )
+            val cells: List<Quadruple<String, Float, ColumnType, (String)->Unit>> = listOf(
+                Quadruple(exercise.series.toString(), 0.7f, ColumnType.SERIES) { v ->
+                    onSeriesChanged(exerciseIndex, v)
                 },
-                Triple(exercise.rir.toString(), 0.7f) { input: String -> }
-            ).forEach { (value, weight, onChange) ->
-                BodyCell(
-                    value = value,
-                    onValueChange = onChange,
-                    weight = weight,
-                    textColor = textColor,
-                    fontSize = fontSize,
-                    fontWeight = fontWeight,
-                    borderColor = inputBorderColor,
-                    focusedBorderColor = inputFocusedBorderColor,
-                    cursorColor = inputCursorColor,
-                    onFocusChanged = { focused ->
-                        isAnyFieldFocused = focused
-                        onFocusChange(focused)
-                    }
+                Quadruple(exercise.weight,        0.8f, ColumnType.WEIGHT) { v ->
+                    onWeightChanged(exerciseIndex, v)
+                },
+                Quadruple(exercise.reps,          0.7f, ColumnType.REPS) { v ->
+                    onRepsChanged(exerciseIndex, v)
+                },
+                Quadruple(exercise.rir.toString(),0.7f, ColumnType.RIR) { v ->
+                    onRirChanged(exerciseIndex, v)
+                }
+            )
+            cells.forEach { (value, weight, columnType, onChange) ->
+            BodyCell(
+                value = value,
+                onValueChange = { raw ->
+                    val clean = validateInput(raw, columnType)
+                    onChange(clean)
+                },
+                weight = weight,
+                textColor = textColor,
+                fontSize = fontSize,
+                fontWeight = fontWeight,
+                borderColor = inputBorderColor,
+                focusedBorderColor = inputFocusedBorderColor,
+                cursorColor = inputCursorColor,
+                columnType = columnType,
+                onFocusChanged = { focused ->
+                    isAnyFieldFocused = focused
+                    onFocusChange(focused)
+                    },
+                validateInput = validateInput
                 )
             }
         }
@@ -278,15 +309,18 @@ fun RoutineTable(
         borderColor: Color,
         focusedBorderColor: Color,
         cursorColor: Color,
-        onFocusChanged: (Boolean) -> Unit
+        columnType: ColumnType,
+        onFocusChanged: (Boolean) -> Unit,
+        validateInput: (String, ColumnType) -> String
     ) {
         var localValue by remember { mutableStateOf(value) }
 
         OutlinedTextField(
             value = localValue,
-            onValueChange = {
-                localValue = it
-                onValueChange(it)
+            onValueChange = { newValue ->
+                val validatedValue = validateInput(newValue, columnType)
+                localValue = validatedValue
+                onValueChange(validatedValue)
             },
             singleLine = true,
             textStyle = TextStyle(
@@ -311,21 +345,27 @@ fun RoutineTable(
         )
     }
 
-    @Preview(showBackground = true)
-    @Composable
-    fun RoutineTablePreview() {
-        val dummyExercises = listOf(
-            SimpleExercise("Press de banca", 3, "12", "50", 2),
-            SimpleExercise("Press inclinado con mancu", 3, "12", "20", 2),
-            SimpleExercise("Press de hombros", 3, "12", "30", 1),
-            SimpleExercise("Fondos", 3, "12", "100", 0)
-        )
+@Preview(showBackground = true)
+@Composable
+fun RoutineTablePreview() {
+    val dummyExercises = listOf(
+        SimpleExercise("Press de banca", 3, "12", "50", 2),
+        SimpleExercise("Press inclinado", 3, "12", "20", 2),
+        SimpleExercise("Press de hombros", 3, "12", "30", 1),
+        SimpleExercise("Fondos", 3, "12", "100", 0)
+    )
 
-        RoutineTable(
-            exercises = dummyExercises,
-            onDeleteExercise = { index -> println("Eliminar ejercicio $index") },
-            onRepsChanged = { exerciseIndex, newRep ->
-                println("Ejercicio $exerciseIndex, nuevas reps: $newRep")
-            }
-        )
+    // Mock de validación simple
+    val fakeValidateInput: (String, ColumnType) -> String = { input, _ ->
+        input.filter { it.isDigit() || it == '.' }
     }
+
+    RoutineTable(
+        exercises = dummyExercises,
+        onDeleteExercise = { /* nada */ },
+        onFieldChanged = { row, column, value ->
+            println("Fila $row, columna $column → $value")
+        },
+        validateInput = fakeValidateInput
+    )
+}
