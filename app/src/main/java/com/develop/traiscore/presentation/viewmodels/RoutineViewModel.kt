@@ -5,34 +5,87 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import com.develop.traiscore.data.firebaseData.RoutineDocument
+import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.data.firebaseData.updateRoutineInFirebase
-import com.develop.traiscore.presentation.screens.RoutineData
+import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.firestore
 
 class RoutineViewModel : ViewModel() {
     // La rutina se almacena y actualiza aquí:
-    var routineData by mutableStateOf<RoutineData?>(null)
+    var routineDocument by mutableStateOf<RoutineDocument?>(null)
     var hasShownEmptyDialog by mutableStateOf(false)
         private set
 
     fun markEmptyDialogShown() {
         hasShownEmptyDialog = true
     }
+    fun loadRoutine(documentId: String, userId: String) {
+        Firebase.firestore
+            .collection("users").document(userId)
+            .collection("routines").document(documentId)
+            .get()
+            .addOnSuccessListener { snap ->
+                if (!snap.exists()) return@addOnSuccessListener
+
+                // 1) Campos básicos
+                val clientName  = snap.getString("clientName") ?: ""
+                val routineName = snap.getString("routineName") ?: ""
+                val createdAt   = snap.getTimestamp("createdAt")    // Timestamp?
+                val trainerId   = snap.getString("trainerId")  // puede ser null
+
+                // 2) Secciones (type + ejercicios)
+                val sectionsRaw = snap.get("sections") as? List<Map<String,Any>> ?: emptyList()
+                // Construimos el Map<String, List<SimpleExercise>>
+                val routineExer = sectionsRaw.associate { section ->
+                    val type = section["type"] as? String ?: return@associate "" to emptyList<SimpleExercise>()
+                    val exercisesRaw = section["exercises"] as? List<Map<String,Any>> ?: emptyList()
+                    val listExe = exercisesRaw.mapNotNull { ex ->
+                        SimpleExercise(
+                            name   = ex["name"]   as? String ?: return@mapNotNull null,
+                            series = (ex["series"] as? Number)?.toInt() ?: 0,
+                            reps   = ex["reps"]   as? String ?: "",
+                            weight = ex["weight"] as? String ?: "",
+                            rir    = (ex["rir"]   as? Number)?.toInt() ?: 0
+                        )
+                    }
+                    type to listExe
+                }
+
+                // 3) Asignamos a nuestro estado
+                routineDocument = RoutineDocument(
+                    userId      = userId,
+                    trainerId   = trainerId,
+                    type        = "",             // lo filtrará Create/RoutineScreen
+                    documentId  = documentId,
+                    createdAt   = createdAt,
+                    clientName  = clientName,
+                    routineName = routineName,
+                    routineExer = routineExer
+                )
+            }
+            .addOnFailureListener { e ->
+                Log.e("RoutineVM", "no pude cargar routine", e)
+            }
+    }
+
 
     fun updateReps(exerciseIndex: Int, trainingType: String, newReps: String) {
-        routineData = routineData?.let { data ->
+        routineDocument = routineDocument?.let { data ->
             // Actualiza la lista de ejercicios para el trainingType
-            val updatedList = data.routine[trainingType]?.mapIndexed { index, exercise ->
+            val updatedList = data.routineExer[trainingType]?.mapIndexed { index, exercise ->
                 if (index == exerciseIndex) exercise.copy(reps = newReps) else exercise
             } ?: emptyList()
-            val updatedRoutine = data.routine.toMutableMap()
+            val updatedRoutine = data.routineExer.toMutableMap()
             updatedRoutine[trainingType] = updatedList
-            data.copy(routine = updatedRoutine)
+            data.copy(routineExer = updatedRoutine)
         }
     }
 
     fun saveRoutine(documentId: String, onResult: (Boolean) -> Unit) {
-        routineData?.let { data ->
+        routineDocument?.let { data ->
             updateRoutineInFirebase(documentId, data)
                 .addOnSuccessListener {
                     Log.d("RoutineViewModel", "Rutina actualizada correctamente")
@@ -44,46 +97,34 @@ class RoutineViewModel : ViewModel() {
                 }
         }
     }
-    fun deleteRoutineType(documentId: String, type: String, onResult: (Boolean) -> Unit) {
-        val db = FirebaseFirestore.getInstance()
-        db.collection("routines").document(documentId)
-            .get()
-            .addOnSuccessListener { document ->
-                if (document.exists()) {
-                    val sections = document.get("sections") as? List<Map<String, Any>> ?: return@addOnSuccessListener
+    fun deleteRoutineType(
+        documentId: String,
+        onResult: (Boolean) -> Unit
+    ) {
+        val uid = FirebaseAuth.getInstance().currentUser?.uid
+            ?: return onResult(false)
 
-                    // Remove the section based on the type
-                    val updatedSections = sections.filterNot { it["type"] == type }
+        val docRef = FirebaseFirestore.getInstance()
+            .collection("users")
+            .document(uid)
+            .collection("routines")
+            .document(documentId)
 
-                    // Update the document in Firebase with the modified sections
-                    db.collection("routines").document(documentId)
-                        .update("sections", updatedSections)
-                        .addOnSuccessListener {
-                            Log.d("RoutineViewModel", "Tipo de rutina eliminado correctamente")
-                            onResult(true) // Success
-                        }
-                        .addOnFailureListener { e ->
-                            Log.e("RoutineViewModel", "Error al eliminar el tipo de rutina", e)
-                            onResult(false) // Error
-                        }
-                }
-            }
-            .addOnFailureListener { e ->
-                Log.e("RoutineViewModel", "Error al obtener rutina", e)
-                onResult(false)
-            }
+        docRef.delete()
+            .addOnSuccessListener { onResult(true) }
+            .addOnFailureListener { onResult(false) }
     }
 
 
     fun cleanRoutine() {
-        routineData = routineData?.let { data ->
+        routineDocument = routineDocument?.let { data ->
             // Para cada tipo de rutina, se limpia el campo 'reps' de cada ejercicio
-            val cleanedRoutine = data.routine.mapValues { (_, exercises) ->
+            val cleanedRoutine = data.routineExer.mapValues { (_, exercises) ->
                 exercises.map { exercise ->
                     exercise.copy(reps = "")
                 }
             }
-            data.copy(routine = cleanedRoutine)
+            data.copy(routineExer = cleanedRoutine)
         }
     }
 }

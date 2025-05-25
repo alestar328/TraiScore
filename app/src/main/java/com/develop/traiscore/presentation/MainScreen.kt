@@ -32,9 +32,9 @@ import com.develop.traiscore.presentation.screens.AddExerciseDialogContent
 import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.screens.ExercisesScreen
-import com.develop.traiscore.presentation.screens.FirebaseRoutineScreen
 import com.develop.traiscore.presentation.screens.ProfileScreen
 import com.develop.traiscore.presentation.screens.RoutineMenuScreen
+import com.develop.traiscore.presentation.screens.RoutineScreen
 import com.develop.traiscore.presentation.screens.StatScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.navbarDay
@@ -201,11 +201,14 @@ fun ContentScreen(
                     },
                     viewModel = routineViewModel // Pass the viewModel to RoutineMenu
                 )
-                is ScreenState.FIREBASE_ROUTINE_SCREEN -> FirebaseRoutineScreen(
-                    documentId = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).documentId,
-                    selectedType = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).selectedType,
-                    onBack = onBackToRoutineMenu
-                )
+                is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
+                    // <-- Aquí!
+                    RoutineScreen(
+                        documentId = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).documentId,
+                        selectedType = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).selectedType,
+                        onBack = onBackToRoutineMenu
+                    )
+                }
                 is ScreenState.CREATE_ROUTINE_SCREEN -> CreateRoutineScreen(
                     onBack = onBackToRoutineMenu,
                     navController = navController

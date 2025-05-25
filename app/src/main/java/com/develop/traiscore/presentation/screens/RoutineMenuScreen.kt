@@ -1,6 +1,7 @@
 package com.develop.traiscore.presentation.screens
 
 import android.widget.Toast
+import android.widget.Toast.LENGTH_SHORT
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -53,7 +54,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.develop.traiscore.core.DefaultCategoryExer
-import com.develop.traiscore.data.firebaseData.RoutineTypeItem
+import com.develop.traiscore.data.firebaseData.RoutineDocument
 import com.develop.traiscore.presentation.theme.traiBackgroundDay
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
@@ -67,7 +68,7 @@ fun RoutineMenuScreen(
     onAddClick: () -> Unit,
     viewModel: RoutineViewModel
 ) {
-    val routineTypes = remember { mutableStateListOf<RoutineTypeItem>() }
+    val routineTypes = remember { mutableStateListOf<RoutineDocument>() }
     val context = LocalContext.current
     var isLoading by remember { mutableStateOf(true) }
     var showEmptyDialog by remember { mutableStateOf(false) }
@@ -79,22 +80,37 @@ fun RoutineMenuScreen(
             isLoading = false
             return@LaunchedEffect
         }
-        val db = FirebaseFirestore.getInstance()
-        db.collection("users")
+        FirebaseFirestore.getInstance()
+            .collection("users")
             .document(userId)
             .collection("routines")
             .get()
             .addOnSuccessListener { result ->
                 val uniqueTypes = mutableSetOf<Pair<String, String>>() // Pair<type, docId>
                 for (document in result) {
-                    val docId = document.id
-                    val clientName = document.getString("clientName") ?: "Cliente"
-                    val sections = document.get("sections") as? List<Map<String, Any>> ?: continue
+                    val docId        = document.id
+                    val clientName   = document.getString("clientName") ?: "Cliente"
+                    val routineName  = document.getString("routineName") ?: clientName
+                    val createdAt    = document.getTimestamp("createdAt")
+                    val trainerId    = document.getString("trainerId")  // puede ser null
+                    val sectionsRaw  = document.get("sections") as? List<Map<String,Any>> ?: emptyList()
 
-                    for (section in sections) {
+                    for (section in sectionsRaw) { // Fixed: was 'sections' instead of 'sectionsRaw'
                         val type = section["type"] as? String ?: continue
                         if (uniqueTypes.add(Pair(type, docId))) {
-                            routineTypes.add(RoutineTypeItem(type, docId, clientName))
+                            // Create a RoutineDocument with the new structure
+                            routineTypes.add(
+                                RoutineDocument(
+                                    userId      = userId,
+                                    trainerId   = trainerId,
+                                    type        = type,
+                                    documentId  = docId,
+                                    createdAt   = createdAt,
+                                    clientName  = clientName,
+                                    routineName = routineName,
+                                    routineExer = emptyMap()       // solo menú, sin ejercicios
+                                )
+                            )
                         }
                     }
                 }
@@ -154,83 +170,89 @@ fun RoutineMenuScreen(
             )
         }
     ) { innerPadding ->
-            LazyColumn (
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(traiBackgroundDay)
-                    .padding(innerPadding)
-                    .navigationBarsPadding(),          // evita que el contenido quede tras la nav‐bar
-                contentPadding = PaddingValues(16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                itemsIndexed(routineTypes, key = { _, r -> "${r.documentId}-${r.type}" }) { index, routine ->
-                    // Creamos el estado de swipe
-                    val dismissState = rememberDismissState(
-                        confirmStateChange = { newValue ->
-                            if (newValue == DismissValue.DismissedToEnd || newValue == DismissValue.DismissedToStart) {
-                                viewModel.deleteRoutineType(
-                                    documentId = routine.documentId,
-                                    type = routine.type
-                                ) { success ->
-                                    if (success) {
-                                        Toast.makeText(context, "Tipo de rutina eliminado", Toast.LENGTH_SHORT).show()
-                                    } else {
-                                        Toast.makeText(context, "Error al eliminar tipo de rutina", Toast.LENGTH_SHORT).show()
-                                    }
-                                }
-                                routineTypes.removeAt(index)
-                                true
-                            } else false
-                        }
-                    )
-                    SwipeToDismiss(
-                        state = dismissState,
-                        directions = setOf(DismissDirection.EndToStart),
-                        background = {
-                            // Fondo rojo con icono de basura
-                            if (dismissState.targetValue != DismissValue.Default) {
-                                Box(
-                                    Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Red)
-                                        .padding(end = 20.dp),
-                                    contentAlignment = Alignment.CenterEnd
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Eliminar rutina",
-                                        tint = Color.White
-                                    )
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(traiBackgroundDay)
+                .padding(innerPadding)
+                .navigationBarsPadding(),          // evita que el contenido quede tras la nav‐bar
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            itemsIndexed(
+                routineTypes,
+                key = { _, r -> "${r.documentId}-${r.type}" }) { index, routine ->
+                // Creamos el estado de swipe
+                val dismissState = rememberDismissState(
+                    confirmStateChange = { newValue ->
+                        if (newValue == DismissValue.DismissedToStart) {
+                            viewModel.deleteRoutineType(routine.documentId) { success ->
+                                if (success) {
+                                    routineTypes.removeAt(index)
+                                    Toast.makeText(context, "Rutina eliminada", LENGTH_SHORT)
+                                        .show()
+                                } else {
+                                    Toast.makeText(
+                                        context,
+                                        "Error al eliminar rutina",
+                                        LENGTH_SHORT
+                                    ).show()
                                 }
                             }
-                        },
-                        dismissContent = {
+                        }
+
+                        false
+                    }
+                )
+                SwipeToDismiss(
+                    state = dismissState,
+                    directions = setOf(DismissDirection.EndToStart),
+                    background = {
+                        // Fondo rojo con icono de basura
+                        if (dismissState.targetValue != DismissValue.Default) {
                             Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .clickable { onRoutineClick(routine.documentId, routine.type) }
+                                Modifier
+                                    .fillMaxSize()
+                                    .background(Color.Red)
+                                    .padding(end = 20.dp),
+                                contentAlignment = Alignment.CenterEnd
                             ) {
-                                RoutineItem(
-                                    name = routine.type,
-                                    imageResId = try {
-                                        DefaultCategoryExer.valueOf(routine.type.uppercase()).imageCat
-                                    } catch (_: Exception) {
-                                        DefaultCategoryExer.BACK.imageCat  // fallback si no coincide
-                                    },
-                                    onClick = { onRoutineClick(routine.documentId, routine.type) }
+                                Icon(
+                                    imageVector = Icons.Default.Delete,
+                                    contentDescription = "Eliminar rutina",
+                                    tint = Color.White
                                 )
                             }
-
                         }
-                    )
-                }
+                    },
+                    dismissContent = {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { onRoutineClick(routine.documentId, routine.type) }
+                        ) {
+                            RoutineItem(
+                                name = routine.clientName,
+                                imageResId = try {
+                                    DefaultCategoryExer.valueOf(routine.type.uppercase()).imageCat
+                                } catch (_: Exception) {
+                                    DefaultCategoryExer.BACK.imageCat  // fallback si no coincide
+                                },
+                                onClick = { onRoutineClick(routine.documentId, routine.type) }
+                            )
+                        }
 
-                item {
-                    Spacer(modifier = Modifier.height(80.dp))
-                }
+                    }
+                )
             }
+
+            item {
+                Spacer(modifier = Modifier.height(80.dp))
+            }
+        }
     }
 }
+
 @Composable
 fun RoutineItem(name: String, imageResId: Int, onClick: () -> Unit) {
     Row(

@@ -1,5 +1,8 @@
 package com.develop.traiscore.data.firebaseData
 
+import com.google.firebase.Timestamp
+import java.util.Date
+
 
 data class FirestoreExercise(
     val name: String = "",
@@ -25,10 +28,15 @@ data class ExerciseEditable(
     val rir: Int
 )
 
-data class RoutineTypeItem(
+data class RoutineDocument(
+    val userId: String,
+    val trainerId: String? = null,
     val type: String,
     val documentId: String,
-    val clientName: String
+    val createdAt: Timestamp?,
+    val clientName: String,
+    val routineName: String,
+    val routineExer: Map<String, List<SimpleExercise>>
 )
 
 

@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -38,7 +39,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.NavController
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.develop.traiscore.core.DefaultCategoryExer
@@ -64,10 +64,23 @@ fun CreateRoutineScreen(
     var workoutName by remember { mutableStateOf("") }
     val exerciseVM: AddExerciseViewModel = viewModel()
     var selectedCategory by remember { mutableStateOf<DefaultCategoryExer?>(null) }
-
+    var exerciseCategory by remember { mutableStateOf<DefaultCategoryExer?>(null) }
+    var nameError by remember { mutableStateOf<String?>(null) }
     var showDialog by remember { mutableStateOf(false) }
     val categories = DefaultCategoryExer.entries
 
+    fun validateRoutineName(name: String): String? {
+        return when {
+            name.isBlank() -> "El nombre no puede estar vacío"
+            name.length > 13 -> "El nombre no puede tener más de 13 caracteres"
+            !name.matches(Regex("^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$")) -> "Solo se permiten letras y espacios"
+            else -> null
+        }
+    }
+    fun onNameChange(newName: String) {
+        workoutName = newName
+        nameError = validateRoutineName(newName)
+    }
 
     Scaffold(
         topBar = {
@@ -99,6 +112,25 @@ fun CreateRoutineScreen(
                     // Botón de "Guardar rutina"
                     ExtendedFloatingActionButton(
                         onClick = {
+                            val validationError = validateRoutineName(workoutName)
+                            if (validationError != null) {
+                                Toast.makeText(
+                                    context,
+                                    validationError,
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@ExtendedFloatingActionButton
+                            }
+
+                            if (exercises.isEmpty()) {
+                                Toast.makeText(
+                                    context,
+                                    "Agrega al menos un ejercicio",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                return@ExtendedFloatingActionButton
+                            }
+
                             viewModel.createRoutine(
                                 clientName = workoutName,
                                 trainerId = null // o tu lógica de trainerId
@@ -159,22 +191,25 @@ fun CreateRoutineScreen(
             }
 
             if (showDialog) {
+                LaunchedEffect(Unit) { exerciseCategory = null }
+
                 AddExeRoutineDialog(
                     onDismiss = { showDialog = false },
                     onSave = { name, category ->
-                            exercises = exercises + SimpleExercise(name, 0, "", "", 0)
+                        exercises = exercises + SimpleExercise(name, 0, "", "", 0)
 
                         showDialog = false
                     },
                     exerciseNames = exerciseVM.exerciseNames,
-                    selectedCategory = selectedCategory, // 👈 correctamente pasado
-                    onExerciseSelected = { exerciseName ->
-                        exerciseVM.fetchCategoryFor(exerciseName) { category ->
-                            selectedCategory = category
+                    selectedCategory = exerciseCategory, // 👈 correctamente pasado
+                    onExerciseSelected = { name ->
+                        // pide al VM la categoría y la actualiza
+                        exerciseVM.fetchCategoryFor(name) { cat ->
+                            exerciseCategory = cat
                         }
                     },
-                    onCategorySelected = { category ->
-                        selectedCategory = category
+                    onCategorySelected = { cat ->
+                        exerciseCategory = cat
                     }
                 )
             }
@@ -203,8 +238,25 @@ fun CreateRoutineScreen(
                     value = workoutName,
                     modifier = Modifier
                         .fillMaxWidth(),
-                    onValueChange = { workoutName = it },
+                    onValueChange = { onNameChange(it) },
+                    isError = nameError != null,
+
                     placeholder = { Text("Nombra tu rutina") },
+                    supportingText = {
+                        nameError?.let { error ->
+                            Text(
+                                text = error,
+                                color = Color.Red,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        } ?: run {
+                            Text(
+                                text = "${workoutName.length}/13 caracteres",
+                                color = Color.Gray,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
+                    },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedBorderColor = com.develop.traiscore.presentation.theme.traiBlue,
                         unfocusedBorderColor = com.develop.traiscore.presentation.theme.traiBlue,
@@ -253,7 +305,8 @@ fun CreateRoutineScreen(
                             exercises = exercises.toMutableList().apply {
                                 this[index] = this[index].copy(reps = newRep)
                             }
-                        }
+                        },
+                        enableSwipe      = true
                     )
 
 

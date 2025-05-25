@@ -43,42 +43,35 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import androidx.compose.ui.platform.LocalContext
+import com.develop.traiscore.data.firebaseData.RoutineDocument
 import com.develop.traiscore.data.firebaseData.SimpleExercise
+import com.google.firebase.auth.FirebaseAuth
+import java.util.Date
 
-
-data class RoutineData(
-    val clientName: String,
-    val createdAt: String,  // O usa Date, según necesites.
-    val routine: Map<String, List<SimpleExercise>>
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoutineScreen(
-    routineData: RoutineData,
+    routineViewModel: RoutineViewModel = viewModel(),
     documentId: String,
     selectedType: String, // <- nuevo parámetro
     onBack: () -> Unit
 ) {
-    val routineViewModel: RoutineViewModel = viewModel()
+
     val context = LocalContext.current
     var showEmptyDialog by remember { mutableStateOf(false) }
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
+        ?: run { onBack(); return }
 
     // Inicializa el estado del ViewModel con los datos iniciales solo una vez
-    LaunchedEffect(routineData) {
-        if (routineViewModel.routineData == null) {
-            routineViewModel.routineData = routineData
-        }
-        // Si no hay ninguna sección en la rutina, mostramos el diálogo
-        if (routineData.routine.isEmpty()) {
-            showEmptyDialog = true
-        }
+    LaunchedEffect(documentId) {
+        routineViewModel.loadRoutine(documentId, userId)
     }
 
 
     // Si el ViewModel no tiene datos aún, muestra un mensaje de carga
-    val currentRoutineData  = routineViewModel.routineData
-    if (currentRoutineData  == null) {
+    val currentRoutineData = routineViewModel.routineDocument
+    if (currentRoutineData == null) {
         Text("Cargando datos...")
         return
     }
@@ -95,7 +88,7 @@ fun RoutineScreen(
         )
         return
     }
-    val filteredExercises = currentRoutineData.routine[selectedType] ?: emptyList()
+    val filteredExercises = currentRoutineData.routineExer[selectedType] ?: emptyList()
 
 
     Scaffold(
@@ -124,8 +117,7 @@ fun RoutineScreen(
             )
         }
     )
-    {
-        innerPadding ->
+    { innerPadding ->
 
         LazyColumn(
             modifier = Modifier
@@ -161,15 +153,9 @@ fun RoutineScreen(
                     onRepsChanged = { exerciseIndex, newRep ->
                         routineViewModel.updateReps(exerciseIndex, selectedType, newRep)
                     },
-                    onDeleteExercise = { index ->
-                        routineViewModel.deleteRoutineType(documentId, selectedType) { isSuccess ->
-                            if (isSuccess) {
-                                Toast.makeText(context, "Tipo de rutina eliminado", Toast.LENGTH_SHORT).show()
-                            } else {
-                                Toast.makeText(context, "Error al eliminar el tipo de rutina", Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                    }
+                    onDeleteExercise = {
+                    },
+                    enableSwipe      = false
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -195,7 +181,8 @@ fun RoutineScreen(
                     Button(
                         onClick = {
                             routineViewModel.saveRoutine(documentId) { isSuccess ->
-                                val message = if (isSuccess) "Rutina guardada con éxito" else "Error al guardar la rutina"
+                                val message =
+                                    if (isSuccess) "Rutina guardada con éxito" else "Error al guardar la rutina"
                                 Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                             }
                         },
@@ -212,10 +199,17 @@ fun RoutineScreen(
 @Preview(showBackground = true)
 @Composable
 fun RoutineScreenPreview() {
-    val routineData = RoutineData(
+    val now = com.google.firebase.Timestamp(Date())
+
+    val routineDocument = RoutineDocument(
         clientName = "Daniel",
-        createdAt = "2025-04-08T19:40:04.423Z",
-        routine = mapOf(
+        routineName = "Empujes",
+        createdAt = now,
+        type = "Pecho",
+        userId = "545454",
+        documentId = "sadasdasd",
+//        createdAt = "2025-04-08T19:40:04.423Z",
+        routineExer = mapOf(
             "Empuje" to listOf(
                 SimpleExercise("Press banca", 3, "10", "100", 4),
                 SimpleExercise("Triceps X", 4, "", "15", 7)
@@ -232,7 +226,6 @@ fun RoutineScreenPreview() {
     )
 
     RoutineScreen(
-        routineData = routineData,
         documentId = "dummyDocumentId",
         selectedType = "Pierna",
         onBack = {}

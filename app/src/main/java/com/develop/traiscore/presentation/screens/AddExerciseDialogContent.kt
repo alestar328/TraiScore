@@ -121,7 +121,7 @@ fun AddExerciseDialogContent(
                 OutlinedTextField(
                     value = weightText,
                     onValueChange = {newValue ->
-                        if(newValue.length <=6 && !newValue.startsWith("-") && !newValue.startsWith("0")  && !newValue.startsWith(".")
+                        if(newValue.length <=6 && !newValue.startsWith("-") && !newValue.startsWith(".")
                             && !newValue.contains("-") && !newValue.contains(" ") && !newValue.contains("..")
                             && !(newValue.startsWith("0") && newValue.length>1)){
                             weightText = newValue
