@@ -82,7 +82,6 @@ class AuthenticationManager(
                                         trySend(AuthResponse.Success)
                                     } else {
                                         Log.d("AuthDebug", "Document does NOT exist. Signing out and sending AuthResponse.NewUser") // <-- Add this
-                                        auth.signOut()
                                         trySend(AuthResponse.NewUser)
                                     }
                                     close()

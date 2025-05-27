@@ -112,7 +112,7 @@ fun RoutineMenuScreen(
                                     createdAt = createdAt,
                                     clientName = clientName,
                                     routineName = routineName,
-                                    routineExer = emptyMap()       // solo menú, sin ejercicios
+                                    sections = emptyList()       // solo menú, sin ejercicios
                                 )
                             )
                         }

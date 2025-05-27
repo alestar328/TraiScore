@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.develop.traiscore.core.ColumnType
 import com.develop.traiscore.data.firebaseData.RoutineDocument
+import com.develop.traiscore.data.firebaseData.RoutineSection
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.data.firebaseData.updateRoutineInFirebase
 import com.google.firebase.Firebase
@@ -74,16 +75,15 @@ class RoutineViewModel : ViewModel() {
                 // 1) Campos básicos
                 val clientName  = snap.getString("clientName") ?: ""
                 val routineName = snap.getString("routineName") ?: ""
-                val createdAt   = snap.getTimestamp("createdAt")    // Timestamp?
-                val trainerId   = snap.getString("trainerId")  // puede ser null
+                val createdAt   = snap.getTimestamp("createdAt")
+                val trainerId   = snap.getString("trainerId")
 
-                // 2) Secciones (type + ejercicios)
+                // 2) Secciones (convertir a List<RoutineSection>)
                 val sectionsRaw = snap.get("sections") as? List<Map<String,Any>> ?: emptyList()
-                // Construimos el Map<String, List<SimpleExercise>>
-                val routineExer = sectionsRaw.associate { section ->
-                    val type = section["type"] as? String ?: return@associate "" to emptyList<SimpleExercise>()
+                val routineSections = sectionsRaw.mapNotNull { section ->
+                    val type = section["type"] as? String ?: return@mapNotNull null
                     val exercisesRaw = section["exercises"] as? List<Map<String,Any>> ?: emptyList()
-                    val listExe = exercisesRaw.mapNotNull { ex ->
+                    val exercises = exercisesRaw.mapNotNull { ex ->
                         SimpleExercise(
                             name   = ex["name"]   as? String ?: return@mapNotNull null,
                             series = (ex["series"] as? Number)?.toInt() ?: 0,
@@ -92,19 +92,19 @@ class RoutineViewModel : ViewModel() {
                             rir    = (ex["rir"]   as? Number)?.toInt() ?: 0
                         )
                     }
-                    type to listExe
+                    RoutineSection(type = type, exercises = exercises)
                 }
 
                 // 3) Asignamos a nuestro estado
                 routineDocument = RoutineDocument(
                     userId      = userId,
                     trainerId   = trainerId,
-                    type        = "",             // lo filtrará Create/RoutineScreen
+                    type        = "",
                     documentId  = documentId,
                     createdAt   = createdAt,
                     clientName  = clientName,
                     routineName = routineName,
-                    routineExer = routineExer
+                    sections    = routineSections
                 )
             }
             .addOnFailureListener { e ->
@@ -112,18 +112,10 @@ class RoutineViewModel : ViewModel() {
             }
     }
 
-
-    fun updateReps(exerciseIndex: Int, trainingType: String, newReps: String) {
-        routineDocument = routineDocument?.let { data ->
-            // Actualiza la lista de ejercicios para el trainingType
-            val updatedList = data.routineExer[trainingType]?.mapIndexed { index, exercise ->
-                if (index == exerciseIndex) exercise.copy(reps = newReps) else exercise
-            } ?: emptyList()
-            val updatedRoutine = data.routineExer.toMutableMap()
-            updatedRoutine[trainingType] = updatedList
-            data.copy(routineExer = updatedRoutine)
-        }
+    fun getExercisesByType(type: String): List<SimpleExercise> {
+        return routineDocument?.sections?.firstOrNull { it.type == type }?.exercises ?: emptyList()
     }
+
     // DESPUÉS:
     fun updateExerciseFieldInMemory(
         exerciseIndex: Int,
@@ -132,28 +124,30 @@ class RoutineViewModel : ViewModel() {
         newValue: String
     ) {
         routineDocument = routineDocument?.let { data ->
-            val updatedList = data.routineExer[trainingType]?.mapIndexed { idx, ex ->
-                if (idx != exerciseIndex) return@mapIndexed ex
+            val updatedSections = data.sections.map { section ->
+                if (section.type != trainingType) return@map section
 
-                when(columnType) {
-                    ColumnType.SERIES -> {
-                        val v = newValue.toIntOrNull() ?: 0
-                        ex.copy(series = v)
-                    }
-                    ColumnType.WEIGHT -> ex.copy(weight = newValue)
-                    ColumnType.REPS   -> ex.copy(reps   = newValue)
-                    ColumnType.RIR    -> {
-                        val v = newValue.toIntOrNull() ?: 0
-                        ex.copy(rir = v)
+                val updatedExercises = section.exercises.mapIndexed { idx, ex ->
+                    if (idx != exerciseIndex) return@mapIndexed ex
+
+                    when(columnType) {
+                        ColumnType.SERIES -> {
+                            val v = newValue.toIntOrNull() ?: 0
+                            ex.copy(series = v)
+                        }
+                        ColumnType.WEIGHT -> ex.copy(weight = newValue)
+                        ColumnType.REPS   -> ex.copy(reps = newValue)
+                        ColumnType.RIR    -> {
+                            val v = newValue.toIntOrNull() ?: 0
+                            ex.copy(rir = v)
+                        }
                     }
                 }
-            } ?: emptyList()
 
-            data.copy(
-                routineExer = data.routineExer.toMutableMap().apply {
-                    put(trainingType, updatedList)
-                }
-            )
+                section.copy(exercises = updatedExercises)
+            }
+
+            data.copy(sections = updatedSections)
         }
     }
 
@@ -199,13 +193,13 @@ class RoutineViewModel : ViewModel() {
 
     fun cleanRoutine() {
         routineDocument = routineDocument?.let { data ->
-            // Para cada tipo de rutina, se limpia el campo 'reps' de cada ejercicio
-            val cleanedRoutine = data.routineExer.mapValues { (_, exercises) ->
-                exercises.map { exercise ->
+            val cleanedSections = data.sections.map { section ->
+                val cleanedExercises = section.exercises.map { exercise ->
                     exercise.copy(reps = "")
                 }
+                section.copy(exercises = cleanedExercises)
             }
-            data.copy(routineExer = cleanedRoutine)
+            data.copy(sections = cleanedSections)
         }
     }
 }

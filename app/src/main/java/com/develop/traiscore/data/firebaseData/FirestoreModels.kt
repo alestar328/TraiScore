@@ -1,49 +1,31 @@
 package com.develop.traiscore.data.firebaseData
 
 import com.google.firebase.Timestamp
-import java.util.Date
 
 
-data class FirestoreExercise(
-    val name: String = "",
-    val series: String = "",
-    val reps: String = "",
-    val weight: String = "",
-    val rir: Int = 0
-)
-
-
-data class FirestoreRoutineDoc(
-    val clientName: String = "",
-    val routine: Map<String, List<FirestoreExercise>> = emptyMap(),
-    val createdAt: com.google.firebase.Timestamp? = null
-
-)
-
-data class ExerciseEditable(
-    val name: String,
-    val series: Int,
-    var reps: String, // mutable
-    val weight: String,
-    val rir: Int
-)
 
 data class RoutineDocument(
-    val userId: String,
+    val userId: String = "",
     val trainerId: String? = null,
+    val documentId: String = "",
     val type: String,
-    val documentId: String,
-    val createdAt: Timestamp?,
-    val clientName: String,
+    val createdAt: Timestamp? = null,
+    val clientName: String = "",
     val routineName: String,
-    val routineExer: Map<String, List<SimpleExercise>>
+    val sections: List<RoutineSection> = emptyList(),
 )
 
 
 data class SimpleExercise(
     val name: String,
-    val series: Int,
+    val series: Int = 0,
     val reps: String,
     val weight: String,
-    val rir: Int
+    val rir: Int = 0
 )
+
+data class RoutineSection(
+    val type: String = "",
+    val exercises: List<SimpleExercise> = emptyList()
+)
+

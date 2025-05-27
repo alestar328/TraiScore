@@ -17,10 +17,8 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -35,16 +33,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import androidx.compose.ui.platform.LocalContext
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.data.firebaseData.RoutineDocument
+import com.develop.traiscore.data.firebaseData.RoutineSection
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.google.firebase.auth.FirebaseAuth
 import java.util.Date
@@ -58,7 +54,6 @@ fun RoutineScreen(
     selectedType: String, // <- nuevo parámetro
     onBack: () -> Unit
 ) {
-    val routineVM: RoutineViewModel = hiltViewModel()
 
     val context = LocalContext.current
     var showEmptyDialog by remember { mutableStateOf(false) }
@@ -90,7 +85,7 @@ fun RoutineScreen(
         )
         return
     }
-    val filteredExercises = currentRoutineData.routineExer[selectedType] ?: emptyList()
+    val filteredExercises = routineViewModel.getExercisesByType(selectedType)
 
 
     Scaffold(
@@ -168,7 +163,7 @@ fun RoutineScreen(
                     },
                     onDeleteExercise = {},
                     enableSwipe = false,
-                    validateInput = routineVM::validateInput
+                    validateInput = routineViewModel::validateInput
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -215,31 +210,47 @@ fun RoutineScreen(
 fun RoutineScreenPreview() {
     val now = com.google.firebase.Timestamp(Date())
 
-    val routineDocument = RoutineDocument(
+    var routineDocument = RoutineDocument(
         clientName = "Daniel",
         routineName = "Empujes",
         createdAt = now,
         type = "Pecho",
         userId = "545454",
         documentId = "sadasdasd",
-//        createdAt = "2025-04-08T19:40:04.423Z",
-        routineExer = mapOf(
-            "Empuje" to listOf(
-                SimpleExercise("Press banca", 3, "10", "100", 4),
-                SimpleExercise("Triceps X", 4, "", "15", 7)
+        sections = listOf(
+            RoutineSection(
+                type = "Empuje",
+                exercises = listOf(
+                    SimpleExercise("Press banca", 3, "10", "100", 4),
+                    SimpleExercise("Triceps X", 4, "", "15", 7)
+                )
             ),
-            "Pierna" to listOf(
-                SimpleExercise("Sentadilla", 3, "5", "30", 3),
-                SimpleExercise("Prensa", 2, "12", "100", 4)
+            RoutineSection(
+                type = "Pierna",
+                exercises = listOf(
+                    SimpleExercise("Sentadilla", 3, "5", "30", 3),
+                    SimpleExercise("Prensa", 2, "12", "100", 4)
+                )
             ),
-            "Tirón" to listOf(
-                SimpleExercise("Dominadas", 5, "8", "16", 1),
-                SimpleExercise("Curl biceps", 3, "15", "20", 2)
+            RoutineSection(
+                type = "Tirón",
+                exercises = listOf(
+                    SimpleExercise("Dominadas", 5, "8", "16", 1),
+                    SimpleExercise("Curl biceps", 3, "15", "20", 2)
+                )
             )
         )
     )
 
+    // Para el Preview, necesitas un ViewModel con datos mockeados
+    val mockViewModel = remember {
+        RoutineViewModel().apply {
+            routineDocument = routineDocument
+        }
+    }
+
     RoutineScreen(
+        routineViewModel = mockViewModel,
         documentId = "dummyDocumentId",
         selectedType = "Pierna",
         onBack = {}

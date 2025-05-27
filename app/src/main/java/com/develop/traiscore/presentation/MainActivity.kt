@@ -5,22 +5,30 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material.Text
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
+import androidx.navigation.navigation
 import com.develop.traiscore.R
+import com.develop.traiscore.core.UserRole
+import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
-import com.develop.traiscore.presentation.screens.RegisterScreenRoute
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -28,6 +36,7 @@ import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
+import com.develop.traiscore.presentation.screens.LoginScreenRoute
 
 
 @AndroidEntryPoint
@@ -93,19 +102,35 @@ fun AppNavigation(navController: NavHostController) {
                 }
             )
         }
-        composable(NavigationRoutes.Register.route) {
-            // Ruta de pantalla de registro
-            RegisterScreenRoute(navController = navController)
-        }
+
         composable(NavigationRoutes.Main.route) {
             MainScreen(navController = navController)
         }
+
+
+
         composable(NavigationRoutes.CreateRoutine.route) {
-            CreateRoutineScreen(
-                onBack = { navController.popBackStack() },
-                navController = navController
-            )
+            var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
+
+            LaunchedEffect(Unit) {
+                UserRoleManager.getCurrentUserRole { role ->
+                    currentUserRole = role
+                }
+            }
+            currentUserRole?.let { role ->
+                CreateRoutineScreen(
+                    onBack = { navController.popBackStack() },
+                    navController = navController,
+                    currentUserRole = role // Agregar este parámetro
+                )
+            } ?: run {
+                Text("Cargando...")
+            }
         }
+
+
+
+
         composable(NavigationRoutes.Measurements.route) {
             BodyMeasurementsScreen(
                 onBack = { navController.popBackStack() },

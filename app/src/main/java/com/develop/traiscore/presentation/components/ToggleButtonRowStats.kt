@@ -19,7 +19,7 @@ import androidx.compose.ui.unit.dp
 import com.develop.traiscore.presentation.theme.traiBlue
 
 @Composable
-fun ToggleButtonRow(
+fun ToggleButtonRowStats(
     selectedTab: String,
     onTabSelected: (String) -> Unit,
     modifier: Modifier = Modifier

@@ -1,5 +1,6 @@
 package com.develop.traiscore.presentation.screens
 
+import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -10,10 +11,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.Colors
+import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -43,6 +48,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.develop.traiscore.core.ColumnType
 import com.develop.traiscore.core.DefaultCategoryExer
+import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.presentation.components.AddExeRoutineDialog
 import com.develop.traiscore.presentation.components.AddRestButton
@@ -51,11 +57,13 @@ import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CreateRoutineScreen(
     onBack: () -> Unit,
     navController: NavHostController,
+    currentUserRole: UserRole,
     viewModel: AddExerciseViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
@@ -94,7 +102,9 @@ fun CreateRoutineScreen(
         workoutName = newName
         nameError = validateRoutineName(newName)
     }
-
+    LaunchedEffect(currentUserRole) {
+        Log.d("CreateRoutineScreen", "Current user role: $currentUserRole")
+    }
     Scaffold(
         topBar = {
             TopAppBar(
@@ -122,6 +132,27 @@ fun CreateRoutineScreen(
                         .padding(horizontal = 16.dp, vertical = 12.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
+
+                    if (currentUserRole == UserRole.TRAINER) {
+                        Log.d("CreateRoutineScreen", "Showing TRAINER button")
+
+                        FloatingActionButton(
+                            onClick = { /* tu lógica de “archivo” */ },
+                            backgroundColor = Color.Yellow,
+                            contentColor   = Color.Black,
+                            modifier       = Modifier.size(56.dp)  // tamaño estándar
+                        ) {
+                            Icon(
+                                imageVector   = Icons.Default.Email,
+                                contentDescription = "Archivo",
+                                tint = Color.Black
+                            )
+                        }
+                    }
+
+
+
+
                     // Botón de "Guardar rutina"
                     ExtendedFloatingActionButton(
                         onClick = {
@@ -373,6 +404,7 @@ fun CreateRoutineScreen(
 fun CreateRoutineScreenPreview() {
     TraiScoreTheme {
         CreateRoutineScreen(
+            currentUserRole =  UserRole.TRAINER,
             onBack = { /* Aquí iría popBackStack() en tu app real */ },
             navController = rememberNavController()
         )

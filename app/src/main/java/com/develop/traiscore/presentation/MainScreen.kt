@@ -12,6 +12,7 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import com.develop.traiscore.R
@@ -27,6 +28,8 @@ import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.develop.traiscore.core.UserRole
+import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.presentation.components.NavItem
 import com.develop.traiscore.presentation.screens.AddExerciseDialogContent
 import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
@@ -42,6 +45,7 @@ import com.develop.traiscore.presentation.theme.primaryBlack
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 
 @Composable
@@ -73,6 +77,15 @@ fun MainScreen(
     }
     val showNavBar =
         !(selectedIndex == 4 && routineScreenState is ScreenState.BODY_MEASUREMENTS_SCREEN)
+
+    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
+    var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
+
+    LaunchedEffect(Unit) {
+        UserRoleManager.getCurrentUserRole { role ->
+            currentUserRole = role
+        }
+    }
 
     Scaffold(modifier = Modifier.fillMaxSize(),
         bottomBar = {
@@ -150,7 +163,8 @@ fun MainScreen(
             onMeasurementsClick = {
                 routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
             },
-            routineViewModel = routineViewModel // Pass the viewModel here
+            routineViewModel = routineViewModel, // Pass the viewModel here
+            currentUserRole = currentUserRole
 
         )
 
@@ -191,7 +205,8 @@ fun ContentScreen(
     onBackToRoutineMenu: () -> Unit,
     onCreateRoutine: () -> Unit,
     onMeasurementsClick: () -> Unit,
-    routineViewModel: RoutineViewModel
+    routineViewModel: RoutineViewModel,
+    currentUserRole: UserRole?
 ) {
     when (selectedIndex) {
         0 -> ExercisesScreen()
@@ -218,10 +233,19 @@ fun ContentScreen(
                     )
                 }
 
-                is ScreenState.CREATE_ROUTINE_SCREEN -> CreateRoutineScreen(
-                    onBack = onBackToRoutineMenu,
-                    navController = navController
-                )
+                is ScreenState.CREATE_ROUTINE_SCREEN -> {
+                    // Solo mostrar si tenemos el rol del usuario
+                    currentUserRole?.let { role ->
+                        CreateRoutineScreen(
+                            onBack = onBackToRoutineMenu,
+                            navController = navController,
+                            currentUserRole = role // Pasar el rol aquí
+                        )
+                    } ?: run {
+                        // Mostrar loading mientras se obtiene el rol
+                        Text("Cargando...")
+                    }
+                }
 
                 else -> Unit
             }

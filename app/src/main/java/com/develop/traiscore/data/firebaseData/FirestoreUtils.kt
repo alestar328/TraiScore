@@ -3,7 +3,6 @@ package com.develop.traiscore.data.firebaseData
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
 import com.google.firebase.firestore.FieldValue
-import com.google.firebase.firestore.SetOptions
 import com.google.firebase.firestore.firestore
 
 fun updateRoutineInFirebase(documentId: String, routineDoc: RoutineDocument): Task<Void> {
@@ -13,7 +12,7 @@ fun updateRoutineInFirebase(documentId: String, routineDoc: RoutineDocument): Ta
         "routineName" to routineDoc.routineName,
         "createdAt" to FieldValue.serverTimestamp(),
         "trainerId" to routineDoc.trainerId,
-        "sections" to routineDoc.routineExer.map { (type, exercises) ->
+        "sections" to routineDoc.sections.map { (type, exercises) ->
             mapOf(
                 "type" to type,
                 "exercises" to exercises.map { exercise ->

@@ -49,7 +49,7 @@ import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.CircularProgressView
 import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.LineChartView
-import com.develop.traiscore.presentation.components.ToggleButtonRow
+import com.develop.traiscore.presentation.components.ToggleButtonRowStats
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.theme.traiBackgroundDay
@@ -157,7 +157,7 @@ fun StatScreen(
                     .fillMaxSize()
             ) {
                 // Toggle Buttons justo debajo del TopAppBar
-                ToggleButtonRow(
+                ToggleButtonRowStats(
                     selectedTab = selectedTab,
                     onTabSelected = { selectedTab = it },
                     modifier = Modifier
