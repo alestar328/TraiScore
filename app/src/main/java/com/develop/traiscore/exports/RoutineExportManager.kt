@@ -25,9 +25,9 @@ import java.util.Locale
 
 object RoutineExportManager {
 
-    private const val FILE_EXTENSION = ".traiscore"
-    private const val MIME_TYPE = "application/traiscore" // MIME type más específico
-    private const val FALLBACK_MIME_TYPE = "application/octet-stream"
+    private const val FILE_EXTENSION = ".json"  // Cambié a .json
+    private const val MIME_TYPE = "application/json"  // MIME type estándar
+    private const val FALLBACK_MIME_TYPE = "text/plain"
 
     // Serializer personalizado para Firebase Timestamp
     class TimestampSerializer : JsonSerializer<Timestamp> {
@@ -67,7 +67,9 @@ object RoutineExportManager {
         val clientName: String,
         val routineName: String,
         val sections: List<RoutineSection>,
-        val metadata: RoutineMetadata
+        val metadata: RoutineMetadata,
+        // Identificador para que sea reconocible como archivo TraiScore
+        val fileType: String = "TraiScore_Routine"
     )
 
     data class RoutineMetadata(
@@ -81,57 +83,6 @@ object RoutineExportManager {
         .registerTypeAdapter(Timestamp::class.java, TimestampDeserializer())
         .setPrettyPrinting()
         .create()
-
-    /**
-     * Exporta una rutina como archivo .traiscore y abre el selector de compartir
-     */
-    fun shareRoutineFile(
-        context: Context,
-        fileUri: Uri,
-        routineName: String
-    ) {
-        try {
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = MIME_TYPE // Usar el MIME type específico
-                putExtra(Intent.EXTRA_STREAM, fileUri)
-                putExtra(Intent.EXTRA_SUBJECT, "Rutina TraiScore: $routineName")
-                putExtra(
-                    Intent.EXTRA_TEXT,
-                    "📋 Te comparto esta rutina de TraiScore: $routineName\n\n" +
-                            "💪 Abre este archivo con la app TraiScore para importar la rutina completa."
-                )
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
-
-            // Crear selector personalizado
-            val chooserIntent = Intent.createChooser(shareIntent, "Compartir rutina TraiScore")
-
-            // Agregar opción alternativa con MIME type genérico por compatibilidad
-            val fallbackIntent = Intent(shareIntent).apply {
-                type = FALLBACK_MIME_TYPE
-            }
-
-            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(fallbackIntent))
-
-            context.startActivity(chooserIntent)
-
-        } catch (e: Exception) {
-            Log.e("RoutineExport", "Error sharing routine", e)
-
-            // Fallback: compartir como archivo genérico
-            try {
-                val fallbackShareIntent = Intent(Intent.ACTION_SEND).apply {
-                    type = FALLBACK_MIME_TYPE
-                    putExtra(Intent.EXTRA_STREAM, fileUri)
-                    putExtra(Intent.EXTRA_SUBJECT, "Rutina: $routineName")
-                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                }
-                context.startActivity(Intent.createChooser(fallbackShareIntent, "Compartir archivo"))
-            } catch (fallbackError: Exception) {
-                Log.e("RoutineExport", "Fallback share also failed", fallbackError)
-            }
-        }
-    }
 
     fun exportRoutine(
         context: Context,
@@ -165,10 +116,51 @@ object RoutineExportManager {
             onError("Error al exportar la rutina: ${e.message}")
         }
     }
+    fun shareRoutineFile(
+        context: Context,
+        fileUri: Uri,
+        routineName: String
+    ) {
+        try {
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = MIME_TYPE
+                putExtra(Intent.EXTRA_STREAM, fileUri)
+                putExtra(Intent.EXTRA_SUBJECT, "Rutina TraiScore: $routineName")
+                putExtra(
+                    Intent.EXTRA_TEXT,
+                    "📋 Te comparto esta rutina de TraiScore: $routineName\n\n" +
+                            "💪 Abre este archivo JSON con la app TraiScore para importar la rutina completa.\n\n" +
+                            "📱 Si no tienes TraiScore instalado, puedes descargarla desde Google Play Store."
+                )
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
 
-    /**
-     * Abre el selector de aplicaciones para compartir el archivo
-     */
+            // Crear selector personalizado
+            val chooserIntent = Intent.createChooser(shareIntent, "Compartir rutina TraiScore")
+
+            context.startActivity(chooserIntent)
+
+        } catch (e: Exception) {
+            Log.e("RoutineExport", "Error sharing routine", e)
+
+            // Fallback: compartir como archivo de texto
+            try {
+                val fallbackShareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = FALLBACK_MIME_TYPE
+                    putExtra(Intent.EXTRA_STREAM, fileUri)
+                    putExtra(Intent.EXTRA_SUBJECT, "Rutina: $routineName")
+                    putExtra(
+                        Intent.EXTRA_TEXT,
+                        "📋 Rutina de TraiScore: $routineName"
+                    )
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(Intent.createChooser(fallbackShareIntent, "Compartir archivo"))
+            } catch (fallbackError: Exception) {
+                Log.e("RoutineExport", "Fallback share also failed", fallbackError)
+            }
+        }
+    }
 
 
     /**
@@ -191,6 +183,12 @@ object RoutineExportManager {
 
             val exportableRoutine = gson.fromJson(jsonString, ExportableRoutine::class.java)
 
+            // Validar que sea un archivo TraiScore válido
+            if (exportableRoutine.fileType != "TraiScore_Routine") {
+                onError("El archivo no es una rutina válida de TraiScore")
+                return
+            }
+
             if (exportableRoutine.sections.isEmpty()) {
                 onError("La rutina no contiene ejercicios válidos")
                 return
@@ -204,7 +202,6 @@ object RoutineExportManager {
             onError("Error al importar la rutina: ${e.message}")
         }
     }
-
     /**
      * Convierte ExportableRoutine a RoutineDocument para guardar en Firebase
      */
@@ -230,13 +227,14 @@ object RoutineExportManager {
         val cleanName = routineName
             .replace(Regex("[^a-zA-Z0-9\\s]"), "")
             .replace("\\s+".toRegex(), "_")
-            .take(30)
+            .take(20)  // Reducido para archivos JSON
 
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault())
             .format(Date())
 
-        return "${cleanName}_$timestamp$FILE_EXTENSION"
+        return "TraiScore_${cleanName}_$timestamp$FILE_EXTENSION"
     }
+
 
     private fun createTempFile(context: Context, fileName: String): File {
         val cacheDir = File(context.cacheDir, "shared_routines")
@@ -267,7 +265,6 @@ object RoutineExportManager {
             )
         )
     }
-
     private fun writeJsonToFile(file: File, exportableRoutine: ExportableRoutine) {
         FileWriter(file).use { writer ->
             gson.toJson(exportableRoutine, writer)

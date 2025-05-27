@@ -9,14 +9,18 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -39,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import androidx.compose.ui.platform.LocalContext
+import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.data.firebaseData.RoutineDocument
 import com.develop.traiscore.data.firebaseData.RoutineSection
 import com.develop.traiscore.data.firebaseData.SimpleExercise
@@ -52,7 +57,8 @@ fun RoutineScreen(
     routineViewModel: RoutineViewModel = viewModel(),
     documentId: String,
     selectedType: String, // <- nuevo parámetro
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    currentUserRole: UserRole,
 ) {
 
     val context = LocalContext.current
@@ -112,7 +118,31 @@ fun RoutineScreen(
                     containerColor = traiBlue
                 )
             )
+        },
+        floatingActionButton = {
+            // Solo para TRAINER mostramos el FAB de “Enviar rutina”
+            if (currentUserRole == UserRole.TRAINER) {
+                FloatingActionButton(
+                    onClick = {
+                        // TODO: disparar la exportación aquí
+                    },
+                    containerColor = Color.Yellow,
+                    contentColor = Color.Black,
+                    modifier = Modifier
+                        .size(56.dp)
+                        .navigationBarsPadding()
+                        .padding(bottom = 100.dp, end = 16.dp) // tu NavBar + margen
+
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Email,
+                        contentDescription = "Enviar rutina"
+                    )
+                }
+            }
         }
+
+
     )
     { innerPadding ->
 
@@ -156,9 +186,9 @@ fun RoutineScreen(
                     onFieldChanged = { idx, columnType, newValue ->
                         routineViewModel.updateExerciseFieldInMemory(
                             exerciseIndex = idx,
-                            trainingType  = selectedType,
-                            columnType    = columnType,
-                            newValue      = newValue
+                            trainingType = selectedType,
+                            columnType = columnType,
+                            newValue = newValue
                         )
                     },
                     onDeleteExercise = {},
@@ -253,6 +283,7 @@ fun RoutineScreenPreview() {
         routineViewModel = mockViewModel,
         documentId = "dummyDocumentId",
         selectedType = "Pierna",
-        onBack = {}
+        onBack = {},
+        currentUserRole = UserRole.TRAINER
     )
 }

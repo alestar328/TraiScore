@@ -133,35 +133,74 @@ class MainActivity : ComponentActivity() {
     // MEJORADO: Detectar archivos .traiscore con mejor validación
     private fun isTraiScoreFile(uri: Uri): Boolean {
         val fileName = getFileName(uri)
-        val isTraiScoreExtension = fileName?.endsWith(".traiscore", ignoreCase = true) == true
 
-        Log.d("MainActivity", "Checking file: $fileName, isTraiScore: $isTraiScoreExtension")
+        Log.d("MainActivity", "=== FILE VALIDATION DEBUG ===")
+        Log.d("MainActivity", "URI: $uri")
+        Log.d("MainActivity", "File name: $fileName")
 
-        // Validación adicional: intentar leer el contenido para verificar estructura
-        if (isTraiScoreExtension) {
-            return validateTraiScoreContent(uri)
-        }
-
-        return false
+        // NO confiar solo en la extensión - WhatsApp puede cambiar nombres de archivo
+        // En su lugar, validar SIEMPRE el contenido
+        return validateTraiScoreContent(uri)
     }
+
     // NUEVO: Validar contenido del archivo
     private fun validateTraiScoreContent(uri: Uri): Boolean {
         return try {
             val inputStream = contentResolver.openInputStream(uri)
             val content = inputStream?.bufferedReader()?.use { it.readText() }
 
-            // Verificar que contenga las claves esperadas de un archivo TraiScore
-            content?.contains("\"appVersion\"") == true &&
-                    content.contains("\"routineName\"") &&
-                    content.contains("\"sections\"")
+            Log.d("MainActivity", "=== CONTENT VALIDATION DEBUG ===")
+            Log.d("MainActivity", "Content length: ${content?.length}")
+            Log.d("MainActivity", "Content preview: ${content?.take(300)}...")
+
+            if (content.isNullOrBlank()) {
+                Log.w("MainActivity", "Content is null or blank")
+                return false
+            }
+
+            // Primero verificar si es JSON válido
+            val looksLikeJson = content.trim().startsWith("{") && content.trim().endsWith("}")
+            Log.d("MainActivity", "Looks like JSON: $looksLikeJson")
+
+            if (!looksLikeJson) {
+                Log.w("MainActivity", "Content doesn't look like JSON")
+                return false
+            }
+
+            // Verificar campos específicos de TraiScore usando Gson para más precisión
+            return try {
+                val gson = com.google.gson.Gson()
+                val jsonObject = gson.fromJson(content, com.google.gson.JsonObject::class.java)
+
+                val hasFileType = jsonObject?.has("fileType") == true &&
+                        jsonObject.get("fileType")?.asString == "TraiScore_Routine"
+                val hasRoutineName = jsonObject?.has("routineName") == true
+                val hasSections = jsonObject?.has("sections") == true
+                val hasAppVersion = jsonObject?.has("appVersion") == true
+
+                Log.d("MainActivity", "GSON Validation checks:")
+                Log.d("MainActivity", "- fileType = TraiScore_Routine: $hasFileType")
+                Log.d("MainActivity", "- has routineName: $hasRoutineName")
+                Log.d("MainActivity", "- has sections: $hasSections")
+                Log.d("MainActivity", "- has appVersion: $hasAppVersion")
+
+                val isValid = hasFileType && hasRoutineName && hasSections && hasAppVersion
+                Log.d("MainActivity", "Final validation result: $isValid")
+
+                isValid
+
+            } catch (jsonException: Exception) {
+                Log.e("MainActivity", "JSON parsing failed", jsonException)
+                false
+            }
 
         } catch (e: Exception) {
-            Log.e("MainActivity", "Error validating TraiScore content", e)
+            Log.e("MainActivity", "Error validating content", e)
             false
         }
     }
     private fun showImportDialog(uri: Uri) {
-        val fileName = getFileName(uri) ?: "archivo.traiscore"
+        val fileName = getFileName(uri) ?: "rutina_traiscore.json"
 
         val builder = AlertDialog.Builder(this)
         builder.setTitle("📱 TraiScore - Importar Rutina")
@@ -199,7 +238,7 @@ class MainActivity : ComponentActivity() {
     private fun showNotTraiScoreFileDialog() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("⚠️ Archivo no compatible")
-        builder.setMessage("El archivo seleccionado no es una rutina válida de TraiScore (.traiscore).\n\n📋 Solo puedes importar rutinas exportadas desde TraiScore.")
+        builder.setMessage("El archivo seleccionado no es una rutina válida de TraiScore.\n\n📋 Solo puedes importar rutinas en formato JSON exportadas desde TraiScore.\n\n💡 Los archivos válidos tienen nombres como 'TraiScore_[nombre]_[fecha].json'")
         builder.setPositiveButton("Entendido") { dialog, _ ->
             dialog.dismiss()
         }

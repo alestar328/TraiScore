@@ -225,12 +225,16 @@ fun ContentScreen(
                 )
 
                 is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
-                    // <-- Aquí!
-                    RoutineScreen(
-                        documentId = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).documentId,
-                        selectedType = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).selectedType,
-                        onBack = onBackToRoutineMenu
-                    )
+                    currentUserRole?.let { role ->
+                        RoutineScreen(
+                            documentId = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).documentId,
+                            selectedType = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).selectedType,
+                            onBack = onBackToRoutineMenu,
+                            currentUserRole = role
+                        )
+                    } ?: run {
+                        Text("Cargando…")
+                    }
                 }
 
                 is ScreenState.CREATE_ROUTINE_SCREEN -> {

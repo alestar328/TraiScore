@@ -106,8 +106,15 @@ class RoutineViewModel : ViewModel() {
     ) {
         viewModelScope.launch {
             val fileName = getFileName(context, uri)
+            Log.d("RoutineViewModel", "Attempting to import file: $fileName")
 
-            if (fileName?.endsWith(".traiscore", ignoreCase = true) == true) {
+            // NO verificar extensión - validar contenido directamente
+            // WhatsApp y otras apps pueden cambiar nombres de archivo
+            Log.d("RoutineViewModel", "Validating file content...")
+
+            if (isValidTraiScoreJson(context, uri)) {
+                Log.d("RoutineViewModel", "Valid TraiScore JSON detected, importing...")
+
                 importViewModel.importRoutineFromUri(
                     context = context,
                     uri = uri,
@@ -117,11 +124,13 @@ class RoutineViewModel : ViewModel() {
                         loadRoutines(context) { /* no necesitamos manejar resultado aquí */ }
                     },
                     onError = { error ->
+                        Log.e("RoutineViewModel", "Import failed: $error")
                         onError("❌ Error al importar: $error")
                     }
                 )
             } else {
-                onError("⚠️ Por favor selecciona un archivo .traiscore válido")
+                Log.w("RoutineViewModel", "File is not a valid TraiScore routine")
+                onError("⚠️ El archivo no es una rutina válida de TraiScore")
             }
         }
     }
@@ -181,18 +190,58 @@ class RoutineViewModel : ViewModel() {
                 onComplete(false)
             }
     }
-    fun deleteRoutineWithUpdate(
-        index: Int,
-        routine: RoutineDocument,
-        onResult: (Boolean, String) -> Unit
-    ) {
-        deleteRoutineType(routine.documentId) { success ->
-            if (success) {
-                routineTypes.removeAt(index)
-                onResult(true, "Rutina eliminada")
-            } else {
-                onResult(false, "Error al eliminar rutina")
+    private fun isValidTraiScoreJson(context: Context, uri: Uri): Boolean {
+        return try {
+            val inputStream = context.contentResolver.openInputStream(uri)
+            val content = inputStream?.bufferedReader()?.use { it.readText() }
+
+            Log.d("RoutineViewModel", "=== CONTENT VALIDATION DEBUG ===")
+            Log.d("RoutineViewModel", "Content length: ${content?.length}")
+            Log.d("RoutineViewModel", "Content preview: ${content?.take(300)}...")
+
+            if (content.isNullOrBlank()) {
+                Log.w("RoutineViewModel", "File content is empty")
+                return false
             }
+
+            // Verificar estructura JSON básica
+            val looksLikeJson = content.trim().startsWith("{") && content.trim().endsWith("}")
+            Log.d("RoutineViewModel", "Looks like JSON: $looksLikeJson")
+
+            if (!looksLikeJson) {
+                return false
+            }
+
+            // Usar Gson para validación precisa
+            return try {
+                val gson = com.google.gson.Gson()
+                val jsonObject = gson.fromJson(content, com.google.gson.JsonObject::class.java)
+
+                val hasFileType = jsonObject?.has("fileType") == true &&
+                        jsonObject.get("fileType")?.asString == "TraiScore_Routine"
+                val hasRoutineName = jsonObject?.has("routineName") == true
+                val hasSections = jsonObject?.has("sections") == true
+                val hasAppVersion = jsonObject?.has("appVersion") == true
+
+                Log.d("RoutineViewModel", "GSON Validation results:")
+                Log.d("RoutineViewModel", "- fileType = TraiScore_Routine: $hasFileType")
+                Log.d("RoutineViewModel", "- Has routineName: $hasRoutineName")
+                Log.d("RoutineViewModel", "- Has sections: $hasSections")
+                Log.d("RoutineViewModel", "- Has appVersion: $hasAppVersion")
+
+                val isValid = hasFileType && hasRoutineName && hasSections && hasAppVersion
+                Log.d("RoutineViewModel", "Overall validation result: $isValid")
+
+                return isValid
+
+            } catch (jsonException: Exception) {
+                Log.e("RoutineViewModel", "JSON parsing failed", jsonException)
+                false
+            }
+
+        } catch (e: Exception) {
+            Log.e("RoutineViewModel", "Error validating JSON content", e)
+            false
         }
     }
     fun loadRoutine(documentId: String, userId: String) {

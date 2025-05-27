@@ -39,28 +39,59 @@
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-            <!-- Intent filter para archivos .traiscore desde el sistema de archivos -->
+
+
+            <!-- Intent filter principal para archivos JSON desde file:// -->
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:mimeType="application/traiscore" />
                 <data android:scheme="file" />
-                <data android:scheme="content" />
-                <data android:pathPattern=".*\\.traiscore" />
+                <data android:mimeType="application/json" />
             </intent-filter>
 
+            <!-- Intent filter principal para archivos JSON desde content:// -->
+            <intent-filter android:priority="1000">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:mimeType="application/json" />
+            </intent-filter>
+
+            <!-- Intent filter para archivos de texto plano con patrón TraiScore -->
+            <intent-filter android:priority="900">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="file" />
+                <data android:mimeType="text/plain" />
+                <data android:pathPattern=".*TraiScore.*\\.json" />
+            </intent-filter>
+
+            <intent-filter android:priority="900">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="content" />
+                <data android:mimeType="text/plain" />
+                <data android:pathPattern=".*TraiScore.*\\.json" />
+            </intent-filter>
+
+            <!-- Intent filter para compartir archivos JSON -->
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="application/traiscore" />
+                <data android:mimeType="application/json" />
             </intent-filter>
 
-            <intent-filter android:priority="1000">
-                <action android:name="android.intent.action.SEND_MULTIPLE" />
+            <!-- Intent filter para compartir archivos de texto -->
+            <intent-filter android:priority="900">
+                <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="application/traiscore" />
+                <data android:mimeType="text/plain" />
             </intent-filter>
+
         </activity>
     </application>
 
