@@ -191,6 +191,44 @@ object UserRoleManager {
             callback(currentRole != null && currentRole in requiredRoles)
         }
     }
+    fun debugUserDocument() {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            Log.d("UserRoleManager", "debugUserDocument: No user logged in")
+            return
+        }
+
+        Log.d("UserRoleManager", "debugUserDocument: Checking document for userId: $userId")
+
+        firestore
+            .collection("users")
+            .document(userId)
+            .get()
+            .addOnSuccessListener { document ->
+                Log.d("UserRoleManager", "=== DEBUG USER DOCUMENT ===")
+                Log.d("UserRoleManager", "Document ID: ${document.id}")
+                Log.d("UserRoleManager", "Document exists: ${document.exists()}")
+                if (document.exists()) {
+                    Log.d("UserRoleManager", "All document data: ${document.data}")
+
+                    // Verificar todos los campos posibles
+                    document.data?.forEach { (key, value) ->
+                        Log.d("UserRoleManager", "Field '$key': '$value' (${value?.javaClass?.simpleName})")
+                    }
+
+                    // Verificar campos específicos
+                    val role = document.getString("role")
+                    val userRole = document.getString("userRole")
+
+                    Log.d("UserRoleManager", "Specific field 'role': '$role'")
+                    Log.d("UserRoleManager", "Specific field 'userRole': '$userRole'")
+                }
+                Log.d("UserRoleManager", "=== END DEBUG ===")
+            }
+            .addOnFailureListener { exception ->
+                Log.e("UserRoleManager", "debugUserDocument: Error", exception)
+            }
+    }
 }
 
 // Extensión para usar desde Composables

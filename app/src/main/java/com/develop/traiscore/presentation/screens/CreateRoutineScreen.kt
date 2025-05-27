@@ -13,12 +13,12 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.material.Colors
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -49,7 +49,9 @@ import androidx.navigation.compose.rememberNavController
 import com.develop.traiscore.core.ColumnType
 import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.core.UserRole
+import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.data.firebaseData.SimpleExercise
+import com.develop.traiscore.exports.RoutineExportManager
 import com.develop.traiscore.presentation.components.AddExeRoutineDialog
 import com.develop.traiscore.presentation.components.AddRestButton
 import com.develop.traiscore.presentation.components.CategoryCard
@@ -137,7 +139,93 @@ fun CreateRoutineScreen(
                         Log.d("CreateRoutineScreen", "Showing TRAINER button")
 
                         FloatingActionButton(
-                            onClick = { /* tu lógica de “archivo” */ },
+                            onClick = {
+                                Log.d("CreateRoutineScreen", "TRAINER export button clicked")
+
+                                // Primero verificar si hay datos para exportar
+                                if (selectedCategory == null || exercises.isEmpty() || workoutName.isBlank()) {
+                                    // Si no hay datos completos, mostrar debug
+                                    Log.d("CreateRoutineScreen", "=== MANUAL DEBUG ===")
+                                    Log.d("CreateRoutineScreen", "Current role in composable: $currentUserRole")
+                                    Log.d("CreateRoutineScreen", "Selected category: $selectedCategory")
+                                    Log.d("CreateRoutineScreen", "Exercises count: ${exercises.size}")
+                                    Log.d("CreateRoutineScreen", "Workout name: '$workoutName'")
+
+                                    UserRoleManager.debugUserDocument()
+                                    UserRoleManager.getCurrentUserRole { role ->
+                                        Log.d("CreateRoutineScreen", "Role from callback: $role")
+                                    }
+
+                                    Toast.makeText(
+                                        context,
+                                        "Completa la rutina antes de exportar (nombre, categoría y ejercicios)",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                    return@FloatingActionButton
+                                }
+
+                                // Si hay datos completos, exportar
+                                try {
+                                    val routineToExport = com.develop.traiscore.data.firebaseData.RoutineDocument(
+                                        userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid ?: "",
+                                        trainerId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid,
+                                        documentId = "",
+                                        type = selectedCategory!!.name,
+                                        createdAt = com.google.firebase.Timestamp.now(),
+                                        clientName = workoutName,
+                                        routineName = workoutName,
+                                        sections = listOf(
+                                            com.develop.traiscore.data.firebaseData.RoutineSection(
+                                                type = selectedCategory!!.name,
+                                                exercises = exercises
+                                            )
+                                        )
+                                    )
+
+                                    // Aquí irá la función de exportación cuando esté implementada
+                                    Toast.makeText(
+                                        context,
+                                        "🚀 Exportando rutina: $workoutName (${exercises.size} ejercicios)",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+
+                                    Log.d("CreateRoutineScreen", "Routine ready for export: ${routineToExport.routineName}")
+
+
+                                    RoutineExportManager.exportRoutine(
+                                        context = context,
+                                        routine = routineToExport,
+                                        onSuccess = { fileUri ->
+                                            RoutineExportManager.shareRoutineFile(
+                                                context = context,
+                                                fileUri = fileUri,
+                                                routineName = workoutName
+                                            )
+                                            Toast.makeText(
+                                                context,
+                                                "Rutina exportada exitosamente",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
+                                        },
+                                        onError = { error ->
+                                            Toast.makeText(
+                                                context,
+                                                error,
+                                                Toast.LENGTH_LONG
+                                            ).show()
+                                        }
+                                    )
+
+
+                                } catch (e: Exception) {
+                                    Log.e("CreateRoutineScreen", "Error preparing export", e)
+                                    Toast.makeText(
+                                        context,
+                                        "Error al preparar la exportación: ${e.message}",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            },
                             backgroundColor = Color.Yellow,
                             contentColor   = Color.Black,
                             modifier       = Modifier.size(56.dp)  // tamaño estándar
@@ -149,9 +237,6 @@ fun CreateRoutineScreen(
                             )
                         }
                     }
-
-
-
 
                     // Botón de "Guardar rutina"
                     ExtendedFloatingActionButton(
@@ -395,6 +480,7 @@ fun CreateRoutineScreen(
                     }
                 }
             }
+
         }
     }
 }
