@@ -95,32 +95,116 @@ class MainActivity : ComponentActivity() {
 
     // OBLIGATORIO: Detectar intents del sistema (VIEW/SEND)
     private fun handleIncomingIntent(intent: Intent?) {
+        Log.d("MainActivity", "Handling intent: ${intent?.action}, data: ${intent?.data}")
+
         when (intent?.action) {
             Intent.ACTION_VIEW -> {
                 // Archivo .traiscore abierto directamente
                 val uri = intent.data
-                if (uri != null && isTraiScoreFile(uri)) {
-                    Log.d("MainActivity", "TraiScore file received via VIEW: $uri")
-                    showImportDialog(uri)
+                if (uri != null) {
+                    Log.d("MainActivity", "Received VIEW intent with URI: $uri")
+                    if (isTraiScoreFile(uri)) {
+                        Log.d("MainActivity", "Confirmed TraiScore file via VIEW: $uri")
+                        showImportDialog(uri)
+                    } else {
+                        Log.d("MainActivity", "Not a TraiScore file: $uri")
+                        showNotTraiScoreFileDialog()
+                    }
                 }
             }
+
             Intent.ACTION_SEND -> {
                 // Archivo .traiscore compartido
                 val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
-                if (uri != null && isTraiScoreFile(uri)) {
-                    Log.d("MainActivity", "TraiScore file received via SEND: $uri")
-                    showImportDialog(uri)
+                if (uri != null) {
+                    Log.d("MainActivity", "Received SEND intent with URI: $uri")
+                    if (isTraiScoreFile(uri)) {
+                        Log.d("MainActivity", "Confirmed TraiScore file via SEND: $uri")
+                        showImportDialog(uri)
+                    } else {
+                        Log.d("MainActivity", "Not a TraiScore file: $uri")
+                        showNotTraiScoreFileDialog()
+                    }
                 }
             }
         }
     }
 
-    // OBLIGATORIO: Acceso a ContentResolver para detectar archivos
+    // MEJORADO: Detectar archivos .traiscore con mejor validación
     private fun isTraiScoreFile(uri: Uri): Boolean {
         val fileName = getFileName(uri)
-        return fileName?.endsWith(".traiscore", ignoreCase = true) == true
-    }
+        val isTraiScoreExtension = fileName?.endsWith(".traiscore", ignoreCase = true) == true
 
+        Log.d("MainActivity", "Checking file: $fileName, isTraiScore: $isTraiScoreExtension")
+
+        // Validación adicional: intentar leer el contenido para verificar estructura
+        if (isTraiScoreExtension) {
+            return validateTraiScoreContent(uri)
+        }
+
+        return false
+    }
+    // NUEVO: Validar contenido del archivo
+    private fun validateTraiScoreContent(uri: Uri): Boolean {
+        return try {
+            val inputStream = contentResolver.openInputStream(uri)
+            val content = inputStream?.bufferedReader()?.use { it.readText() }
+
+            // Verificar que contenga las claves esperadas de un archivo TraiScore
+            content?.contains("\"appVersion\"") == true &&
+                    content.contains("\"routineName\"") &&
+                    content.contains("\"sections\"")
+
+        } catch (e: Exception) {
+            Log.e("MainActivity", "Error validating TraiScore content", e)
+            false
+        }
+    }
+    private fun showImportDialog(uri: Uri) {
+        val fileName = getFileName(uri) ?: "archivo.traiscore"
+
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("📱 TraiScore - Importar Rutina")
+        builder.setMessage("¿Deseas importar la rutina desde el archivo '$fileName'?\n\n💪 La rutina se agregará a tu biblioteca personal.")
+
+        builder.setPositiveButton("✅ Sí, importar") { _, _ ->
+            // Delegar la lógica al ViewModel
+            importViewModel.importRoutineFromUri(
+                context = this,
+                uri = uri,
+                onSuccess = { routineName, routineId ->
+                    Toast.makeText(
+                        this,
+                        "🎉 ¡Rutina '$routineName' importada exitosamente!\n\nYa puedes encontrarla en tu biblioteca.",
+                        Toast.LENGTH_LONG
+                    ).show()
+                },
+                onError = { error ->
+                    Toast.makeText(
+                        this,
+                        "❌ Error al importar: $error",
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            )
+        }
+
+        builder.setNegativeButton("❌ Cancelar") { dialog, _ ->
+            dialog.dismiss()
+        }
+
+        builder.setCancelable(true)
+        builder.show()
+    }
+    private fun showNotTraiScoreFileDialog() {
+        val builder = AlertDialog.Builder(this)
+        builder.setTitle("⚠️ Archivo no compatible")
+        builder.setMessage("El archivo seleccionado no es una rutina válida de TraiScore (.traiscore).\n\n📋 Solo puedes importar rutinas exportadas desde TraiScore.")
+        builder.setPositiveButton("Entendido") { dialog, _ ->
+            dialog.dismiss()
+        }
+        builder.show()
+    }
     // OBLIGATORIO: Acceso a ContentResolver
     private fun getFileName(uri: Uri): String? {
         return try {
@@ -142,37 +226,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // OBLIGATORIO: Crear y mostrar dialogs (UI)
-    private fun showImportDialog(uri: Uri) {
-        val fileName = getFileName(uri) ?: "archivo"
 
-        val builder = AlertDialog.Builder(this)
-        builder.setTitle("📂 Importar Rutina")
-        builder.setMessage("¿Deseas importar la rutina '$fileName'?")
-        builder.setPositiveButton("✅ Importar") { _, _ ->
-            // Delegar la lógica al ViewModel
-            importViewModel.importRoutineFromUri(
-                context = this,
-                uri = uri,
-                onSuccess = { routineName, routineId ->
-                    Toast.makeText(
-                        this,
-                        "🎉 Rutina '$routineName' importada exitosamente",
-                        Toast.LENGTH_LONG
-                    ).show()
-                },
-                onError = { error ->
-                    Toast.makeText(
-                        this,
-                        "❌ Error: $error",
-                        Toast.LENGTH_LONG
-                    ).show()
-                }
-            )
-        }
-        builder.setNegativeButton("❌ Cancelar", null)
-        builder.show()
-    }
 }
 
 @Composable

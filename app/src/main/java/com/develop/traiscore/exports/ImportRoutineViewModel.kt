@@ -1,5 +1,7 @@
 package com.develop.traiscore.exports
 
+import android.content.Context
+import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.develop.traiscore.data.firebaseData.RoutineDocument
@@ -42,7 +44,45 @@ class ImportRoutineViewModel @Inject constructor() : ViewModel() {
             }
         }
     }
+    fun importRoutineFromUri(
+        context: Context,
+        uri: Uri,
+        onSuccess: (routineName: String, routineId: String) -> Unit,
+        onError: (String) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                // Verificar que el usuario esté autenticado
+                val currentUserId = auth.currentUser?.uid
+                if (currentUserId == null) {
+                    onError("Usuario no autenticado")
+                    return@launch
+                }
 
+                // Usar RoutineExportManager para importar el archivo
+                RoutineExportManager.importRoutine(
+                    context = context,
+                    uri = uri,
+                    onSuccess = { exportableRoutine ->
+                        // Una vez importado exitosamente, guardarlo en Firebase
+                        importAndSaveRoutine(
+                            exportableRoutine = exportableRoutine,
+                            onSuccess = { routineId ->
+                                onSuccess(exportableRoutine.routineName, routineId)
+                            },
+                            onError = onError
+                        )
+                    },
+                    onError = { error ->
+                        onError("Error al leer el archivo: $error")
+                    }
+                )
+
+            } catch (e: Exception) {
+                onError("Error inesperado: ${e.message}")
+            }
+        }
+    }
     private fun saveRoutineToFirestore(
         routine: RoutineDocument,
         onSuccess: (String) -> Unit,

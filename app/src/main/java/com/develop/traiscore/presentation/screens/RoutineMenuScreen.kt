@@ -1,12 +1,16 @@
 package com.develop.traiscore.presentation.screens
 
+import android.net.Uri
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -26,10 +31,12 @@ import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.rememberDismissState
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -53,8 +60,11 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.develop.traiscore.R
 import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.data.firebaseData.RoutineDocument
+import com.develop.traiscore.exports.ImportRoutineViewModel
 import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.theme.traiBackgroundDay
 import com.develop.traiscore.presentation.theme.traiBlue
@@ -67,7 +77,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 fun RoutineMenuScreen(
     onRoutineClick: (String, String) -> Unit,
     onAddClick: () -> Unit,
-    viewModel: RoutineViewModel
+    viewModel: RoutineViewModel,
+    importViewModel: ImportRoutineViewModel = hiltViewModel()
+
 ) {
     val routineTypes = remember { mutableStateListOf<RoutineDocument>() }
     val context = LocalContext.current
@@ -75,6 +87,24 @@ fun RoutineMenuScreen(
     var showEmptyDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var routineToDelete by remember { mutableStateOf<Pair<Int, RoutineDocument>?>(null) }
+
+    val filePickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let { selectedUri ->
+            viewModel.handleFileImport(
+                context = context,
+                uri = selectedUri,
+                importViewModel = importViewModel,
+                onSuccess = { message ->
+                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                },
+                onError = { error ->
+                    Toast.makeText(context, error, Toast.LENGTH_LONG).show()
+                }
+            )
+        }
+    }
 
     LaunchedEffect(Unit) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
@@ -222,14 +252,32 @@ fun RoutineMenuScreen(
         },
         containerColor = Color.DarkGray,
         floatingActionButton = {
-            ExtendedFloatingActionButton(
-                onClick = onAddClick,
-                icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                text = { Text("Nueva rutina") },
-                containerColor = traiBlue,
-                contentColor = Color.Black,
-                modifier = Modifier.navigationBarsPadding() // evita solapamiento con nav‐bar
-            )
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.navigationBarsPadding()
+            ) {
+                // 1) Botón de descarga (solo UI por ahora)
+                FloatingActionButton(
+                    onClick = { filePickerLauncher.launch("*/*") },
+                    containerColor = Color.Yellow,
+                    contentColor = traiBlue,
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Icon(
+                        imageVector  = Icons.Default.Search,
+                        contentDescription = "Download routines"
+                    )
+                }
+                ExtendedFloatingActionButton(
+                    onClick = onAddClick,
+                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                    text = { Text("Nueva rutina") },
+                    containerColor = traiBlue,
+                    contentColor = Color.Black,
+                    modifier = Modifier.navigationBarsPadding() // evita solapamiento con nav‐bar
+                )
+            }
         }
     ) { innerPadding ->
         LazyColumn(

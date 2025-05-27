@@ -26,7 +26,8 @@ import java.util.Locale
 object RoutineExportManager {
 
     private const val FILE_EXTENSION = ".traiscore"
-    private const val MIME_TYPE = "application/octet-stream"
+    private const val MIME_TYPE = "application/traiscore" // MIME type más específico
+    private const val FALLBACK_MIME_TYPE = "application/octet-stream"
 
     // Serializer personalizado para Firebase Timestamp
     class TimestampSerializer : JsonSerializer<Timestamp> {
@@ -84,6 +85,54 @@ object RoutineExportManager {
     /**
      * Exporta una rutina como archivo .traiscore y abre el selector de compartir
      */
+    fun shareRoutineFile(
+        context: Context,
+        fileUri: Uri,
+        routineName: String
+    ) {
+        try {
+            val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                type = MIME_TYPE // Usar el MIME type específico
+                putExtra(Intent.EXTRA_STREAM, fileUri)
+                putExtra(Intent.EXTRA_SUBJECT, "Rutina TraiScore: $routineName")
+                putExtra(
+                    Intent.EXTRA_TEXT,
+                    "📋 Te comparto esta rutina de TraiScore: $routineName\n\n" +
+                            "💪 Abre este archivo con la app TraiScore para importar la rutina completa."
+                )
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+
+            // Crear selector personalizado
+            val chooserIntent = Intent.createChooser(shareIntent, "Compartir rutina TraiScore")
+
+            // Agregar opción alternativa con MIME type genérico por compatibilidad
+            val fallbackIntent = Intent(shareIntent).apply {
+                type = FALLBACK_MIME_TYPE
+            }
+
+            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(fallbackIntent))
+
+            context.startActivity(chooserIntent)
+
+        } catch (e: Exception) {
+            Log.e("RoutineExport", "Error sharing routine", e)
+
+            // Fallback: compartir como archivo genérico
+            try {
+                val fallbackShareIntent = Intent(Intent.ACTION_SEND).apply {
+                    type = FALLBACK_MIME_TYPE
+                    putExtra(Intent.EXTRA_STREAM, fileUri)
+                    putExtra(Intent.EXTRA_SUBJECT, "Rutina: $routineName")
+                    addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                }
+                context.startActivity(Intent.createChooser(fallbackShareIntent, "Compartir archivo"))
+            } catch (fallbackError: Exception) {
+                Log.e("RoutineExport", "Fallback share also failed", fallbackError)
+            }
+        }
+    }
+
     fun exportRoutine(
         context: Context,
         routine: RoutineDocument,
@@ -120,41 +169,7 @@ object RoutineExportManager {
     /**
      * Abre el selector de aplicaciones para compartir el archivo
      */
-    fun shareRoutineFile(
-        context: Context,
-        fileUri: Uri,
-        routineName: String
-    ) {
-        try {
-            val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                type = MIME_TYPE
-                putExtra(Intent.EXTRA_STREAM, fileUri)
-                putExtra(Intent.EXTRA_SUBJECT, "Rutina: $routineName")
-                putExtra(
-                    Intent.EXTRA_TEXT,
-                    "Te comparto esta rutina de TraiScore: $routineName"
-                )
-                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            }
 
-            // Crear selector con WhatsApp como opción preferida
-            val chooserIntent = Intent.createChooser(shareIntent, "Compartir rutina")
-
-            // Intentar priorizar WhatsApp
-            val whatsappIntent = Intent(shareIntent).apply {
-                setPackage("com.whatsapp")
-            }
-
-            if (whatsappIntent.resolveActivity(context.packageManager) != null) {
-                chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, arrayOf(whatsappIntent))
-            }
-
-            context.startActivity(chooserIntent)
-
-        } catch (e: Exception) {
-            Log.e("RoutineExport", "Error sharing routine", e)
-        }
-    }
 
     /**
      * Importa una rutina desde un archivo .traiscore
