@@ -2,8 +2,7 @@ package com.develop.traiscore.core
 
 enum class UserRole {
     CLIENT,     // Usuario regular que usa la app
-    TRAINER,    // Entrenador que puede tener clientes
-    ADMIN       // Administrador del sistema
+    TRAINER    // Entrenador que puede tener clientes
 }
 
 enum class Gender(val displayName: String, val value: String) {

@@ -1,6 +1,8 @@
 package com.develop.traiscore.data.local.entity
 
-data class UserMeasurements<Timestamp>(
+import com.google.firebase.Timestamp
+
+data class UserMeasurements(
     val height: Double = 0.0,      // cm
     val weight: Double = 0.0,      // kg
     val neck: Double = 0.0,        // cm
@@ -27,11 +29,25 @@ data class UserMeasurements<Timestamp>(
         )
     }
 
+    fun toFirestoreMap(): Map<String, Any> {
+        return mapOf(
+            "height" to height,
+            "weight" to weight,
+            "neck" to neck,
+            "chest" to chest,
+            "arms" to arms,
+            "waist" to waist,
+            "thigh" to thigh,
+            "calf" to calf,
+            "lastUpdated" to (lastUpdated ?: Timestamp.now())
+        )
+    }
+
     companion object {
         /**
          * Crea UserMeasurements desde el Map<String, String> usado en BodyStatsViewModel
          */
-        fun fromMeasurementsMap(measurements: Map<String, String>): UserMeasurements<Any?> {
+        fun fromMeasurementsMap(measurements: Map<String, String>): UserMeasurements {
             return UserMeasurements(
                 height = measurements["Height"]?.toDoubleOrNull() ?: 0.0,
                 weight = measurements["Weight"]?.toDoubleOrNull() ?: 0.0,
@@ -41,6 +57,23 @@ data class UserMeasurements<Timestamp>(
                 waist = measurements["Waist"]?.toDoubleOrNull() ?: 0.0,
                 thigh = measurements["Thigh"]?.toDoubleOrNull() ?: 0.0,
                 calf = measurements["Calf"]?.toDoubleOrNull() ?: 0.0
+            )
+        }
+
+        /**
+         * Crea desde datos de Firestore
+         */
+        fun fromFirestore(data: Map<String, Any>): UserMeasurements {
+            return UserMeasurements(
+                height = (data["height"] as? Number)?.toDouble() ?: 0.0,
+                weight = (data["weight"] as? Number)?.toDouble() ?: 0.0,
+                neck = (data["neck"] as? Number)?.toDouble() ?: 0.0,
+                chest = (data["chest"] as? Number)?.toDouble() ?: 0.0,
+                arms = (data["arms"] as? Number)?.toDouble() ?: 0.0,
+                waist = (data["waist"] as? Number)?.toDouble() ?: 0.0,
+                thigh = (data["thigh"] as? Number)?.toDouble() ?: 0.0,
+                calf = (data["calf"] as? Number)?.toDouble() ?: 0.0,
+                lastUpdated = data["lastUpdated"] as? Timestamp
             )
         }
     }
