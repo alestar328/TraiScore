@@ -6,9 +6,9 @@ enum class UserRole {
 }
 
 enum class Gender(val displayName: String, val value: String) {
-    MALE("Masculino", "male"),
-    FEMALE("Femenino", "female"),
-    OTHER("Otro", "other");
+    MALE("Masculino", "MALE"),
+    FEMALE("Femenino", "FEMALE"),
+    OTHER("Otro", "OTHER");
 
     companion object {
         fun fromValue(value: String?): Gender? {
