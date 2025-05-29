@@ -1,5 +1,6 @@
 package com.develop.traiscore.presentation.screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -22,11 +23,13 @@ import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -65,7 +68,9 @@ import kotlinx.coroutines.launch
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
-    onMeasurementsClick: () -> Unit
+    onMeasurementsClick: () -> Unit,
+    onMeasurementsHistoryClick: () -> Unit // ← NUEVO PARÁMETRO
+
 ) {
     var selectedTab by remember { mutableStateOf(2) /* 0:Explorar,1:Mapa,2:Perfil */ }
     val auth = FirebaseAuth.getInstance()
@@ -183,7 +188,31 @@ fun ProfileScreen(
                             }
                         }
                     }
-                })
+                }
+            )
+            Button(
+                onClick = onMeasurementsClick,
+                // ... propiedades del botón existente
+            ) {
+                Text("Mis Medidas")
+            }
+
+            // ← NUEVO BOTÓN para historial
+            OutlinedButton(
+                onClick = onMeasurementsHistoryClick,
+                colors = ButtonDefaults.outlinedButtonColors(
+                    contentColor = traiBlue
+                ),
+                border = BorderStroke(1.dp, traiBlue)
+            ) {
+                Icon(
+                    Icons.Default.ThumbUp,
+                    contentDescription = "Historial",
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Ver Historial")
+            }
 
         }
     }

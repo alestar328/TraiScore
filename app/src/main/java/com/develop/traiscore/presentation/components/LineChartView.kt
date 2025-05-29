@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation.components
 
-import android.text.TextPaint
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -9,25 +8,27 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.StrokeJoin
-import androidx.compose.ui.graphics.copy
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.unit.sp
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
-import kotlin.math.abs
+data class ProcessedDataPoint(
+    val originalIndex: Int,
+    val label: String,
+    val value: Float,
+    val normalizedValue: Float
+)
 
 @Composable
 fun LineChartView(
@@ -37,8 +38,24 @@ fun LineChartView(
     backgroundChartColor: Color = Color.DarkGray,
     modifier: Modifier = Modifier
 ) {
-    val pts = dataPoints
-    if (pts.size < 2) {
+    val processedData = remember(dataPoints) {
+        if (dataPoints.size < 2) return@remember emptyList()
+
+        val maxV = dataPoints.maxOf { it.second }
+        val minV = dataPoints.minOf { it.second }
+        val range = (maxV - minV).takeIf { it > 0f } ?: 1f
+
+        dataPoints.mapIndexed { index, (label, value) ->
+            ProcessedDataPoint(
+                originalIndex = index,
+                label = label,
+                value = value,
+                normalizedValue = (value - minV) / range
+            )
+        }
+    }
+
+    if (processedData.size < 2) {
         Box(
             modifier
                 .background(backgroundChartColor, RoundedCornerShape(8.dp))
@@ -54,24 +71,19 @@ fun LineChartView(
             .then(modifier)
     ) {
         Canvas(Modifier.fillMaxSize()) {
-
-
             val paddingX = 12.dp.toPx()
             val paddingY = 30.dp.toPx()
             val chartWidth = size.width - paddingX * 2
             val chartHeight = size.height - paddingY * 2
-            val stepX = chartWidth / (pts.size - 1)
+            val stepX = chartWidth / (processedData.size - 1)
 
-            // Calculamos rango Y
-            val maxV = pts.maxOf { it.second }
-            val minV = 0f
-            val range = (maxV - minV).takeIf { it > 0f } ?: 1f
-
-            val coords = pts.mapIndexed { i, (_, v) ->
+            // Usar datos procesados para coordenadas
+            val coords = processedData.mapIndexed { i, processedPoint ->
                 val x = paddingX + stepX * i
-                val y = size.height - paddingY - ((v - minV) / range) * chartHeight
+                val y = size.height - paddingY - (processedPoint.normalizedValue * chartHeight)
                 x to y
             }
+
             val smoothPath = Path().apply {
                 val (startX, startY) = coords.first()
                 moveTo(startX, startY)
@@ -85,6 +97,7 @@ fun LineChartView(
                     )
                 }
             }
+
             // Creamos la Path de la curva con cubicTo para suavizarla
             val yAxis = size.height - paddingY
             val fillPath = Path().apply {
@@ -94,7 +107,7 @@ fun LineChartView(
                 close()
             }
 
-            // Dibujamos eje X
+            // Dibujamos relleno bajo la curva
             drawPath(
                 fillPath,
                 brush = Brush.verticalGradient(
@@ -103,28 +116,31 @@ fun LineChartView(
                     endY = yAxis
                 )
             )
-            // Degradado bajo la curva
+
+            // Dibujamos la línea principal
             drawPath(
                 smoothPath,
                 color = lineColor,
                 style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
             )
-            // — puntos
+
+            // Dibujamos puntos
             coords.forEach { (x, y) ->
                 drawCircle(lineColor, radius = 5.dp.toPx(), center = Offset(x, y))
             }
-            // — ejes y etiquetas (igual que antes)
+
+            // Dibujamos eje X
             drawLine(
                 axisColor,
                 Offset(paddingX, yAxis),
                 Offset(size.width - paddingX, yAxis),
                 strokeWidth = 1.dp.toPx()
             )
-            coords.forEachIndexed { i, (_, _) ->
-                val x = coords[i].first
-                // etiqueta en yAxis + offset
+
+            // Etiquetas usando datos procesados
+            coords.forEachIndexed { i, (x, _) ->
                 drawContext.canvas.nativeCanvas.drawText(
-                    pts[i].second.toInt().toString(),
+                    processedData[i].value.toInt().toString(),
                     x,
                     yAxis + 14.dp.toPx(),
                     android.graphics.Paint().apply {

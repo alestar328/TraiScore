@@ -11,7 +11,7 @@ data class WorkoutEntry(
     val uid: String? = null, // <-- Este será el ID real de Firebase
     val exerciseId: Int,
     val title: String,
-    val weight: Double,
+    val weight: Float,
     val series: Int,
     val reps: Int,
     val rir: Int? = 0,

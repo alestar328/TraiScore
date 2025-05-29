@@ -35,13 +35,17 @@ fun CircularProgressView(
     val animatedProgress = remember { Animatable(0f) }
 
     LaunchedEffect(progress) {
-        val validProgress = progress.coerceIn(0f, 1f)
-        if (!validProgress.isNaN()) { // Asegúrate de que no sea NaN
-            animatedProgress.animateTo(
-                targetValue = validProgress,
-                animationSpec = tween(durationMillis = 1000)
-            )
+        val validProgress = when {
+            progress.isNaN() || progress.isInfinite() -> 0f
+            progress < 0f -> 0f
+            progress > 1f -> 1f
+            else -> progress
         }
+
+        animatedProgress.animateTo(
+            targetValue = validProgress,
+            animationSpec = tween(durationMillis = 1000)
+        )
     }
     Box(
         contentAlignment = Alignment.Center,

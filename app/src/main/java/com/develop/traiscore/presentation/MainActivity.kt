@@ -34,6 +34,7 @@ import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.exports.ImportRoutineViewModel
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
+import com.develop.traiscore.presentation.screens.BodyMeasurementsHistoryScreen
 import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
@@ -298,7 +299,15 @@ fun AppNavigation(navController: NavHostController) {
             MainScreen(navController = navController)
         }
 
-
+        composable(NavigationRoutes.MeasurementsHistory.route) {
+            BodyMeasurementsHistoryScreen(
+                onBack = { navController.popBackStack() },
+                onEditMeasurement = { historyItem ->
+                    // Navegar a la pantalla de edición con datos precargados
+                    navController.navigate(NavigationRoutes.Measurements.route)
+                }
+            )
+        }
 
         composable(NavigationRoutes.CreateRoutine.route) {
             var currentUserRole by remember { mutableStateOf<UserRole?>(null) }

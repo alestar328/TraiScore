@@ -1,6 +1,13 @@
 package com.develop.traiscore.presentation.screens
 
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -75,10 +82,8 @@ fun StatScreen(
     val totalKg by viewModel.totalWeightSum.collectAsState()
 
     val (oneRepMax, maxReps, averageRIR) = circularData
-    val lastTwelve = weightData.takeLast(12)
-    val weightByReps = remember(lastTwelve) {
-        lastTwelve.map { (_, peso) ->
-            // etiqueta X = peso redondeado a entero
+    val weightByReps = remember(weightData) {
+        weightData.map { (_, peso) ->
             peso.toInt().toString() to peso
         }
     }
@@ -164,6 +169,9 @@ fun StatScreen(
                         .fillMaxWidth()
                         .padding(horizontal = TraiScoreTheme.dimens.paddingMedium)
                         .padding(top = 8.dp)
+                        .animateContentSize(
+                            animationSpec = tween(300)
+                        )
                 )
 
                 // Contenido principal
@@ -174,28 +182,39 @@ fun StatScreen(
                         .padding(top = 8.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    when (selectedTab) {
-                        "Mis records" -> {
-                            // Filtros
-                            item {
-                                Text(
-                                    text = "Filtrar por:",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-                                FilterableDropdown(
-                                    items = exerOptions,
-                                    selectedValue = selected ?: "",
-                                    placeholder = "Ejercicio",
-                                    onItemSelected = { viewModel.onExerciseSelected(it) },
-                                    modifier = Modifier.fillMaxWidth()
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                            }
+                    // TAB: Mis records
+                    item {
+                        AnimatedVisibility(
+                            visible = selectedTab == "Mis records",
+                            enter = fadeIn(tween(300)) + slideInHorizontally(
+                                initialOffsetX = { -it },
+                                animationSpec = tween(300)
+                            ),
+                            exit = fadeOut(tween(200)) + slideOutHorizontally(
+                                targetOffsetX = { -it },
+                                animationSpec = tween(200)
+                            )
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                // Filtros
+                                Column {
+                                    Text(
+                                        text = "Filtrar por:",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                    FilterableDropdown(
+                                        items = exerOptions,
+                                        selectedValue = selected ?: "",
+                                        placeholder = "Ejercicio",
+                                        onItemSelected = { viewModel.onExerciseSelected(it) },
+                                        modifier = Modifier.fillMaxWidth()
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                }
 
-                            // Detalles del ejercicio
-                            item {
+                                // Detalles del ejercicio
                                 Row(
                                     horizontalArrangement = Arrangement.SpaceBetween,
                                     modifier = Modifier
@@ -263,46 +282,46 @@ fun StatScreen(
                                         )
                                     }
                                 }
-                            }
 
-                            // Gráficas
-                            item {
-                                Text(
-                                    text = "Por peso:",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-                                LineChartView(
-                                    dataPoints = weightByReps,
-                                    lineColor = Color.Cyan,
-                                    backgroundChartColor = Color.DarkGray,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(120.dp)
-                                        .padding(horizontal = 0.dp)
-                                )
-                            }
+                                // Gráfica Por peso
+                                Column {
+                                    Text(
+                                        text = "Por peso:",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                    LineChartView(
+                                        dataPoints = weightByReps,
+                                        lineColor = Color.Cyan,
+                                        backgroundChartColor = Color.DarkGray,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(120.dp)
+                                            .padding(horizontal = 0.dp)
+                                    )
+                                }
 
-                            item {
-                                Text(
-                                    text = "Por repeticiones:",
-                                    style = MaterialTheme.typography.titleLarge,
-                                    color = Color.White,
-                                    modifier = Modifier.padding(bottom = 8.dp)
-                                )
-                                LineChartView(
-                                    dataPoints = repsData,
-                                    lineColor = Color.Cyan,
-                                    backgroundChartColor = Color.DarkGray,
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(120.dp)
-                                        .padding(horizontal = 0.dp)
-                                )
-                            }
+                                // Gráfica Por repeticiones
+                                Column {
+                                    Text(
+                                        text = "Por repeticiones:",
+                                        style = MaterialTheme.typography.titleLarge,
+                                        color = Color.White,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                    LineChartView(
+                                        dataPoints = repsData,
+                                        lineColor = Color.Cyan,
+                                        backgroundChartColor = Color.DarkGray,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(120.dp)
+                                            .padding(horizontal = 0.dp)
+                                    )
+                                }
 
-                            item {
+                                // Resumen total
                                 Column(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -332,11 +351,23 @@ fun StatScreen(
                                 }
                             }
                         }
+                    }
 
-                        "Mis medidas" -> {
-                            // NUEVO: Contenido para medidas corporales
-                            if (isLoadingBodyData) {
-                                item {
+                    // TAB: Mis medidas
+                    item {
+                        AnimatedVisibility(
+                            visible = selectedTab == "Mis medidas",
+                            enter = fadeIn(tween(300)) + slideInHorizontally(
+                                initialOffsetX = { it },
+                                animationSpec = tween(300)
+                            ),
+                            exit = fadeOut(tween(200)) + slideOutHorizontally(
+                                targetOffsetX = { it },
+                                animationSpec = tween(200)
+                            )
+                        ) {
+                            Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                                if (isLoadingBodyData) {
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -349,9 +380,7 @@ fun StatScreen(
                                             Text("Cargando medidas...", color = Color.White)
                                         }
                                     }
-                                }
-                            } else if (availableBodyMetrics.isEmpty()) {
-                                item {
+                                } else if (availableBodyMetrics.isEmpty()) {
                                     Box(
                                         modifier = Modifier
                                             .fillMaxWidth()
@@ -375,10 +404,8 @@ fun StatScreen(
                                             )
                                         }
                                     }
-                                }
-                            } else {
-                                // Dropdown para seleccionar métrica corporal
-                                item {
+                                } else {
+                                    // Dropdown para seleccionar métrica corporal
                                     Text(
                                         text = "Seleccionar medida:",
                                         style = MaterialTheme.typography.titleLarge,
@@ -390,16 +417,15 @@ fun StatScreen(
                                         selectedValue = selectedBodyMetric?.displayName ?: "",
                                         placeholder = "Medida corporal",
                                         onItemSelected = { selectedName ->
-                                            selectedBodyMetric = availableBodyMetrics.find { it.displayName == selectedName }
+                                            selectedBodyMetric =
+                                                availableBodyMetrics.find { it.displayName == selectedName }
                                         },
                                         modifier = Modifier.fillMaxWidth()
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
-                                }
 
-                                // Gráfico de progreso de medidas corporales
-                                selectedBodyMetric?.let { metric ->
-                                    item {
+                                    // Gráfico de progreso de medidas corporales
+                                    selectedBodyMetric?.let { metric ->
                                         Text(
                                             text = "Progreso de ${metric.displayName}:",
                                             style = MaterialTheme.typography.titleLarge,
@@ -422,67 +448,78 @@ fun StatScreen(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
                                                     .height(120.dp)
-                                                    .background(Color.DarkGray, RoundedCornerShape(8.dp)),
+                                                    .background(
+                                                        Color.DarkGray,
+                                                        RoundedCornerShape(8.dp)
+                                                    ),
                                                 contentAlignment = Alignment.Center
                                             ) {
-                                                Text("Sin datos para esta medida", color = Color.Gray)
+                                                Text(
+                                                    "Sin datos para esta medida",
+                                                    color = Color.Gray
+                                                )
                                             }
                                         }
-                                    }
 
-                                    // Resumen de estadísticas
-                                    bodyMeasurementData?.getProgressSummary()?.get(metric)?.let { summary ->
-                                        item {
-                                            Column(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .background(Color.DarkGray, RoundedCornerShape(8.dp))
-                                                    .padding(16.dp)
-                                            ) {
-                                                Text(
-                                                    text = "Resumen de ${metric.displayName}",
-                                                    style = MaterialTheme.typography.titleMedium,
-                                                    color = Color.White,
-                                                    modifier = Modifier.padding(bottom = 8.dp)
-                                                )
-
-                                                Row(
-                                                    modifier = Modifier.fillMaxWidth(),
-                                                    horizontalArrangement = Arrangement.SpaceBetween
+                                        // Resumen de estadísticas
+                                        bodyMeasurementData?.getProgressSummary()?.get(metric)
+                                            ?.let { summary ->
+                                                Column(
+                                                    modifier = Modifier
+                                                        .fillMaxWidth()
+                                                        .background(
+                                                            Color.DarkGray,
+                                                            RoundedCornerShape(8.dp)
+                                                        )
+                                                        .padding(16.dp)
                                                 ) {
-                                                    Column {
-                                                        Text(
-                                                            "Valor actual:",
-                                                            color = Color.Gray,
-                                                            style = MaterialTheme.typography.bodySmall
-                                                        )
-                                                        Text(
-                                                            summary.getFormattedLatestValue(),
-                                                            color = traiBlue
-                                                        )
-                                                    }
-                                                    Column {
-                                                        Text(
-                                                            "Cambio total:",
-                                                            color = Color.Gray,
-                                                            style = MaterialTheme.typography.bodySmall
-                                                        )
-                                                        Text(
-                                                            summary.getFormattedChange(),
-                                                            color = traiBlue
-                                                        )
-                                                    }
-                                                    Column {
-                                                        Text(
-                                                            "Registros:",
-                                                            color = Color.Gray,
-                                                            style = MaterialTheme.typography.bodySmall
-                                                        )
-                                                        Text("${summary.totalRecords}", color = traiBlue)
+                                                    Text(
+                                                        text = "Resumen de ${metric.displayName}",
+                                                        style = MaterialTheme.typography.titleMedium,
+                                                        color = Color.White,
+                                                        modifier = Modifier.padding(bottom = 8.dp)
+                                                    )
+
+                                                    Row(
+                                                        modifier = Modifier.fillMaxWidth(),
+                                                        horizontalArrangement = Arrangement.SpaceBetween
+                                                    ) {
+                                                        Column {
+                                                            Text(
+                                                                "Valor actual:",
+                                                                color = Color.Gray,
+                                                                style = MaterialTheme.typography.bodySmall
+                                                            )
+                                                            Text(
+                                                                summary.getFormattedLatestValue(),
+                                                                color = traiBlue
+                                                            )
+                                                        }
+                                                        Column {
+                                                            Text(
+                                                                "Cambio total:",
+                                                                color = Color.Gray,
+                                                                style = MaterialTheme.typography.bodySmall
+                                                            )
+                                                            Text(
+                                                                summary.getFormattedChange(),
+                                                                color = traiBlue
+                                                            )
+                                                        }
+                                                        Column {
+                                                            Text(
+                                                                "Registros:",
+                                                                color = Color.Gray,
+                                                                style = MaterialTheme.typography.bodySmall
+                                                            )
+                                                            Text(
+                                                                "${summary.totalRecords}",
+                                                                color = traiBlue
+                                                            )
+                                                        }
                                                     }
                                                 }
                                             }
-                                        }
                                     }
                                 }
                             }
@@ -493,14 +530,3 @@ fun StatScreen(
         }
     )
 }
-
-                                    @Preview(
-                                        name = "StatScreenPreview",
-                                        showBackground = true
-                                    )
-                                    @Composable
-                                    fun StatScreenPreview() {
-                                        TraiScoreTheme {
-                                            StatScreen()
-                                        }
-                                    }

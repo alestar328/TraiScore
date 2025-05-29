@@ -87,6 +87,7 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
     implementation("androidx.compose.material3:material3:1.3.2")
     implementation("androidx.compose.material:material:1.8.1")
+    implementation(libs.play.services.fido)
 
     val lifecycle_version = "2.8.7"
 

@@ -186,7 +186,7 @@ fun ExercisesScreen(
             id = 1,
             exerciseId = 1,
             title = "Sentadillas",
-            weight = 100.0,
+            weight = 100.0f,
             reps = 10,
             rir = 2,
             series = 0,

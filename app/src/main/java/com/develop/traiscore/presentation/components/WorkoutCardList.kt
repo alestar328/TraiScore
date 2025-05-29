@@ -4,8 +4,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.runtime.Composable
@@ -57,7 +55,7 @@ fun WorkoutCardListPreview() {
             id = 1,
             exerciseId = 101,
             title = "Press Banca",
-            weight = 85.0,
+            weight = 85.0f,
             reps = 10,
             rir = 2,
             series = 4,
@@ -67,7 +65,7 @@ fun WorkoutCardListPreview() {
             id = 2,
             exerciseId = 102,
             title = "Sentadillas",
-            weight = 100.0,
+            weight = 100.0f,
             reps = 8,
             rir = 3,
             series = 4,
@@ -77,7 +75,7 @@ fun WorkoutCardListPreview() {
             id = 3,
             exerciseId = 103,
             title = "Dominadas",
-            weight = 0.0,
+            weight = 0.0f,
             reps = 12,
             rir = 1,
             series = 3,
@@ -87,7 +85,7 @@ fun WorkoutCardListPreview() {
             id = 4,
             exerciseId = 104,
             title = "Fondos",
-            weight = 10.0,
+            weight = 10.0f,
             reps = 15,
             rir = 2,
             series = 3,

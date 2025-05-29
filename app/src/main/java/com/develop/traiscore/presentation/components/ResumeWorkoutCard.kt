@@ -11,8 +11,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -26,9 +24,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.presentation.theme.traiBlue
-import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 
 @Composable
@@ -106,7 +102,7 @@ fun ResumeWorkoutCard() {
         id = 1,
         exerciseId = 101,
         title = "Press Banca",
-        weight = 85.0,
+        weight = 85.0f,
         reps = 10,
         rir = 2,
         series = 4,

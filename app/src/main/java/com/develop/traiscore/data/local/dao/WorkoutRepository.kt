@@ -1,6 +1,5 @@
-package com.develop.traiscore.data
+package com.develop.traiscore.data.local.dao
 
-import com.develop.traiscore.data.local.dao.WorkoutDao
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import kotlinx.coroutines.flow.Flow
 

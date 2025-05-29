@@ -7,4 +7,5 @@ sealed class NavigationRoutes(val route: String) {
     object CreateRoutine : NavigationRoutes("createroutine")
     object Register : NavigationRoutes("register")
     object Measurements : NavigationRoutes("measurements")
+    object MeasurementsHistory : NavigationRoutes("measurements_history") // ← NUEVA RUTA
 }

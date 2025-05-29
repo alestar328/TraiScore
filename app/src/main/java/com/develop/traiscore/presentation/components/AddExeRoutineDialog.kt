@@ -36,8 +36,7 @@ fun AddExeRoutineDialog(
     onSave: (String, String) -> Unit,
     exerciseNames: List<String>,
     onExerciseSelected: (String) -> Unit,
-    selectedCategory: DefaultCategoryExer?,
-    onCategorySelected: (DefaultCategoryExer) -> Unit
+    selectedCategory: DefaultCategoryExer?
 ) {
     val context = LocalContext.current
     var name by remember { mutableStateOf("") }

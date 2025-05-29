@@ -32,6 +32,7 @@ import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.presentation.components.NavItem
 import com.develop.traiscore.presentation.screens.AddExerciseDialogContent
+import com.develop.traiscore.presentation.screens.BodyMeasurementsHistoryScreen
 import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.screens.ExercisesScreen
@@ -75,8 +76,9 @@ fun MainScreen(
     var isDialogVisible by remember {
         mutableStateOf(false)
     }
-    val showNavBar =
-        !(selectedIndex == 4 && routineScreenState is ScreenState.BODY_MEASUREMENTS_SCREEN)
+    val showNavBar = !(selectedIndex == 4 &&
+            (routineScreenState is ScreenState.BODY_MEASUREMENTS_SCREEN ||
+                    routineScreenState is ScreenState.MEASUREMENTS_HISTORY_SCREEN)) // ← ACTUALIZADA
 
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
     var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
@@ -163,6 +165,12 @@ fun MainScreen(
             onMeasurementsClick = {
                 routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
             },
+            onMeasurementsHistoryClick = { // ← NUEVA FUNCIÓN
+                routineScreenState = ScreenState.MEASUREMENTS_HISTORY_SCREEN
+            },
+            onEditMeasurementFromHistory = {
+                routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
+            },
             routineViewModel = routineViewModel, // Pass the viewModel here
             currentUserRole = currentUserRole
 
@@ -186,12 +194,10 @@ fun MainScreen(
 
 sealed class ScreenState {
     object MAIN_ROUTINE_MENU : ScreenState()
-    data class FIREBASE_ROUTINE_SCREEN(val documentId: String, val selectedType: String) :
-        ScreenState()
-
-    object CREATE_ROUTINE_SCREEN : ScreenState() // 👈 nuevo
+    data class FIREBASE_ROUTINE_SCREEN(val documentId: String, val selectedType: String) : ScreenState()
+    object CREATE_ROUTINE_SCREEN : ScreenState()
     object BODY_MEASUREMENTS_SCREEN : ScreenState()
-
+    object MEASUREMENTS_HISTORY_SCREEN : ScreenState() // ← NUEVO ESTADO
 }
 
 @Composable
@@ -201,10 +207,12 @@ fun ContentScreen(
     navController: NavHostController,
     exeScreenViewModel: ExercisesScreenViewModel,
     routineScreenState: ScreenState,
-    onRoutineSelected: (String, String) -> Unit,  // <- ahora acepta docId y type
+    onRoutineSelected: (String, String) -> Unit,
     onBackToRoutineMenu: () -> Unit,
     onCreateRoutine: () -> Unit,
     onMeasurementsClick: () -> Unit,
+    onMeasurementsHistoryClick: () -> Unit,
+    onEditMeasurementFromHistory: () -> Unit, // ← NUEVO PARÁMETRO
     routineViewModel: RoutineViewModel,
     currentUserRole: UserRole?
 ) {
@@ -264,10 +272,19 @@ fun ContentScreen(
                         onBackToRoutineMenu()
                     },
                 )
-
+                // ← NUEVA PANTALLA
+                is ScreenState.MEASUREMENTS_HISTORY_SCREEN -> BodyMeasurementsHistoryScreen(
+                    onBack = onBackToRoutineMenu,
+                    onEditMeasurement = { historyItem ->
+                        // ✅ SOLUCIONADO: Ahora usa la función callback
+                        onEditMeasurementFromHistory()
+                    }
+                )
                 else -> ProfileScreen(
                     navController = navController,
-                    onMeasurementsClick = onMeasurementsClick
+                    onMeasurementsClick = onMeasurementsClick,
+                    onMeasurementsHistoryClick = onMeasurementsHistoryClick // ← NUEVO PARÁMETRO
+
                 )
             }
         }

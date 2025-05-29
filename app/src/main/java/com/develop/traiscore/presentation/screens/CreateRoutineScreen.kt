@@ -336,10 +336,8 @@ fun CreateRoutineScreen(
                         exerciseVM.fetchCategoryFor(name) { cat ->
                             exerciseCategory = cat
                         }
-                    },
-                    onCategorySelected = { cat ->
-                        exerciseCategory = cat
                     }
+
                 )
             }
         }

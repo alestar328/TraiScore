@@ -42,7 +42,7 @@ class WorkoutEntryViewModel @Inject constructor() : ViewModel() {
                 val result = snapshot?.documents?.mapNotNull { doc ->
                     val title = doc.getString("title") ?: return@mapNotNull null
                     val reps = doc.getLong("reps")?.toInt() ?: 0
-                    val weight = doc.getDouble("weight") ?: 0.0
+                    val weight = doc.getDouble("weight")?.toFloat() ?: 0.0f
                     val rir = doc.getLong("rir")?.toInt() ?: 0
                     val timestamp = doc.getDate("timestamp") ?: Date()
 

@@ -9,7 +9,7 @@ data class WorkoutModel(
     val id: Int = 0, // Clave primaria autogenerada
     val exerciseId: Int, // ID del ejercicio
     val title: String, // Nombre del ejercicio
-    val weight: Double, // Peso usado
+    val weight: Float, // Peso usado
     val series:Int,
     val reps: Int, // Repeticiones
     val rir: Int? = 0, // RIR opcional
