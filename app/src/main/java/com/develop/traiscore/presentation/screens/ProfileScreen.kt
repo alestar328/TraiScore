@@ -68,8 +68,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
-    onMeasurementsClick: () -> Unit,
-    onMeasurementsHistoryClick: () -> Unit // ← NUEVO PARÁMETRO
+    onMeasurementsClick: () -> Unit
 
 ) {
     var selectedTab by remember { mutableStateOf(2) /* 0:Explorar,1:Mapa,2:Perfil */ }
@@ -190,29 +189,7 @@ fun ProfileScreen(
                     }
                 }
             )
-            Button(
-                onClick = onMeasurementsClick,
-                // ... propiedades del botón existente
-            ) {
-                Text("Mis Medidas")
-            }
 
-            // ← NUEVO BOTÓN para historial
-            OutlinedButton(
-                onClick = onMeasurementsHistoryClick,
-                colors = ButtonDefaults.outlinedButtonColors(
-                    contentColor = traiBlue
-                ),
-                border = BorderStroke(1.dp, traiBlue)
-            ) {
-                Icon(
-                    Icons.Default.ThumbUp,
-                    contentDescription = "Historial",
-                    modifier = Modifier.size(18.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Ver Historial")
-            }
 
         }
     }

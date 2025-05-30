@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -31,7 +32,7 @@ import androidx.navigation.compose.rememberNavController
 import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.presentation.components.NavItem
-import com.develop.traiscore.presentation.screens.AddExerciseDialogContent
+import com.develop.traiscore.presentation.screens.AddExerciseBottomSheet
 import com.develop.traiscore.presentation.screens.BodyMeasurementsHistoryScreen
 import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
@@ -49,6 +50,7 @@ import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainScreen(
     modifier: Modifier = Modifier,
@@ -69,16 +71,12 @@ fun MainScreen(
 
     )
     var routineScreenState by remember { mutableStateOf<ScreenState>(ScreenState.MAIN_ROUTINE_MENU) }
+    var selectedIndex by remember { mutableIntStateOf(0) }
+    var isBottomSheetVisible by remember { mutableStateOf(false) } // ✅ CAMBIO: de isDialogVisible a isBottomSheetVisible
 
-    var selectedIndex by remember {
-        mutableIntStateOf(0)
-    }
-    var isDialogVisible by remember {
-        mutableStateOf(false)
-    }
     val showNavBar = !(selectedIndex == 4 &&
             (routineScreenState is ScreenState.BODY_MEASUREMENTS_SCREEN ||
-                    routineScreenState is ScreenState.MEASUREMENTS_HISTORY_SCREEN)) // ← ACTUALIZADA
+                    routineScreenState is ScreenState.MEASUREMENTS_HISTORY_SCREEN))
 
     val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
     var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
@@ -89,21 +87,21 @@ fun MainScreen(
         }
     }
 
-    Scaffold(modifier = Modifier.fillMaxSize(),
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
         bottomBar = {
             if (showNavBar) {
                 NavigationBar(
                     modifier = Modifier.height(100.dp),
-                    containerColor = navbarDay, // Fondo de la barra de navegación
-                    contentColor = Color.Black // Color por defecto de los íconos
+                    containerColor = navbarDay,
+                    contentColor = Color.Black
                 ) {
                     navItemList.forEachIndexed { index, navItem ->
-
                         NavigationBarItem(
                             selected = selectedIndex == index,
                             onClick = {
                                 if (index == 2) {
-                                    isDialogVisible = true
+                                    isBottomSheetVisible = true // ✅ CAMBIO: Mostrar bottom sheet
                                 } else {
                                     selectedIndex = index
                                 }
@@ -177,24 +175,21 @@ fun MainScreen(
         )
 
     }
-    // Muestra el diálogo si está activo
-    if (isDialogVisible) {
-        Dialog(
-            onDismissRequest = { isDialogVisible = false }
-        ) {
-            AddExerciseDialogContent(onDismiss =
-            { isDialogVisible = false },
-                onSave = { updated ->
-                    println("🔧 Datos actualizados: $updated")
-                }
-            )
+    AddExerciseBottomSheet(
+        isVisible = isBottomSheetVisible,
+        onDismiss = { isBottomSheetVisible = false },
+        onSave = { updated ->
+            println("🔧 Datos actualizados: $updated")
+            isBottomSheetVisible = false
         }
-    }
+    )
 }
 
 sealed class ScreenState {
     object MAIN_ROUTINE_MENU : ScreenState()
-    data class FIREBASE_ROUTINE_SCREEN(val documentId: String, val selectedType: String) : ScreenState()
+    data class FIREBASE_ROUTINE_SCREEN(val documentId: String, val selectedType: String) :
+        ScreenState()
+
     object CREATE_ROUTINE_SCREEN : ScreenState()
     object BODY_MEASUREMENTS_SCREEN : ScreenState()
     object MEASUREMENTS_HISTORY_SCREEN : ScreenState() // ← NUEVO ESTADO
@@ -271,22 +266,24 @@ fun ContentScreen(
                         println("Guardar gender=$gender, medidas=$data")
                         onBackToRoutineMenu()
                     },
+                    // ✅ AÑADIR PARÁMETROS FALTANTES
+                    onMeasurementsClick = onMeasurementsClick,
+                    onMeasurementsHistoryClick = onMeasurementsHistoryClick
                 )
-                // ← NUEVA PANTALLA
+
                 is ScreenState.MEASUREMENTS_HISTORY_SCREEN -> BodyMeasurementsHistoryScreen(
                     onBack = onBackToRoutineMenu,
                     onEditMeasurement = { historyItem ->
-                        // ✅ SOLUCIONADO: Ahora usa la función callback
                         onEditMeasurementFromHistory()
                     }
                 )
+
                 else -> ProfileScreen(
                     navController = navController,
-                    onMeasurementsClick = onMeasurementsClick,
-                    onMeasurementsHistoryClick = onMeasurementsHistoryClick // ← NUEVO PARÁMETRO
-
+                    onMeasurementsClick = onMeasurementsClick
                 )
             }
+
         }
     }
 }

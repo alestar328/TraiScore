@@ -157,6 +157,8 @@ fun RoutineScreen(
 
             // Por cada tipo de entrenamiento, se muestra una tabla
             item {
+                val exerciseCount = filteredExercises.size
+
                 RoutineTable(
                     exercises = filteredExercises,
                     onSeriesChanged = { exerciseIndex, newSeries ->
@@ -193,7 +195,8 @@ fun RoutineScreen(
                     },
                     onDeleteExercise = {},
                     enableSwipe = false,
-                    validateInput = routineViewModel::validateInput
+                    validateInput = routineViewModel::validateInput,
+                    bottomPadding = if (currentUserRole == UserRole.TRAINER) 80.dp else 20.dp
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }

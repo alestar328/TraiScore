@@ -428,6 +428,12 @@ fun CreateRoutineScreen(
                                 removeAt(index)
                             }
                         },
+                        onDuplicateExercise = { index -> // ✅ AÑADIR: Callback para duplicar
+                            val exerciseToDuplicate = exercises[index]
+                            exercises = exercises.toMutableList().apply {
+                                add(index + 1, exerciseToDuplicate.copy()) // Duplica justo después del original
+                            }
+                        },
                         onSeriesChanged = { index, newSeries ->
                             updateExerciseField(index, ColumnType.SERIES, newSeries)
                         },
@@ -444,7 +450,8 @@ fun CreateRoutineScreen(
                             updateExerciseField(exerciseIndex, columnType, newValue)
                         },
                         enableSwipe = true,
-                        validateInput = routineVM::validateInput
+                        validateInput = routineVM::validateInput,
+                        bottomPadding = 120.dp
                     )
 
 

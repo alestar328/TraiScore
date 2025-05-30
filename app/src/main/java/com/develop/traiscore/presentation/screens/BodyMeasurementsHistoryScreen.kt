@@ -207,13 +207,7 @@ fun BodyMeasurementsHistoryScreen(
                         modifier = Modifier.fillMaxSize()
                     ) {
                         // Barra de búsqueda
-                        if (!showCompareMode) {
-                            SearcherBar(
-                                query = searchQuery,
-                                onQueryChange = { searchQuery = it },
-                                modifier = Modifier.padding(16.dp)
-                            )
-                        }
+
 
                         // Estadísticas rápidas
                         if (!showCompareMode && searchQuery.isEmpty()) {

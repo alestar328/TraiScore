@@ -337,11 +337,16 @@ fun AppNavigation(navController: NavHostController) {
                 onSave = { gender, data ->
                     navController.popBackStack()
                 },
-                initialData = emptyMap() // o tus valores precargados
-
-
+                initialData = emptyMap(),
+                // ✅ AÑADIR PARÁMETROS FALTANTES - funciones vacías porque no se usan en este contexto
+                onMeasurementsClick = { }, // No hace nada en el contexto de MainActivity
+                onMeasurementsHistoryClick = {
+                    // Navegar al historial desde MainActivity
+                    navController.navigate(NavigationRoutes.MeasurementsHistory.route)
+                }
             )
         }
+
 
     }
 }

@@ -2,6 +2,7 @@ package com.develop.traiscore.presentation.screens
 
 import android.util.Log
 import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -14,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -21,6 +23,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.ThumbUp
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -50,6 +55,7 @@ import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.OutlinedButton
 import com.develop.traiscore.data.local.entity.SubscriptionLimits
 import com.develop.traiscore.presentation.components.SubscriptionInfoCard
 import com.develop.traiscore.presentation.components.UpgradeDialog
@@ -64,7 +70,10 @@ fun BodyMeasurementsScreen(
     initialData: Map<String, String> = emptyMap(),
     onSave: (gender: String, data: Map<String, String>) -> Unit,
     bodyStatsViewModel: BodyStatsViewModel = hiltViewModel(),
-    subscriptionViewModel: SubscriptionViewModel = hiltViewModel()
+    subscriptionViewModel: SubscriptionViewModel = hiltViewModel(),
+    onMeasurementsClick: () -> Unit,
+    onMeasurementsHistoryClick: () -> Unit // ← NUEVO PARÁMETRO
+
 
 ) {
     val context = LocalContext.current
@@ -249,39 +258,67 @@ fun BodyMeasurementsScreen(
             )
         },
         bottomBar = {
-            ExtendedFloatingActionButton(
-                onClick = {
-                    if (!bodyStatsViewModel.isLoading) {
-                        saveData()
-                    }
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-                    .padding(16.dp),
-                text = {
-                    if (bodyStatsViewModel.isLoading) {
-                        Text("Guardando...")
-                    } else {
-                        Text("Save")
-                    }
-                },
-                icon = {
-                    if (bodyStatsViewModel.isLoading) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.width(24.dp).height(24.dp),
-                            color = Color.White
-                        )
-                    } else {
+            Column {
+                // Fila de botones superiores (solo mostrar si las funciones no son vacías)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+
+                    // Botón de historial
+                    ExtendedFloatingActionButton(
+                        onClick = onMeasurementsHistoryClick,
+                        modifier = Modifier.weight(1f),
+                        containerColor = Color.Yellow,
+                        contentColor = Color.Black
+                    ) {
                         Icon(
-                            imageVector = Icons.Default.Check,
-                            contentDescription = "Save"
+                            Icons.Default.ThumbUp,
+                            contentDescription = "Historial",
+                            modifier = Modifier.size(18.dp)
                         )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text("Ver Historial")
                     }
-                },
-                containerColor = traiBlue,
-                contentColor = Color.White
-            )
+                }
+
+                // Botón principal de guardar
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        if (!bodyStatsViewModel.isLoading) {
+                            saveData()
+                        }
+                    },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                        .padding(16.dp),
+                    text = {
+                        if (bodyStatsViewModel.isLoading) {
+                            Text("Guardando...")
+                        } else {
+                            Text("Save")
+                        }
+                    },
+                    icon = {
+                        if (bodyStatsViewModel.isLoading) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.width(24.dp).height(24.dp),
+                                color = Color.White
+                            )
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Check,
+                                contentDescription = "Save"
+                            )
+                        }
+                    },
+                    containerColor = traiBlue,
+                    contentColor = Color.White
+                )
+            }
         },
         content = { inner ->
             Box(modifier = Modifier.fillMaxSize()) {

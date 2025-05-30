@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation.screens
 
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -27,7 +26,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.data.local.entity.ExerciseEntity
 import com.develop.traiscore.domain.model.WorkoutModel
@@ -43,14 +41,13 @@ import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.util.Date
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ExercisesScreen(
     viewModel: WorkoutEntryViewModel = hiltViewModel()
 ) {
     val entries = viewModel.entries.value
-    val showDialog = remember { mutableStateOf(false) }
+    val showBottomSheet = remember { mutableStateOf(false) } // ✅ CAMBIO: showDialog → showBottomSheet
     val selectedEntry = remember { mutableStateOf<WorkoutEntry?>(null) }
     val groupedEntries = viewModel.groupWorkoutsByDate(entries)
     val showSearchBar = remember { mutableStateOf(false) }
@@ -75,13 +72,13 @@ fun ExercisesScreen(
                 actions = {
                     IconButton(
                         onClick = {
-                        println("🔍 Icono de busqueda clicado")
+                            println("🔍 Icono de busqueda clicado")
                             showSearchBar.value = !showSearchBar.value
                             if (!showSearchBar.value) {
-                                selectedSearch.value = "" // 👈 Esto reinicia el filtro al cerrar
+                                selectedSearch.value = "" // Reinicia el filtro al cerrar
                             }
-
-                    }) {
+                        }
+                    ) {
                         CircleDot(color = traiBlue) {
                             Icon(
                                 imageVector = Icons.Default.Search,
@@ -98,15 +95,14 @@ fun ExercisesScreen(
                 )
             )
         },
-
-        content = {
-            paddingValues ->
+        content = { paddingValues ->
             Column(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(Color.Black)
-                    .padding(top = paddingValues.calculateTopPadding()) // Solo top
+                    .padding(top = paddingValues.calculateTopPadding())
             ) {
+                // Barra de búsqueda
                 if (showSearchBar.value) {
                     FilterableDropdown(
                         items = viewModel.entries.value.map { it.title }.distinct(),
@@ -118,6 +114,8 @@ fun ExercisesScreen(
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     )
                 }
+
+                // Lista de entrenamientos
                 LazyColumn(
                     modifier = Modifier
                         .background(traiBackgroundDay)
@@ -138,13 +136,12 @@ fun ExercisesScreen(
                             )
                         }
 
-
                         item {
                             WorkoutCardList(
                                 workouts = dailyWorkouts,
                                 onEditClick = { workout ->
                                     selectedEntry.value = workout
-                                    showDialog.value = true
+                                    showBottomSheet.value = true // ✅ CAMBIO: Mostrar bottom sheet
                                 },
                                 onDeleteClick = { workout ->
                                     workout.uid?.let { viewModel.deleteWorkoutEntry(it) }
@@ -154,79 +151,79 @@ fun ExercisesScreen(
                     }
                 }
             }
+        }
+    )
 
-            // ⬇️ Este bloque debe ir AQUÍ justo después del Scaffold:
-            if (showDialog.value && selectedEntry.value != null) {
-                Dialog(
-                    onDismissRequest = { showDialog.value = false }
-                ) {
-                    AddExerciseDialogContent(
-                        workoutToEdit = selectedEntry.value,
-                        onDismiss = { showDialog.value = false },
-                        onSave = { updatedData ->
-                            selectedEntry.value?.uid?.let { id ->
-                                viewModel.editWorkoutEntry(id, updatedData)
-                                showDialog.value = false
-                            }
-                        }
-                    )
-                }
+    // ✅ CAMBIO: Reemplazar Dialog con AddExerciseBottomSheet
+    AddExerciseBottomSheet(
+        workoutToEdit = selectedEntry.value,
+        isVisible = showBottomSheet.value,
+        onDismiss = {
+            showBottomSheet.value = false
+            selectedEntry.value = null // Limpiar selección al cerrar
+        },
+        onSave = { updatedData ->
+            selectedEntry.value?.uid?.let { id ->
+                viewModel.editWorkoutEntry(id, updatedData)
+                showBottomSheet.value = false
+                selectedEntry.value = null
             }
         }
     )
 }
 
-    @Preview(
-        name = "ExercisesScreenPreview",
-        showBackground = true
+@Preview(
+    name = "ExercisesScreenPreview",
+    showBackground = true
+)
+@Composable
+fun ExercisesScreenPreview() {
+    val workoutEntry = WorkoutEntry(
+        id = 1,
+        exerciseId = 1,
+        title = "Sentadillas",
+        weight = 100.0f,
+        reps = 10,
+        rir = 2,
+        series = 0,
+        timestamp = Date()
     )
-    @Composable
-    fun ExercisesScreenPreview() {
-        val workoutEntry = WorkoutEntry(
-            id = 1,
-            exerciseId = 1,
-            title = "Sentadillas",
-            weight = 100.0f,
-            reps = 10,
-            rir = 2,
-            series = 0,
-            timestamp = Date()
-        )
 
-        val workoutModel = WorkoutModel(
-            id = 1,
-            exerciseId = 1,
-            title = workoutEntry.title,
-            reps = workoutEntry.reps,
-            weight = workoutEntry.weight,
-            series = 0,
-            timestamp = Date()
-        )
-        val exerciseEntity = ExerciseEntity(
-            id = 1,
-            idIntern = "sentadillas",
-            name = "Sentadillas",
-            isDefault = true
-        )
-        val workoutWithExercise = WorkoutWithExercise(
-            workoutModel = workoutModel,
-            workoutEntry = workoutEntry,
-            exerciseEntity = exerciseEntity
-        )
+    val workoutModel = WorkoutModel(
+        id = 1,
+        exerciseId = 1,
+        title = workoutEntry.title,
+        reps = workoutEntry.reps,
+        weight = workoutEntry.weight,
+        series = 0,
+        timestamp = Date()
+    )
 
+    val exerciseEntity = ExerciseEntity(
+        id = 1,
+        idIntern = "sentadillas",
+        name = "Sentadillas",
+        isDefault = true
+    )
 
-        TraiScoreTheme {
-            LazyColumn {
-                items(
-                    items = listOf(workoutWithExercise),
-                    key = { it.workoutModel.id }
-                ) { exercise ->
-                    WorkoutCard(
-                        workoutEntry = workoutEntry,
-                        onEditClick = { println("Edit ${exercise.exerciseEntity.name}") },
-                        onDeleteClick = { println("Delete ${exercise.exerciseEntity.name}") }
-                    )
-                }
+    val workoutWithExercise = WorkoutWithExercise(
+        workoutModel = workoutModel,
+        workoutEntry = workoutEntry,
+        exerciseEntity = exerciseEntity
+    )
+
+    TraiScoreTheme {
+        LazyColumn {
+            items(
+                items = listOf(workoutWithExercise),
+                key = { it.workoutModel.id }
+            ) { exercise ->
+                WorkoutCard(
+                    workoutEntry = workoutEntry,
+                    onEditClick = { println("Edit ${exercise.exerciseEntity.name}") },
+                    onDeleteClick = { println("Delete ${exercise.exerciseEntity.name}") }
+                )
             }
         }
     }
+}
