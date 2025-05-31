@@ -30,7 +30,8 @@ import kotlinx.coroutines.tasks.await
 @Composable
 fun MyClients(
     onClientClick: (UserEntity) -> Unit,
-    onAddClientClick: () -> Unit
+    onAddClientClick: () -> Unit,
+    onInvitationsClick: () -> Unit
 ) {
     var clients by remember { mutableStateOf<List<UserEntity>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -82,6 +83,14 @@ fun MyClients(
                     containerColor = navbarDay
                 ),
                 actions = {
+                    // Botón de invitaciones
+                    IconButton(onClick = onInvitationsClick) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = "Invitaciones",
+                            tint = Color.White
+                        )
+                    }
                     // Contador de clientes
                     Text(
                         text = "${clients.size} clientes",

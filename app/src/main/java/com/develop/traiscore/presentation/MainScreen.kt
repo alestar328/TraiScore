@@ -192,6 +192,9 @@ fun ContentScreen(
                 onAddClientClick = {
                     // Navegar a pantalla de agregar cliente
                     println("Agregar nuevo cliente")
+                },
+                onInvitationsClick = {
+                    navController.navigate("trainer_invitations")
                 }
             )
             1 -> {

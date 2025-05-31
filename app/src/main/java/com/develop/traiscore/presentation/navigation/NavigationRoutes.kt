@@ -8,5 +8,6 @@ sealed class NavigationRoutes(val route: String) {
     object CreateRoutine : NavigationRoutes("createroutine")
     object Register : NavigationRoutes("register")
     object Measurements : NavigationRoutes("measurements")
+    object TrainerInvitations : NavigationRoutes("trainer_invitations")
     object MeasurementsHistory : NavigationRoutes("measurements_history") // ← NUEVA RUTA
 }

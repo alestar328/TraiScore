@@ -2,37 +2,17 @@ package com.develop.traiscore.presentation.screens
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Divider
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -41,25 +21,33 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.develop.traiscore.R
+import com.develop.traiscore.core.UserRole
+import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.presentation.MainActivity
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
-import com.develop.traiscore.presentation.theme.navbarDay
-import com.develop.traiscore.presentation.theme.traiBackgroundDay
-import com.develop.traiscore.presentation.theme.traiBlue
-import com.develop.traiscore.presentation.theme.traiOrange
+import com.develop.traiscore.presentation.theme.*
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+
+data class TrainerInfo(
+    val name: String,
+    val email: String,
+    val photoUrl: String? = null
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
-    onMeasurementsClick: () -> Unit
-
+    onMeasurementsClick: () -> Unit,
+    onEnterInvitationClick: () -> Unit = {}
 ) {
     val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
@@ -68,6 +56,58 @@ fun ProfileScreen(
         val mainActivity = context as? MainActivity
         mainActivity?.googleSignInClient
     }
+
+    var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
+    var trainerInfo by remember { mutableStateOf<TrainerInfo?>(null) }
+    var isLoading by remember { mutableStateOf(true) }
+
+
+
+    LaunchedEffect(Unit) {
+        // Obtener rol del usuario
+        UserRoleManager.getCurrentUserRole { role ->
+            currentUserRole = role
+        }
+
+        // Si es cliente, buscar información del trainer
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            scope.launch {
+                try {
+                    val userDoc = FirebaseFirestore.getInstance()
+                        .collection("users")
+                        .document(currentUser.uid)
+                        .get()
+                        .await()
+
+                    val userRole = userDoc.getString("userRole")
+                    if (userRole == "CLIENT") {
+                        val linkedTrainerUid = userDoc.getString("linkedTrainerUid")
+                        if (linkedTrainerUid != null) {
+                            // Obtener información del trainer
+                            val trainerDoc = FirebaseFirestore.getInstance()
+                                .collection("users")
+                                .document(linkedTrainerUid)
+                                .get()
+                                .await()
+
+                            val trainerName = "${trainerDoc.getString("firstName") ?: ""} ${trainerDoc.getString("lastName") ?: ""}".trim()
+                            val trainerEmail = trainerDoc.getString("email") ?: ""
+                            val trainerPhoto = trainerDoc.getString("photoURL")
+
+                            if (trainerName.isNotEmpty()) {
+                                trainerInfo = TrainerInfo(trainerName, trainerEmail, trainerPhoto)
+                            }
+                        }
+                    }
+                    isLoading = false
+                } catch (e: Exception) {
+                    isLoading = false
+                }
+            }
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -90,7 +130,6 @@ fun ProfileScreen(
                 )
             )
         },
-
     ) { padding ->
         Column(
             modifier = Modifier
@@ -146,24 +185,54 @@ fun ProfileScreen(
 
             Spacer(Modifier.height(24.dp))
 
-            // Botones grandes
+            // Sección de Trainer para CLIENTES
+            if (currentUserRole == UserRole.CLIENT) {
+                TrainerSection(
+                    trainerInfo = trainerInfo,
+                    isLoading = isLoading,
+                    onAddTrainer = onEnterInvitationClick
+                )
+                Spacer(Modifier.height(20.dp))
+            }
+
+            // Botón de invitaciones para TRAINERS
+            if (currentUserRole == UserRole.TRAINER) {
+                ProfileButton(
+                    text = "Gestionar Invitaciones",
+                    containerColor = traiBlue,
+                    contentColor = Color.White,
+                    icon = Icons.Default.AddCircle,
+                    onClick = {
+                        navController.navigate("trainer_invitations")
+                    }
+                )
+                Spacer(Modifier.height(12.dp))
+            }
+
+            // Botones principales
             ProfileButton(
                 text = "Mis medidas",
                 containerColor = traiBlue,
                 contentColor = Color.Black,
+                icon = Icons.Default.Home,
                 onClick = onMeasurementsClick
             )
             Spacer(Modifier.height(12.dp))
+
             ProfileButton(
                 text = "Favoritos",
                 containerColor = traiOrange,
                 contentColor = Color.Black,
-                onClick = { /* … */ })
+                icon = Icons.Default.Favorite,
+                onClick = { /* … */ }
+            )
             Spacer(Modifier.height(12.dp))
+
             ProfileButton(
-                text = "Cerrar sesion",
+                text = "Cerrar sesión",
                 containerColor = Color.Red,
                 contentColor = Color.White,
+                icon = Icons.Default.Clear,
                 onClick = {
                     scope.launch {
                         auth.signOut()
@@ -175,8 +244,162 @@ fun ProfileScreen(
                     }
                 }
             )
+        }
+    }
+}
 
+@Composable
+private fun TrainerSection(
+    trainerInfo: TrainerInfo?,
+    isLoading: Boolean,
+    onAddTrainer: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth(0.9f)
+            .clip(RoundedCornerShape(16.dp)),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 4.dp
+        )
+    ) {
+        when {
+            isLoading -> {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(24.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = traiBlue
+                    )
+                }
+            }
 
+            trainerInfo != null -> {
+                // Tiene trainer asignado
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            traiBlue.copy(alpha = 0.05f)
+                        )
+                        .padding(20.dp)
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Foto del trainer o icono por defecto
+                        Box(
+                            modifier = Modifier
+                                .size(60.dp)
+                                .clip(CircleShape)
+                                .background(traiBlue.copy(alpha = 0.1f))
+                                .border(2.dp, traiBlue, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.pesa_icon),
+                                contentDescription = "Entrenador",
+                                modifier = Modifier.size(32.dp),
+                                tint = traiBlue
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.width(16.dp))
+
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = "Mi Entrenador",
+                                fontSize = 12.sp,
+                                color = Color.Gray,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                text = trainerInfo.name,
+                                fontSize = 18.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Black
+                            )
+                            Text(
+                                text = trainerInfo.email,
+                                fontSize = 14.sp,
+                                color = Color.Gray
+                            )
+                        }
+
+                        // Badge de verificado
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = "Verificado",
+                            modifier = Modifier.size(24.dp),
+                            tint = Color(0xFF4CAF50)
+                        )
+                    }
+                }
+            }
+
+            else -> {
+                // No tiene trainer
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onAddTrainer() }
+                        .background(
+                            Color(0xFFFFF3E0) // Fondo amarillo claro
+                        )
+                        .padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Icon(
+                        Icons.Default.Clear,
+                        contentDescription = "Sin entrenador",
+                        modifier = Modifier.size(48.dp),
+                        tint = Color(0xFFFF9800) // Naranja
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text(
+                        text = "Sin Entrenador Asignado",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.Black
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = "Únete a un entrenador para obtener rutinas personalizadas",
+                        fontSize = 14.sp,
+                        color = Color.Gray,
+                        textAlign = TextAlign.Center
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = onAddTrainer,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFF9800)
+                        ),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text("Agregar Entrenador")
+                    }
+                }
+            }
         }
     }
 }
@@ -195,6 +418,7 @@ fun ProfileButton(
     modifier: Modifier = Modifier,
     containerColor: Color = Color(0xFFE0E0E0),
     contentColor: Color = Color.Black,
+    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
     onClick: () -> Unit
 ) {
     Button(
@@ -207,8 +431,16 @@ fun ProfileButton(
             containerColor = containerColor,
             contentColor = contentColor
         ),
-        contentPadding = PaddingValues() // centers the text nicely
+        contentPadding = PaddingValues(horizontal = 24.dp)
     ) {
+        if (icon != null) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+        }
         Text(
             text = text,
             fontSize = 16.sp,
@@ -245,4 +477,3 @@ private fun HexagonBadge(number: String, modifier: Modifier = Modifier) {
         )
     }
 }
-
