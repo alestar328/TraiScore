@@ -45,6 +45,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import com.develop.traiscore.presentation.screens.LoginScreenRoute
+import com.develop.traiscore.presentation.screens.SettingsScreen
 import java.io.File
 
 
@@ -287,14 +288,15 @@ fun AppNavigation(navController: NavHostController) {
                     navController.navigate(NavigationRoutes.Main.route) {
                         popUpTo(NavigationRoutes.Login.route) { inclusive = true }
                     }
-                },
-                onRegisterClick = {
-                    // si tienes una ruta para crear cuenta, navega aquí
-                    navController.navigate(NavigationRoutes.Register.route)
                 }
+
             )
         }
-
+        composable(NavigationRoutes.Settings.route) {
+            SettingsScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
         composable(NavigationRoutes.Main.route) {
             MainScreen(navController = navController)
         }

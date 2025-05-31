@@ -57,8 +57,101 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         _errorMsg.value = null
     }
 
-    // Lógica de login con email
+    fun sendPasswordResetEmail(email: String) {
+        println("🔥 DEBUG: sendPasswordResetEmail called with: '$email'")
 
+        if (email.isBlank()) {
+            println("🔥 DEBUG: Email is blank")
+
+            _errorMsg.value = "Ingresa tu email para recuperar la contraseña"
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                auth.sendPasswordResetEmail(email)
+                    .addOnSuccessListener {
+                        println("🔥 DEBUG: Firebase SUCCESS - Email sent")
+
+                        _errorMsg.value = "✅ Se ha enviado un enlace de recuperación a tu email"
+                    }
+                    .addOnFailureListener { exception ->
+                        _errorMsg.value = when {
+                            exception.message?.contains("user not found") == true ->
+                                "No existe una cuenta con este email"
+                            exception.message?.contains("invalid email") == true ->
+                                "Email no válido"
+                            else -> "Error al enviar email: ${exception.message}"
+                        }
+                    }
+            } catch (exception: Exception) {
+                println("🔥 DEBUG: Exception caught - ${exception.message}")
+
+                _errorMsg.value = "Error inesperado: ${exception.message}"
+            }
+        }
+    }
+    // Lógica de login con email
+    fun signInWithEmail() {
+        if (email.isBlank() || password.isBlank()) {
+            _errorMsg.value = "Email y contraseña son obligatorios"
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                auth.signInWithEmailAndPassword(email, password)
+                    .addOnSuccessListener {
+                        viewModelScope.launch {
+                            _loginSuccess.emit(Unit)
+                        }
+                    }
+                    .addOnFailureListener { exception ->
+                        _errorMsg.value = when (exception.message) {
+                            "The email address is badly formatted." -> "Email mal formateado"
+                            "There is no user record corresponding to this identifier." -> "Usuario no encontrado"
+                            "The password is invalid or the user does not have a password." -> "Contraseña incorrecta"
+                            else -> "Error de autenticación: ${exception.message}"
+                        }
+                    }
+            } catch (exception: Exception) {
+                _errorMsg.value = "Error inesperado: ${exception.message}"
+            }
+        }
+    }
+
+    fun registerWithEmail() {
+        if (email.isBlank() || password.isBlank()) {
+            _errorMsg.value = "Email y contraseña son obligatorios"
+            return
+        }
+        if (password.length < 6) {
+            _errorMsg.value = "La contraseña debe tener al menos 6 caracteres"
+            return
+        }
+
+        viewModelScope.launch {
+            try {
+                auth.createUserWithEmailAndPassword(email, password)
+                    .addOnSuccessListener {
+                        // Después del registro exitoso, mostrar formulario de perfil
+                        isNewUser = true
+                        viewModelScope.launch {
+                            _requireRegistration.emit(Unit)
+                        }
+                    }
+                    .addOnFailureListener { exception ->
+                        _errorMsg.value = when {
+                            exception.message?.contains("already in use") == true -> "Este email ya está registrado"
+                            exception.message?.contains("weak password") == true -> "La contraseña es muy débil"
+                            else -> "Error de registro: ${exception.message}"
+                        }
+                    }
+            } catch (exception: Exception) {
+                _errorMsg.value = "Error inesperado: ${exception.message}"
+            }
+        }
+    }
 
     // Lógica de login con Google
     fun signInWithGoogle(authManager: AuthenticationManager) {

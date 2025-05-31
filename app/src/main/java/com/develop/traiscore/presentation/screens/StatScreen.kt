@@ -46,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.R
@@ -209,7 +208,8 @@ fun StatScreen(
                                         selectedValue = selected ?: "",
                                         placeholder = "Ejercicio",
                                         onItemSelected = { viewModel.onExerciseSelected(it) },
-                                        modifier = Modifier.fillMaxWidth()
+                                        modifier = Modifier.fillMaxWidth(),
+
                                     )
                                     Spacer(modifier = Modifier.height(4.dp))
                                 }

@@ -75,8 +75,10 @@ fun BodyMeasurementsHistoryScreen(
         if (searchQuery.isNotEmpty()) {
             filtered = filtered.filter { item ->
                 val dateStr = formatDate(item.createdAt.toDate())
-                val weightStr = if (item.measurements.weight > 0) "${item.measurements.weight} kg" else ""
-                val heightStr = if (item.measurements.height > 0) "${item.measurements.height} cm" else ""
+                val weightStr =
+                    if (item.measurements.weight > 0) "${item.measurements.weight} kg" else ""
+                val heightStr =
+                    if (item.measurements.height > 0) "${item.measurements.height} cm" else ""
 
                 listOf(dateStr, weightStr, heightStr, item.gender)
                     .any { it.contains(searchQuery, ignoreCase = true) }
@@ -134,7 +136,11 @@ fun BodyMeasurementsHistoryScreen(
                         // Menú de ordenación
                         Box {
                             IconButton(onClick = { showSortMenu = true }) {
-                                Icon(Icons.Default.ThumbUp, contentDescription = "Ordenar", tint = traiBlue)
+                                Icon(
+                                    Icons.Default.ThumbUp,
+                                    contentDescription = "Ordenar",
+                                    tint = traiBlue
+                                )
                             }
                             DropdownMenu(
                                 expanded = showSortMenu,
@@ -149,7 +155,11 @@ fun BodyMeasurementsHistoryScreen(
                                         },
                                         leadingIcon = {
                                             if (selectedSortOption == option) {
-                                                Icon(Icons.Default.Check, contentDescription = null, tint = traiBlue)
+                                                Icon(
+                                                    Icons.Default.Check,
+                                                    contentDescription = null,
+                                                    tint = traiBlue
+                                                )
                                             }
                                         }
                                     )
@@ -236,20 +246,44 @@ fun BodyMeasurementsHistoryScreen(
                                         item = item,
                                         isExpanded = expandedItemId == item.id,
                                         isCompareMode = showCompareMode,
-                                        isSelectedForComparison = selectedForComparison.contains(item.id),
+                                        isSelectedForComparison = selectedForComparison.contains(
+                                            item.id
+                                        ),
                                         onExpandToggle = {
-                                            expandedItemId = if (expandedItemId == item.id) null else item.id
+                                            expandedItemId =
+                                                if (expandedItemId == item.id) null else item.id
                                         },
                                         onEdit = { onEditMeasurement(item) },
                                         onCompareToggle = { itemId ->
-                                            selectedForComparison = if (selectedForComparison.contains(itemId)) {
-                                                selectedForComparison - itemId
-                                            } else if (selectedForComparison.size < 3) {
-                                                selectedForComparison + itemId
-                                            } else {
-                                                selectedForComparison // No permitir más de 3
+                                            selectedForComparison =
+                                                if (selectedForComparison.contains(itemId)) {
+                                                    selectedForComparison - itemId
+                                                } else if (selectedForComparison.size < 3) {
+                                                    selectedForComparison + itemId
+                                                } else {
+                                                    selectedForComparison // No permitir más de 3
+                                                }
+                                        },
+                                        onDelete = { // ✅ AÑADIR callback de eliminación
+                                            // Eliminar de Firebase y actualizar lista local
+                                            bodyStatsViewModel.deleteBodyStatsRecord(item.id) { success, error ->
+                                                if (success) {
+                                                    // Actualizar lista local
+                                                    historyItems =
+                                                        historyItems.filter { it.id != item.id }
+                                                    // Limpiar selecciones si está en modo comparación
+                                                    if (selectedForComparison.contains(item.id)) {
+                                                        selectedForComparison =
+                                                            selectedForComparison - item.id
+                                                    }
+                                                } else {
+                                                    // Mostrar error (opcional: usar SnackBar)
+                                                    errorMessage = error
+                                                }
                                             }
                                         }
+
+
                                     )
                                 }
                             }

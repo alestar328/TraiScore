@@ -48,7 +48,28 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
                 .document(userId)
                 .collection("bodyStats")
         }
+    fun deleteBodyStatsRecord(
+        documentId: String,
+        onComplete: (success: Boolean, error: String?) -> Unit
+    ) {
+        val userId = auth.currentUser?.uid
+        if (userId == null) {
+            onComplete(false, "Usuario no autenticado")
+            return
+        }
 
+        userStatsRef?.document(documentId)
+            ?.delete()
+            ?.addOnSuccessListener {
+                Log.d("BodyStatsVM", "✅ Registro eliminado correctamente: $documentId")
+                onComplete(true, null)
+            }
+            ?.addOnFailureListener { exception ->
+                val errorMsg = "Error al eliminar registro: ${exception.message}"
+                Log.e("BodyStatsVM", "Error eliminando registro", exception)
+                onComplete(false, errorMsg)
+            }
+    }
     /**
      * Carga las medidas corporales más recientes del usuario
      */

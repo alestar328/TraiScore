@@ -11,8 +11,7 @@ import com.develop.traiscore.presentation.viewmodels.LoginViewModel
 
 @Composable
 fun LoginScreenRoute(
-    onLoginSuccess: () -> Unit,
-    onRegisterClick: () -> Unit
+    onLoginSuccess: () -> Unit
 ) {
     val loginViewModel = hiltViewModel<LoginViewModel>()
     val context = LocalContext.current
@@ -46,10 +45,24 @@ fun LoginScreenRoute(
             loginViewModel.signInWithGoogle(authManager)
         },
         onRegisterClick = {
-            // En lugar de navegar, activar el modo registro
-            loginViewModel.isNewUser = true  // ← CAMBIAR ESTO
+            loginViewModel.isNewUser = true
+        },
+        onBackToLogin = { // ✅ NUEVO
+            loginViewModel.isNewUser = false
+            loginViewModel.clearError()
+        },
+        onForgotPassword = { email -> // ✅ NUEVO
+            println("🔥 DEBUG: LoginScreenRoute onForgotPassword called with: '$email'")
+
+            loginViewModel.sendPasswordResetEmail(email)
         },
         isNewUser = loginViewModel.isNewUser,
-        onCompleteRegistration = loginViewModel::completeRegistration
+        onCompleteRegistration = loginViewModel::completeRegistration,
+        email = loginViewModel.email,
+        password = loginViewModel.password,
+        onEmailChange = loginViewModel::onEmailChange,
+        onPasswordChange = loginViewModel::onPasswordChange,
+        onEmailSignIn = loginViewModel::signInWithEmail,
+        onEmailSignUp = loginViewModel::registerWithEmail
     )
 }

@@ -17,12 +17,13 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.IconButton
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -48,7 +49,14 @@ import com.develop.traiscore.R
 import com.develop.traiscore.core.Gender
 import com.develop.traiscore.core.UserRole
 import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.TextButton
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.zIndex
 import com.develop.traiscore.presentation.components.DatePickerSection
 import com.develop.traiscore.presentation.components.FullScreenDatePicker
@@ -58,34 +66,70 @@ import com.develop.traiscore.presentation.theme.Roboto
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBlue
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @Composable
 fun LoginScreen(
-
     errorMsg: String?,
     onGoogleClick: () -> Unit,
     onRegisterClick: () -> Unit,
     isNewUser: Boolean = false,
-    onCompleteRegistration: (firstName: String, lastName: String, birthYear: LocalDate, gender: Gender, UserRole: UserRole) -> Unit = { _, _, _, _, _ -> }
+    onCompleteRegistration: (firstName: String, lastName: String, birthYear: LocalDate, gender: Gender, UserRole: UserRole) -> Unit = { _, _, _, _, _ -> },
+    email: String = "",
+    password: String = "",
+    onEmailChange: (String) -> Unit = {},
+    onPasswordChange: (String) -> Unit = {},
+    onEmailSignIn: () -> Unit = {},
+    onEmailSignUp: () -> Unit = {},
+    onBackToLogin: () -> Unit = {},
+    onForgotPassword: (String) -> Unit = {}
+
 
 ) {
     var showDatePicker by remember { mutableStateOf(false) }  // ← Añadir esto
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var isRegistering by remember { mutableStateOf(false) } // ✅ AÑADIR estado para tracking
 
-    Box(modifier = Modifier.fillMaxSize()) {
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .navigationBarsPadding()
+    ) {
         Surface {
             Column(modifier = Modifier.fillMaxSize()) {
 
-                TopSection()
-                Spacer(modifier = Modifier.height(20.dp))
+                TopSection(
+                    title = if (isNewUser || isRegistering) "Registro" else "Login",
+                    showBackButton = isNewUser || isRegistering, // ✅ NUEVO
+                    onBackClick = {
+                        isRegistering = false
+                        onBackToLogin()
+                    }
+                )
+                Spacer(modifier = Modifier.height(15.dp))
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .padding(horizontal = 30.dp)
                 ) {
                     if (!isNewUser) {
-                        SocialMediaSection(onGoogleClick = onGoogleClick)
+                        SocialMediaSection(
+                            onGoogleClick = onGoogleClick,
+                            email = email,
+                            password = password,
+                            onEmailChange = onEmailChange,
+                            onPasswordChange = onPasswordChange,
+                            onEmailSignIn = onEmailSignIn,
+                            onEmailSignUp = {
+                                isRegistering = true
+                                onEmailSignUp()
+                            },
+                            onForgotPassword = {
+                                println("🔥 DEBUG: onForgotPassword called with email: '$email'")
+
+                                onForgotPassword(email) // ✅ CAMBIAR: Siempre llamar, que el ViewModel valide
+                            }
+                        )
 
 
                         val uiColor = if (isSystemInDarkTheme()) Color.White else Black
@@ -113,7 +157,11 @@ fun LoginScreen(
                                     fontFamily = Roboto,
                                     fontWeight = FontWeight.Medium,
                                     modifier = Modifier
-                                        .clickable { onRegisterClick() }
+                                        .clickable {
+                                            isRegistering =
+                                                true // ✅ AÑADIR: Marcar como registrando
+                                            onRegisterClick()
+                                        }
                                         .padding(vertical = 8.dp)
                                 )
                             }
@@ -123,11 +171,15 @@ fun LoginScreen(
                         RegistrationSection(
                             onCompleteRegistration = onCompleteRegistration,
                             errorMsg = errorMsg,
-                            selectedDate = selectedDate,          // ← Pasar estado
-                            onDateSelected = { selectedDate = it }, // ← Pasar callback
-                            onShowDatePicker = { showDatePicker = true }
+                            selectedDate = selectedDate,
+                            onDateSelected = { selectedDate = it },
+                            onShowDatePicker = { showDatePicker = true },
+                            // ✅ NUEVOS PARÁMETROS:
+                            initialEmail = email,
+                            initialPassword = password,
+                            onEmailChange = onEmailChange,
+                            onPasswordChange = onPasswordChange
                         )
-                    // ← Pasar callback
                     }
                 }
             }
@@ -164,15 +216,24 @@ fun LoginScreen(
 private fun RegistrationSection(
     onCompleteRegistration: (String, String, LocalDate, Gender, UserRole) -> Unit,
     errorMsg: String?,
-    selectedDate: LocalDate?,                    // ← Añadir parámetro
-    onDateSelected: (LocalDate) -> Unit,         // ← Añadir parámetro
-    onShowDatePicker: () -> Unit                 // ← Añadir parámetro
+    selectedDate: LocalDate?,
+    onDateSelected: (LocalDate) -> Unit,
+    onShowDatePicker: () -> Unit,
+    initialEmail: String = "",
+    initialPassword: String = "",
+    onEmailChange: (String) -> Unit = {},
+    onPasswordChange: (String) -> Unit = {}
 ) {
+    var email by remember { mutableStateOf(initialEmail) }
+    var password by remember { mutableStateOf(initialPassword) }
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
     var selectedGender by remember { mutableStateOf<Gender?>(null) }
     var selectedUserType by remember { mutableStateOf<UserRole?>(null) }
-    val isFormValid = firstName.isNotBlank() &&
+
+    val isFormValid = email.isNotBlank() &&
+            password.isNotBlank() &&
+            firstName.isNotBlank() &&
             lastName.isNotBlank() &&
             selectedDate != null &&
             selectedGender != null &&
@@ -183,9 +244,12 @@ private fun RegistrationSection(
         unfocusedBorderColor = Color.Gray,
         cursorColor = traiBlue,
         textColor = Color.Black,
-        focusedLabelColor = traiBlue,
-        unfocusedLabelColor = Color.Black,
-        placeholderColor = Color.Black
+        focusedLabelColor = traiBlue,           // Label cuando tiene foco
+        unfocusedLabelColor = Color.Black,      // Label cuando no tiene foco
+        placeholderColor = Color.Gray,          // Placeholder más suave
+        disabledLabelColor = Color.Black,       // Label cuando está deshabilitado
+        errorLabelColor = Color.Red,            // Label cuando hay error
+        backgroundColor = Color.Transparent     // Fondo transparente
     )
 
     LazyColumn(
@@ -205,12 +269,19 @@ private fun RegistrationSection(
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
-
         item {
             OutlinedTextField(
-                value = firstName,
-                onValueChange = { firstName = it },
-                label = { Text("Nombre") },
+                value = email,
+                onValueChange = { newEmail ->
+                    email = newEmail
+                    onEmailChange(newEmail) // ✅ Propagar el cambio al padre
+                },
+                label = {
+                    Text(
+                        text = "Email",
+                        color = if (email.isEmpty()) Color.Black else traiBlue
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = defaultColors
@@ -219,12 +290,60 @@ private fun RegistrationSection(
 
         item {
             OutlinedTextField(
-                value = lastName,
-                onValueChange = { lastName = it },
-                label = { Text("Apellido") },
+                value = password,
+                onValueChange = { newPassword ->
+                    password = newPassword
+                    onPasswordChange(newPassword) // ✅ Propagar el cambio al padre
+                },
+                label = {
+                    Text(
+                        text = "Contraseña",
+                        color = if (password.isEmpty()) Color.Black else traiBlue
+                    )
+                },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                visualTransformation = PasswordVisualTransformation(),
                 colors = defaultColors
+            )
+        }
+        item {
+            OutlinedTextField(
+                value = firstName,
+                onValueChange = { firstName = it },
+                label = {
+                    Text(
+                        text = "Nombre",
+                        color = if (firstName.isEmpty()) Color.Black else traiBlue // Negro cuando vacío, azul cuando tiene contenido
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = defaultColors,
+                keyboardOptions = KeyboardOptions.Default.copy( // ✅ AÑADIR: Configuración del teclado
+                    capitalization = KeyboardCapitalization.Sentences,
+                    imeAction = ImeAction.Done
+                ),
+            )
+        }
+
+        item {
+            OutlinedTextField(
+                value = lastName,
+                onValueChange = { lastName = it },
+                label = {
+                    Text(
+                        text = "Apellido",
+                        color = if (lastName.isEmpty()) Color.Black else traiBlue // Negro cuando vacío, azul cuando tiene contenido
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true,
+                colors = defaultColors,
+                keyboardOptions = KeyboardOptions.Default.copy( // ✅ AÑADIR: Configuración del teclado
+                    capitalization = KeyboardCapitalization.Sentences,
+                    imeAction = ImeAction.Done
+                ),
             )
         }
 
@@ -345,14 +464,122 @@ private fun RegistrationSection(
 
 @Composable
 private fun SocialMediaSection(
-    onGoogleClick: () -> Unit
+    onGoogleClick: () -> Unit,
+    email: String,
+    password: String,
+    onEmailChange: (String) -> Unit,
+    onPasswordChange: (String) -> Unit,
+    onEmailSignIn: () -> Unit,
+    onEmailSignUp: () -> Unit,
+    onForgotPassword: () -> Unit = {}
+
 ) {
+    val defaultColors = TextFieldDefaults.outlinedTextFieldColors(
+        focusedBorderColor = traiBlue,
+        unfocusedBorderColor = Color.Gray,
+        cursorColor = traiBlue,
+        textColor = Color.Black,
+        focusedLabelColor = traiBlue,
+        unfocusedLabelColor = Color.Black,
+        placeholderColor = Color.Gray,
+        backgroundColor = Color.Transparent
+    )
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = 30.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        // Campos de email y contraseña
+        OutlinedTextField(
+            value = email,
+            onValueChange = onEmailChange,
+            label = {
+                Text(
+                    text = "Email",
+                    color = if (email.isEmpty()) Color.Black else traiBlue
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            colors = defaultColors
+        )
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = onPasswordChange,
+            label = {
+                Text(
+                    text = "Contraseña",
+                    color = if (password.isEmpty()) Color.Black else traiBlue
+                )
+            },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            colors = defaultColors
+        )
+
+        // Botones de acción
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            ElevatedButton(
+                onClick = onEmailSignIn,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp),
+                colors = ButtonDefaults.elevatedButtonColors(
+                    containerColor = traiBlue,
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Ingresar")
+            }
+
+            ElevatedButton(
+                onClick = onEmailSignUp,
+                modifier = Modifier
+                    .weight(1f)
+                    .height(48.dp),
+                colors = ButtonDefaults.elevatedButtonColors(
+                    containerColor = Color.Gray,
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Registrarse")
+            }
+        }
+        TextButton(
+
+            onClick = {
+                println("🔥 DEBUG: TextButton clicked!") // ✅ AÑADIR: Debug para verificar
+
+                onForgotPassword() },
+            modifier = Modifier.padding(top = 8.dp)
+        ) {
+            Text(
+                text = "¿Olvidaste tu contraseña?",
+                color = Color.Red,
+                style = MaterialTheme.typography.bodyMedium
+
+            )
+        }
+
+        // Divider
+        Text(
+            text = "O",
+            color = Color.Gray,
+            modifier = Modifier.padding(vertical = 8.dp)
+        )
+
+
+
+
+
         ElevatedButton(
             onClick = onGoogleClick,
             modifier = Modifier
@@ -388,16 +615,36 @@ private fun SocialMediaSection(
 
 
 @Composable
-private fun TopSection() {
+private fun TopSection(
+    title: String = "Login",
+    showBackButton: Boolean = false,
+    onBackClick: () -> Unit = {}
+) {
     val uiColor = if (isSystemInDarkTheme()) Color.White else Black
 
     Box(
         contentAlignment = Alignment.TopCenter
     ) {
+        if (showBackButton) {
+            IconButton(
+                onClick = onBackClick,
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .padding(start = 16.dp, top = 16.dp)
+                    .zIndex(1f)
+            ) {
+                Icon(
+                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Volver al login",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+        }
         Image(
             modifier = Modifier
                 .fillMaxWidth()
-                .fillMaxHeight(fraction = 0.46f),
+                .fillMaxHeight(fraction = 0.38f),
             painter = painterResource(id = R.drawable.shape),
             contentDescription = null,
             contentScale = ContentScale.FillBounds,
@@ -405,11 +652,11 @@ private fun TopSection() {
 
         )
         Row(
-            modifier = Modifier.padding(top = 80.dp),
+            modifier = Modifier.padding(top = 60.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Icon(
-                modifier = Modifier.size(85.dp),
+                modifier = Modifier.size(75.dp),
                 painter = painterResource(id = R.drawable.tslogo),
                 contentDescription = stringResource(id = R.string.app_logo),
                 tint = Color.Unspecified
@@ -433,7 +680,7 @@ private fun TopSection() {
             modifier = Modifier
                 .padding(bottom = 7.dp)
                 .align(alignment = Alignment.BottomCenter),
-            text = stringResource(id = R.string.login),
+            text = title,
             style = MaterialTheme.typography.headlineLarge,
             color = uiColor
 

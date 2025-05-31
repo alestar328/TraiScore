@@ -2,10 +2,13 @@ package com.develop.traiscore.presentation.components
 
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import com.develop.traiscore.presentation.theme.traiBlue
@@ -54,6 +57,11 @@ fun FilterableDropdown(
             trailingIcon = {
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded)
             },
+            singleLine = true,
+            keyboardOptions = KeyboardOptions.Default.copy( // ✅ AÑADIR: Configuración del teclado
+                capitalization = KeyboardCapitalization.Sentences,
+                imeAction = ImeAction.Done
+            ),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = traiBlue,
                 unfocusedBorderColor = traiBlue,
