@@ -66,13 +66,10 @@ fun RoutineScreen(
     val userId = FirebaseAuth.getInstance().currentUser?.uid
         ?: run { onBack(); return }
 
-    // Inicializa el estado del ViewModel con los datos iniciales solo una vez
     LaunchedEffect(documentId) {
         routineViewModel.loadRoutine(documentId)
     }
 
-
-    // Si el ViewModel no tiene datos aún, muestra un mensaje de carga
     val currentRoutineData = routineViewModel.routineDocument
     if (currentRoutineData == null) {
         Text("Cargando datos...")
@@ -124,15 +121,66 @@ fun RoutineScreen(
             if (currentUserRole == UserRole.TRAINER) {
                 FloatingActionButton(
                     onClick = {
-                        // TODO: disparar la exportación aquí
+                        // ✅ NUEVA FUNCIONALIDAD DE EXPORTACIÓN
+                        val currentRoutine = routineViewModel.routineDocument
+
+                        if (currentRoutine == null) {
+                            Toast.makeText(
+                                context,
+                                "Error: No se pudo cargar la rutina",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@FloatingActionButton
+                        }
+
+                        // Verificar que hay datos para exportar
+                        if (currentRoutine.sections.isEmpty()) {
+                            Toast.makeText(
+                                context,
+                                "La rutina no tiene secciones para exportar",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                            return@FloatingActionButton
+                        }
+
+                        try {
+                            // Exportar usando RoutineExportManager
+                            com.develop.traiscore.exports.RoutineExportManager.exportRoutine(
+                                context = context,
+                                routine = currentRoutine,
+                                onSuccess = { fileUri ->
+                                    // Compartir el archivo después de exportar
+                                    com.develop.traiscore.exports.RoutineExportManager.shareRoutineFile(
+                                        context = context,
+                                        fileUri = fileUri,
+                                        routineName = currentRoutine.routineName
+                                    )
+                                    Toast.makeText(
+                                        context,
+                                        "✅ Rutina '${currentRoutine.routineName}' exportada y compartida",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                },
+                                onError = { error ->
+                                    Toast.makeText(
+                                        context,
+                                        "❌ Error al exportar: $error",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            )
+                        } catch (e: Exception) {
+                            Toast.makeText(
+                                context,
+                                "Error inesperado: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
                     },
                     containerColor = Color.Yellow,
                     contentColor = Color.Black,
                     modifier = Modifier
-                        .size(56.dp)
                         .navigationBarsPadding()
-                        .padding(bottom = 100.dp, end = 16.dp) // tu NavBar + margen
-
                 ) {
                     Icon(
                         imageVector = Icons.Default.Email,
@@ -141,8 +189,6 @@ fun RoutineScreen(
                 }
             }
         }
-
-
     )
     { innerPadding ->
 
