@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.develop.traiscore.data.local.entity.UserMeasurements
 import com.develop.traiscore.domain.model.BodyMeasurementProgressBuilder
 import com.develop.traiscore.domain.model.BodyMeasurementProgressData
@@ -17,6 +18,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -24,6 +26,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class BodyStatsViewModel @Inject constructor() : ViewModel() {
+    private var targetUserId: String? = null
 
     // Estados del ViewModel
     var isLoading by mutableStateOf(false)
@@ -40,33 +43,114 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
 
     private val db = Firebase.firestore
     private val auth = FirebaseAuth.getInstance()
-
-    // Referencia a la colección del usuario actual
     private val userStatsRef
-        get() = auth.currentUser?.uid?.let { userId ->
-            db.collection("users")
-                .document(userId)
-                .collection("bodyStats")
+        get() = run {
+            val userId = getCurrentUserId()
+            Log.d("BodyStatsVM", "🔧 userStatsRef para userId: $userId")
+            if (userId.isNotEmpty()) {
+                db.collection("users")
+                    .document(userId)
+                    .collection("bodyStats")
+            } else {
+                null
+            }
         }
+
+
+    fun setTargetUser(userId: String) {
+        Log.d("BodyStatsVM", "🔧 setTargetUser llamado con userId: $userId")
+        targetUserId = userId
+        // Recargar datos para el nuevo usuario
+        loadBodyStatsForUser(userId)
+    }
+
+
+    private fun getCurrentUserId(): String {
+        val userId = targetUserId ?: FirebaseAuth.getInstance().currentUser?.uid ?: ""
+        Log.d("BodyStatsVM", "🔧 getCurrentUserId() retorna: $userId (targetUserId=$targetUserId)")
+        return userId
+    }
+
+    private fun loadBodyStatsForUser(userId: String) {
+        viewModelScope.launch {
+            try {
+                isLoading = true
+                errorMessage = null
+
+                // Obtener los datos más recientes del usuario específico
+                val targetUserStatsRef = db
+                    .collection("users")
+                    .document(userId)
+                    .collection("bodyStats")
+
+                targetUserStatsRef
+                    .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                    .limit(1)
+                    .get()
+                    .addOnSuccessListener { querySnapshot ->
+                        isLoading = false
+                        if (!querySnapshot.isEmpty) {
+                            val document = querySnapshot.documents.first()
+                            val data = document.data ?: return@addOnSuccessListener
+
+                            // Cargar género
+                            selectedGender = data["gender"] as? String
+
+                            // Cargar medidas
+                            val measurements = data["measurements"] as? Map<String, Any> ?: emptyMap()
+                            bodyMeasurements = measurements.mapValues { (_, value) ->
+                                value.toString()
+                            }
+
+                            Log.d("BodyStatsVM", "✅ Medidas cargadas para usuario: $userId")
+                        } else {
+                            // No hay datos previos
+                            bodyMeasurements = getDefaultMeasurements()
+                            selectedGender = "Male"
+                            Log.d("BodyStatsVM", "No hay medidas previas para usuario: $userId")
+                        }
+                    }
+                    .addOnFailureListener { exception ->
+                        isLoading = false
+                        errorMessage = "Error al cargar las medidas: ${exception.message}"
+                        Log.e("BodyStatsVM", "Error cargando medidas para usuario $userId", exception)
+                    }
+            } catch (e: Exception) {
+                isLoading = false
+                errorMessage = "Error al cargar datos: ${e.message}"
+                Log.e("BodyStatsVM", "Error en loadBodyStatsForUser", e)
+            }
+        }
+    }
+
+
+
     fun deleteBodyStatsRecord(
         documentId: String,
         onComplete: (success: Boolean, error: String?) -> Unit
     ) {
-        val userId = auth.currentUser?.uid
-        if (userId == null) {
+        // ✅ CAMBIO: Usar getCurrentUserId() en lugar de auth.currentUser?.uid directamente
+        val userId = getCurrentUserId()
+        if (userId.isEmpty()) {
             onComplete(false, "Usuario no autenticado")
             return
         }
 
-        userStatsRef?.document(documentId)
-            ?.delete()
-            ?.addOnSuccessListener {
-                Log.d("BodyStatsVM", "✅ Registro eliminado correctamente: $documentId")
+        // ✅ CORRECCIÓN: Usar db (que es Firebase.firestore) en lugar de firestore
+        val targetUserStatsRef = db
+            .collection("users")
+            .document(userId)
+            .collection("bodyStats")
+
+        targetUserStatsRef.document(documentId)
+            .delete()
+            .addOnSuccessListener {
+                Log.d("BodyStatsVM", "✅ Registro eliminado correctamente: $documentId para usuario: $userId")
                 onComplete(true, null)
             }
-            ?.addOnFailureListener { exception ->
+            .addOnFailureListener { exception ->
                 val errorMsg = "Error al eliminar registro: ${exception.message}"
-                Log.e("BodyStatsVM", "Error eliminando registro", exception)
+                Log.e("BodyStatsVM", "Error eliminando registro para usuario $userId", exception)
                 onComplete(false, errorMsg)
             }
     }
@@ -302,14 +386,12 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
             }
     }
 
-    /**
-     * Obtiene el historial completo de medidas del usuario
-     */
+
     fun getBodyStatsHistory(
         onComplete: (success: Boolean, data: List<Map<String, Any>>?, error: String?) -> Unit
     ) {
-        val userId = auth.currentUser?.uid
-        if (userId == null) {
+        val userId = getCurrentUserId() // ✅ CAMBIO: usar getCurrentUserId en lugar de auth.currentUser?.uid
+        if (userId.isEmpty()) {
             onComplete(false, null, "Usuario no autenticado")
             return
         }
@@ -382,8 +464,9 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
     fun getBodyMeasurementProgressData(
         onComplete: (success: Boolean, data: BodyMeasurementProgressData?, error: String?) -> Unit
     ) {
-        val userId = auth.currentUser?.uid
-        if (userId == null) {
+        // ✅ CAMBIO: Usar getCurrentUserId() en lugar de auth.currentUser?.uid
+        val userId = getCurrentUserId()
+        if (userId.isEmpty()) {
             onComplete(false, null, "Usuario no autenticado")
             return
         }
@@ -401,17 +484,17 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
                     }
 
                     val progressData = builder.build(userId)
-                    Log.d("BodyStatsVM", "✅ Datos de progreso generados: ${progressData.getTotalRecords()} registros")
+                    Log.d("BodyStatsVM", "✅ Datos de progreso generados para usuario $userId: ${progressData.getTotalRecords()} registros")
                     onComplete(true, progressData, null)
 
                 } catch (exception: Exception) {
-                    Log.e("BodyStatsVM", "Error procesando datos de progreso", exception)
+                    Log.e("BodyStatsVM", "Error procesando datos de progreso para usuario $userId", exception)
                     onComplete(false, null, "Error procesando datos: ${exception.message}")
                 }
             }
             ?.addOnFailureListener { exception ->
                 val errorMsg = "Error al obtener datos de progreso: ${exception.message}"
-                Log.e("BodyStatsVM", "Error obteniendo progreso", exception)
+                Log.e("BodyStatsVM", "Error obteniendo progreso para usuario $userId", exception)
                 onComplete(false, null, errorMsg)
             }
     }

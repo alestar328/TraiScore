@@ -55,6 +55,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import com.develop.traiscore.presentation.screens.LoginScreenRoute
 import com.develop.traiscore.presentation.screens.SettingsScreen
 import com.develop.traiscore.presentation.screens.StatScreen
+import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import com.develop.traiscore.presentation.viewmodels.MyClientsViewModel
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
 import java.io.File
@@ -212,6 +213,7 @@ class MainActivity : ComponentActivity() {
             false
         }
     }
+
     private fun showImportDialog(uri: Uri) {
         val fileName = getFileName(uri) ?: "rutina_traiscore.json"
 
@@ -248,6 +250,7 @@ class MainActivity : ComponentActivity() {
         builder.setCancelable(true)
         builder.show()
     }
+
     private fun showNotTraiScoreFileDialog() {
         val builder = AlertDialog.Builder(this)
         builder.setTitle("⚠️ Archivo no compatible")
@@ -257,6 +260,7 @@ class MainActivity : ComponentActivity() {
         }
         builder.show()
     }
+
     private fun getFileName(uri: Uri): String? {
         return try {
             when (uri.scheme) {
@@ -269,6 +273,7 @@ class MainActivity : ComponentActivity() {
                         } else null
                     }
                 }
+
                 else -> null
             }
         } catch (e: Exception) {
@@ -410,7 +415,6 @@ fun AppNavigation(navController: NavHostController) {
         ) { backStackEntry ->
             val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
 
-            // Buscar el cliente en MyClientsViewModel
             val myClientsViewModel: MyClientsViewModel = hiltViewModel()
             val clients by myClientsViewModel.clients.collectAsState()
 
@@ -422,10 +426,12 @@ fun AppNavigation(navController: NavHostController) {
                     onBack = { navController.popBackStack() },
                     onStatsClick = { clientUid ->
                         navController.navigate("client_stats/$clientUid")
+                    },
+                    onMeasurementsClick = { clientUid -> // ✅ AGREGAR este parámetro
+                        navController.navigate("client_measurements_history/$clientUid")
                     }
                 )
             } else {
-                // Mostrar loading o error
                 Box(
                     modifier = Modifier.fillMaxSize(),
                     contentAlignment = Alignment.Center
@@ -434,7 +440,26 @@ fun AppNavigation(navController: NavHostController) {
                 }
             }
         }
+        composable(
+            route = "client_measurements_history/{clientId}",
+            arguments = listOf(navArgument("clientId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
 
+            // Configurar BodyMeasurementsHistoryScreen para mostrar datos del cliente específico
+            BodyMeasurementsHistoryScreen(
+                onBack = { navController.popBackStack() },
+                onEditMeasurement = { historyItem ->
+                    // Optionalmente navegar a editar medidas del cliente
+                    navController.navigate(NavigationRoutes.Measurements.route)
+                },
+                bodyStatsViewModel = hiltViewModel<BodyStatsViewModel>().apply {
+                    // ✅ IMPORTANTE: Configurar el ViewModel para cargar datos del cliente específico
+                    // Necesitarás agregar un método setTargetUser en BodyStatsViewModel
+                    setTargetUser(clientId)
+                }
+            )
+        }
         composable(
             route = "client_stats/{clientId}",
             arguments = listOf(navArgument("clientId") { type = NavType.StringType })
@@ -442,16 +467,21 @@ fun AppNavigation(navController: NavHostController) {
             val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
 
             val statViewModel: StatScreenViewModel = hiltViewModel()
+            val bodyStatsViewModel: BodyStatsViewModel = hiltViewModel() // ✅ AGREGAR este ViewModel
 
-            // Configurar el ViewModel para mostrar datos del cliente
+            // Configurar ambos ViewModels para mostrar datos del cliente
             LaunchedEffect(clientId) {
                 statViewModel.setTargetUser(clientId)
+                bodyStatsViewModel.setTargetUser(clientId) // ✅ AGREGAR configuración
             }
 
-            StatScreen(viewModel = statViewModel)
+            // ✅ PASAR ambos ViewModels y el clientId
+            StatScreen(
+                viewModel = statViewModel,
+                bodyStatsViewModel = bodyStatsViewModel,
+                clientId = clientId
+            )
         }
-
-
 
 
     }

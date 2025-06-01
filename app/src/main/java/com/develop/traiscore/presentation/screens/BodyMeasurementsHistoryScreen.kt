@@ -127,7 +127,7 @@ fun BodyMeasurementsHistoryScreen(
                             onClick = { showCompareMode = true }
                         ) {
                             Icon(
-                                Icons.Default.ThumbUp,
+                                Icons.Default.Info,
                                 contentDescription = "Comparar medidas",
                                 tint = traiBlue
                             )
@@ -137,7 +137,7 @@ fun BodyMeasurementsHistoryScreen(
                         Box {
                             IconButton(onClick = { showSortMenu = true }) {
                                 Icon(
-                                    Icons.Default.ThumbUp,
+                                    Icons.Default.List,
                                     contentDescription = "Ordenar",
                                     tint = traiBlue
                                 )

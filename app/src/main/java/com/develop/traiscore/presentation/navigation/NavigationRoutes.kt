@@ -12,13 +12,16 @@ sealed class NavigationRoutes(val route: String) {
     object TrainerInvitations : NavigationRoutes("trainer_invitations")
     object EnterInvitation : NavigationRoutes("enter_invitation")
 
-    // NUEVAS RUTAS para el perfil del cliente
     object ClientProfile : NavigationRoutes("client_profile/{clientId}") {
         fun createRoute(clientId: String) = "client_profile/$clientId"
     }
 
     object ClientStats : NavigationRoutes("client_stats/{clientId}") {
         fun createRoute(clientId: String) = "client_stats/$clientId"
+    }
+
+    object ClientMeasurementsHistory : NavigationRoutes("client_measurements_history/{clientId}") {
+        fun createRoute(clientId: String) = "client_measurements_history/$clientId"
     }
 
 }

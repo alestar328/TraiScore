@@ -1,8 +1,8 @@
 package com.develop.traiscore.presentation.screens
 
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -30,7 +30,8 @@ import java.util.*
 fun ClientProfileScreen(
     client: UserEntity,
     onBack: () -> Unit,
-    onStatsClick: (String) -> Unit, // Pasamos el UID del cliente
+    onStatsClick: (String) -> Unit,
+    onMeasurementsClick: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     Scaffold(
@@ -57,58 +58,68 @@ fun ClientProfileScreen(
             )
         }
     ) { innerPadding ->
-        Column(
+        LazyColumn(
             modifier = modifier
                 .fillMaxSize()
                 .background(traiBackgroundDay)
-                .padding(innerPadding)
-                .padding(24.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .padding(innerPadding),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            contentPadding = PaddingValues(24.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Spacer(modifier = Modifier.height(32.dp))
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
 
             // Foto de perfil
-            ProfileImageSection(client = client)
-
-            Spacer(modifier = Modifier.height(24.dp))
+            item {
+                ProfileImageSection(client = client)
+            }
 
             // Información personal
-            PersonalInfoCard(client = client)
-
-            Spacer(modifier = Modifier.height(24.dp))
+            item {
+                PersonalInfoCard(client = client)
+            }
 
             // Botón de Estadísticas
-            ActionButton(
-                text = "Ver Estadísticas",
-                icon = Icons.Default.Star,
-                onClick = { onStatsClick(client.uid) },
-                containerColor = traiBlue
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
+            item {
+                ActionButton(
+                    text = "Ver Estadísticas",
+                    icon = Icons.Default.Star,
+                    onClick = { onStatsClick(client.uid) },
+                    containerColor = traiBlue
+                )
+            }
 
             // Botón de Rutinas (futuro)
-            ActionButton(
-                text = "Rutinas Asignadas",
-                icon = Icons.Default.Person,
-                onClick = { /* TODO: Implementar rutinas */ },
-                containerColor = traiOrange
-            )
-
-            Spacer(modifier = Modifier.height(16.dp))
+            item {
+                ActionButton(
+                    text = "Rutinas Asignadas",
+                    icon = Icons.Default.Person,
+                    onClick = { /* TODO: Implementar rutinas */ },
+                    containerColor = traiOrange
+                )
+            }
 
             // Botón de Medidas Corporales (futuro)
-            ActionButton(
-                text = "Medidas Corporales",
-                icon = Icons.Default.Person,
-                onClick = { /* TODO: Implementar medidas */ },
-                containerColor = Color(0xFF4CAF50)
-            )
-
-            Spacer(modifier = Modifier.weight(1f))
+            item {
+                ActionButton(
+                    text = "Medidas Corporales",
+                    icon = Icons.Default.Person,
+                    onClick = { onMeasurementsClick(client.uid) },
+                    containerColor = Color(0xFF4CAF50)
+                )
+            }
 
             // Información adicional
-            AdditionalInfoCard(client = client)
+            item {
+                AdditionalInfoCard(client = client)
+            }
+
+            // Espaciado final
+            item {
+                Spacer(modifier = Modifier.height(16.dp))
+            }
         }
     }
 }

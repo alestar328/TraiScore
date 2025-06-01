@@ -69,7 +69,8 @@ import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
 fun StatScreen(
     modifier: Modifier = Modifier,
     viewModel: StatScreenViewModel = hiltViewModel(),
-    bodyStatsViewModel: BodyStatsViewModel = hiltViewModel()
+    bodyStatsViewModel: BodyStatsViewModel = hiltViewModel(),
+    clientId: String? = null
 ) {
     val exerOptions by viewModel.exerciseOptions.collectAsState()
     val weightData by viewModel.weightProgress.collectAsState()
@@ -92,6 +93,12 @@ fun StatScreen(
     var bodyChartData by remember { mutableStateOf<List<Pair<String, Float>>>(emptyList()) }
     var isLoadingBodyData by remember { mutableStateOf(false) }
 
+
+    LaunchedEffect(clientId) {
+        clientId?.let { id ->
+            bodyStatsViewModel.setTargetUser(id)
+        }
+    }
     LaunchedEffect(selected, weightData, repsData) {
         Log.d("StatScreen", "Ejercicio=$selected  pesos=$weightData  reps=$repsData")
     }
@@ -153,10 +160,18 @@ fun StatScreen(
             )
         },
         content = { paddingValues ->
+            val isClientViewingOwnStats = clientId == null
+
             Column(
                 modifier = Modifier
                     .padding(paddingValues)
-                    .navigationBarsPadding()
+                    .then(
+                        if (isClientViewingOwnStats) {
+                            Modifier.navigationBarsPadding()
+                        } else {
+                            Modifier
+                        }
+                    )
                     .background(traiBackgroundDay)
                     .fillMaxSize()
             ) {
