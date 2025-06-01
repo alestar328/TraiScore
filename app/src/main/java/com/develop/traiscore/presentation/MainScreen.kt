@@ -26,6 +26,7 @@ import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.presentation.components.NavItem
 import com.develop.traiscore.presentation.navigation.BottomNavigationBar
+import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.navigation.TrainerBottomNavigationBar
 import com.develop.traiscore.presentation.screens.AddExerciseBottomSheet
 import com.develop.traiscore.presentation.screens.BodyMeasurementsHistoryScreen
@@ -186,15 +187,13 @@ fun ContentScreen(
         when (selectedIndex) {
             0 -> MyClients(
                 onClientClick = { client ->
-                    // Aquí puedes navegar al perfil del cliente o rutinas del cliente
-                    println("Cliente seleccionado: ${client.getFullName()}")
+                    navController.navigate("client_profile/${client.uid}")
                 },
                 onAddClientClick = {
-                    // Navegar a pantalla de agregar cliente
                     println("Agregar nuevo cliente")
                 },
                 onInvitationsClick = {
-                    navController.navigate("trainer_invitations")
+                    navController.navigate(NavigationRoutes.TrainerInvitations.route)
                 }
             )
             1 -> {
@@ -231,7 +230,10 @@ fun ContentScreen(
             }
             2 -> ProfileScreen(
                 navController = navController,
-                onMeasurementsClick = onMeasurementsClick
+                onMeasurementsClick = {
+                    navController.navigate(NavigationRoutes.Measurements.route)
+                }
+                // Ya no necesitas el parámetro onEnterInvitationClick
             )
         }
         return
@@ -304,7 +306,10 @@ fun ContentScreen(
 
                 else -> ProfileScreen(
                     navController = navController,
-                    onMeasurementsClick = onMeasurementsClick
+                    onMeasurementsClick = {
+                        navController.navigate(NavigationRoutes.Measurements.route)
+                    }
+                    // Ya no necesitas el parámetro onEnterInvitationClick
                 )
             }
         }

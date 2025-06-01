@@ -47,7 +47,7 @@ data class TrainerInfo(
 fun ProfileScreen(
     navController: NavHostController,
     onMeasurementsClick: () -> Unit,
-    onEnterInvitationClick: () -> Unit = {}
+    // Removemos el parámetro onEnterInvitationClick ya que usaremos navController directamente
 ) {
     val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
@@ -61,9 +61,7 @@ fun ProfileScreen(
     var trainerInfo by remember { mutableStateOf<TrainerInfo?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-
-
-    LaunchedEffect(Unit) {
+    LaunchedEffect(navController.currentBackStackEntry) { // <- Cambiar esto
         // Obtener rol del usuario
         UserRoleManager.getCurrentUserRole { role ->
             currentUserRole = role
@@ -74,6 +72,9 @@ fun ProfileScreen(
         if (currentUser != null) {
             scope.launch {
                 try {
+                    isLoading = true // <- Agregar esto
+                    trainerInfo = null // <- Resetear antes de buscar
+
                     val userDoc = FirebaseFirestore.getInstance()
                         .collection("users")
                         .document(currentUser.uid)
@@ -83,6 +84,8 @@ fun ProfileScreen(
                     val userRole = userDoc.getString("userRole")
                     if (userRole == "CLIENT") {
                         val linkedTrainerUid = userDoc.getString("linkedTrainerUid")
+                        android.util.Log.d("ProfileScreen", "linkedTrainerUid: $linkedTrainerUid") // <- Debug
+
                         if (linkedTrainerUid != null) {
                             // Obtener información del trainer
                             val trainerDoc = FirebaseFirestore.getInstance()
@@ -91,9 +94,17 @@ fun ProfileScreen(
                                 .get()
                                 .await()
 
+                            android.util.Log.d("ProfileScreen", "Datos del trainer: ${trainerDoc.data}") // <- AGREGAR
+
                             val trainerName = "${trainerDoc.getString("firstName") ?: ""} ${trainerDoc.getString("lastName") ?: ""}".trim()
                             val trainerEmail = trainerDoc.getString("email") ?: ""
+
+                            android.util.Log.d("ProfileScreen", "firstName: ${trainerDoc.getString("firstName")}") // <- AGREGAR
+                            android.util.Log.d("ProfileScreen", "lastName: ${trainerDoc.getString("lastName")}") // <- AGREGAR
+                            android.util.Log.d("ProfileScreen", "email: ${trainerDoc.getString("email")}") // <- AGREGAR
                             val trainerPhoto = trainerDoc.getString("photoURL")
+
+                            android.util.Log.d("ProfileScreen", "Trainer encontrado: $trainerName") // <- Debug
 
                             if (trainerName.isNotEmpty()) {
                                 trainerInfo = TrainerInfo(trainerName, trainerEmail, trainerPhoto)
@@ -102,12 +113,12 @@ fun ProfileScreen(
                     }
                     isLoading = false
                 } catch (e: Exception) {
+                    android.util.Log.e("ProfileScreen", "Error cargando trainer info", e) // <- Debug
                     isLoading = false
                 }
             }
         }
     }
-
     Scaffold(
         topBar = {
             TopAppBar(
@@ -190,7 +201,10 @@ fun ProfileScreen(
                 TrainerSection(
                     trainerInfo = trainerInfo,
                     isLoading = isLoading,
-                    onAddTrainer = onEnterInvitationClick
+                    onAddTrainer = {
+                        // Navegamos directamente a la pantalla de invitación
+                        navController.navigate(NavigationRoutes.EnterInvitation.route)
+                    }
                 )
                 Spacer(Modifier.height(20.dp))
             }

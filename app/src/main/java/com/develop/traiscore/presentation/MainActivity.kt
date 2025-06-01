@@ -11,24 +11,31 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Text
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.Modifier
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import com.develop.traiscore.R
 import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.data.Authentication.UserRoleManager
@@ -36,6 +43,7 @@ import com.develop.traiscore.exports.ImportRoutineViewModel
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.screens.BodyMeasurementsHistoryScreen
 import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
+import com.develop.traiscore.presentation.screens.ClientProfileScreen
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -46,6 +54,9 @@ import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import com.develop.traiscore.presentation.screens.LoginScreenRoute
 import com.develop.traiscore.presentation.screens.SettingsScreen
+import com.develop.traiscore.presentation.screens.StatScreen
+import com.develop.traiscore.presentation.viewmodels.MyClientsViewModel
+import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
 import java.io.File
 
 
@@ -328,8 +339,42 @@ fun AppNavigation(navController: NavHostController) {
             }
         }
 
+        composable(
+            route = NavigationRoutes.ClientProfile.route,
+            arguments = listOf(navArgument("clientId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
 
+            // Aquí necesitarías obtener los datos del cliente
+            // Por simplicidad, puedes usar un ViewModel o pasarlos como argumentos serializados
+            LaunchedEffect(clientId) {
+                // Cargar datos del cliente
+            }
 
+            // Por ahora, crear un UserEntity dummy o cargarlo del ViewModel
+            // ClientProfileScreen(
+            //     client = client,
+            //     onBack = { navController.popBackStack() },
+            //     onStatsClick = { clientId ->
+            //         navController.navigate(NavigationRoutes.ClientStats.createRoute(clientId))
+            //     }
+            // )
+        }
+
+        composable(
+            route = NavigationRoutes.ClientStats.route,
+            arguments = listOf(navArgument("clientId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+
+            // Usar StatScreen pero configurado para mostrar datos del cliente
+            StatScreen(
+                modifier = Modifier,
+                viewModel = hiltViewModel<StatScreenViewModel>().apply {
+                    setTargetUser(clientId) // Configurar para mostrar datos del cliente específico
+                }
+            )
+        }
 
         composable(NavigationRoutes.Measurements.route) {
             BodyMeasurementsScreen(
@@ -358,6 +403,52 @@ fun AppNavigation(navController: NavHostController) {
                     }
                 }
             )
+        }
+        composable(
+            route = "client_profile/{clientId}",
+            arguments = listOf(navArgument("clientId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+
+            // Buscar el cliente en MyClientsViewModel
+            val myClientsViewModel: MyClientsViewModel = hiltViewModel()
+            val clients by myClientsViewModel.clients.collectAsState()
+
+            val client = clients.find { it.uid == clientId }
+
+            if (client != null) {
+                ClientProfileScreen(
+                    client = client,
+                    onBack = { navController.popBackStack() },
+                    onStatsClick = { clientUid ->
+                        navController.navigate("client_stats/$clientUid")
+                    }
+                )
+            } else {
+                // Mostrar loading o error
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    CircularProgressIndicator()
+                }
+            }
+        }
+
+        composable(
+            route = "client_stats/{clientId}",
+            arguments = listOf(navArgument("clientId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+
+            val statViewModel: StatScreenViewModel = hiltViewModel()
+
+            // Configurar el ViewModel para mostrar datos del cliente
+            LaunchedEffect(clientId) {
+                statViewModel.setTargetUser(clientId)
+            }
+
+            StatScreen(viewModel = statViewModel)
         }
 
 

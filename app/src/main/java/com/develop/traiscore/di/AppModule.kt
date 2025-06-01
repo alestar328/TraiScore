@@ -1,6 +1,8 @@
 package com.develop.traiscore.di
 
 import android.content.Context
+import com.develop.traiscore.data.repository.InvitationRepository
+import com.develop.traiscore.presentation.viewmodels.MyClientsViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
@@ -34,4 +36,13 @@ object AppModule {
     fun provideContext(@ApplicationContext context: Context): Context {
         return context
     }
+    @Provides
+    @Singleton
+    fun provideInvitationRepository(
+        firestore: FirebaseFirestore,
+        auth: FirebaseAuth
+    ): InvitationRepository {
+        return InvitationRepository(firestore, auth)
+    }
+
 }

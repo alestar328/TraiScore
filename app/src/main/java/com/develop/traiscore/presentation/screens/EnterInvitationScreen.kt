@@ -41,9 +41,10 @@ fun EnterInvitationScreen(
 
     val currentUser = FirebaseAuth.getInstance().currentUser
 
-    LaunchedEffect(error) {
+    LaunchedEffect(error, isLoading) { // <- Cambiar la dependencia
         if (error == null && isLoading == false && invitationCode.isNotEmpty()) {
-            // Si no hay error y no está cargando, significa que se aceptó exitosamente
+            // Esperar un poco para que se complete la sincronización
+            kotlinx.coroutines.delay(500)
             onSuccess()
         }
     }

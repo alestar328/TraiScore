@@ -45,21 +45,8 @@ data class UserEntity(
      */
     fun isTrainer(): Boolean = userRole == UserRole.TRAINER
 
-    fun toFirestoreMap(): Map<String, Any?> {
-        return mapOf(
-            "firstName" to firstName,
-            "lastName" to lastName,
-            "email" to email,
-            "photoURL" to photoURL,
-            "birthYear" to birthYear,
-            "gender" to gender?.value,
-            "userRole" to userRole.name,
-            "createdAt" to createdAt,
-            "updatedAt" to updatedAt,
-            "isActive" to isActive,
-            "linkedTrainerUid" to linkedTrainerUid
-        )
-    }
+
+
 
     companion object {
         /**

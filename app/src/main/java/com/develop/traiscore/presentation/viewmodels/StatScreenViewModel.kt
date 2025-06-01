@@ -31,6 +31,10 @@ import kotlin.math.roundToInt
 class StatScreenViewModel @Inject constructor() : ViewModel() {
     private val db = Firebase.firestore
 
+    // NUEVO: Estado para el cliente que se está visualizando
+    private val _targetUserId = MutableStateFlow<String?>(null)
+    val targetUserId: StateFlow<String?> = _targetUserId
+
     // Estado de selección
     private val _selectedExercise = MutableStateFlow<String?>(null)
     val selectedExercise: StateFlow<String?> = _selectedExercise
@@ -64,6 +68,11 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
 
     init {
         viewModelScope.launch {
+            // Inicializar con el usuario actual si no se especifica otro
+            if (_targetUserId.value == null) {
+                _targetUserId.value = FirebaseAuth.getInstance().currentUser?.uid
+            }
+
             // Cargar ejercicios primero
             fetchExerciseOptions()
 
@@ -88,6 +97,31 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                 }
         }
     }
+
+    /**
+     * NUEVO: Establecer el ID del usuario del cual queremos ver estadísticas
+     * @param userId ID del cliente o null para usar el usuario actual
+     */
+    fun setTargetUser(userId: String?) {
+        _targetUserId.value = userId ?: FirebaseAuth.getInstance().currentUser?.uid
+
+        // Recargar datos para el nuevo usuario
+        viewModelScope.launch {
+            fetchExerciseOptions()
+            _selectedExercise.value?.let { exercise ->
+                loadAllProgressFor(exercise)
+                calculateTotalWeightLifted(exercise)
+            }
+        }
+    }
+
+    /**
+     * NUEVO: Obtener el ID del usuario objetivo (cliente o usuario actual)
+     */
+    private fun getTargetUserId(): String? {
+        return _targetUserId.value ?: FirebaseAuth.getInstance().currentUser?.uid
+    }
+
     private fun handleError(operation: String, exception: Exception) {
         Log.e("StatsVM", "Error en $operation", exception)
         _errorState.value = "Error en $operation: ${exception.message}"
@@ -98,6 +132,7 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
             _errorState.value = null
         }
     }
+
     private fun fetchExerciseOptions() {
         // Queremos tanto logging como un posible estado de error en UI
         db.collection("exercises")
@@ -109,8 +144,6 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
             }
             .addOnFailureListener { e ->
                 Log.e("StatsVM", "No se pudo cargar la lista de ejercicios", e)
-                // Aquí podrías actualizar un StateFlow de error, p.ej.:
-                // _loadError.value = "Error al cargar ejercicios"
             }
     }
 
@@ -118,9 +151,10 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
         _selectedExercise.value = name
     }
 
-
     private fun loadAllProgressFor(exerciseName: String) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val userId = getTargetUserId() ?: return
+
+        Log.d("StatsVM", "Cargando progreso de $exerciseName para usuario: $userId")
 
         // Usar una sola consulta con límite apropiado
         db.collection("users")
@@ -131,12 +165,14 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
             .limit(50) // Aumentar límite para mejor análisis
             .get()
             .addOnSuccessListener { snap ->
+                Log.d("StatsVM", "Encontrados ${snap.size()} documentos para $exerciseName")
                 processWorkoutData(snap.documents)
             }
             .addOnFailureListener { e ->
                 handleError("loadAllProgressFor", e)
             }
     }
+
     private fun processWorkoutData(documents: List<DocumentSnapshot>) {
         val sdf = SimpleDateFormat("dd/MM", Locale.getDefault())
         val wData = mutableListOf<Pair<String, Float>>()
@@ -185,11 +221,14 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun calculateTotalWeightLifted(exerciseName: String) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        val userId = getTargetUserId()
         if (userId == null) {
-            Log.e("StatsVM", "Usuario no autenticado, no puedo calcular total weight")
+            Log.e("StatsVM", "Usuario no identificado, no puedo calcular total weight")
             return
         }
+
+        Log.d("StatsVM", "Calculando peso total de $exerciseName para usuario: $userId")
+
         db.collection("users")
             .document(userId)
             .collection("workoutEntries")
@@ -201,7 +240,7 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                     acc + (doc.getDouble("weight")?.toFloat() ?: 0f)
                 }
                 _totalWeightSum.value = total
-                Log.d("StatsVM", "✅ Total weight calculado: $total kg para ejercicio: $exerciseName")
+                Log.d("StatsVM", "✅ Total weight calculado: $total kg para ejercicio: $exerciseName (usuario: $userId)")
             }
             .addOnFailureListener { e ->
                 handleError("calculateTotalWeightLifted", e)
@@ -209,9 +248,9 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun fetchLastWorkoutEntry() {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        val userId = getTargetUserId()
         if (userId == null) {
-            Log.e("StatsVM", "Usuario no autenticado")
+            Log.e("StatsVM", "Usuario no identificado")
             // Seleccionar primer ejercicio disponible como fallback
             viewModelScope.launch {
                 _exerciseOptions.collect { options ->
@@ -223,6 +262,8 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
             return
         }
 
+        Log.d("StatsVM", "Buscando último workout entry para usuario: $userId")
+
         db.collection("users")
             .document(userId)
             .collection("workoutEntries")
@@ -232,8 +273,10 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
             .addOnSuccessListener { snap ->
                 val lastTitle = snap.documents.firstOrNull()?.getString("title")
                 if (lastTitle != null) {
+                    Log.d("StatsVM", "Último ejercicio encontrado: $lastTitle")
                     _selectedExercise.value = lastTitle
                 } else {
+                    Log.d("StatsVM", "No se encontraron ejercicios, usando fallback")
                     // Fallback: usar primer ejercicio disponible
                     _exerciseOptions.value.firstOrNull()?.let {
                         _selectedExercise.value = it
