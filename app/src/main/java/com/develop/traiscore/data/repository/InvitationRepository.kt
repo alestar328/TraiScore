@@ -31,10 +31,23 @@ class InvitationRepository @Inject constructor(
                 Exception("Usuario no autenticado")
             )
 
+            // Verificar que el usuario es un trainer
+            val userDoc = usersCollection.document(trainerId).get().await()
+            val userRole = userDoc.getString("userRole")
+
+            if (userRole != "TRAINER") {
+                return Result.failure(Exception("Solo los entrenadores pueden crear invitaciones"))
+            }
+
             // Generar código único
             var inviteCode: String
+            var attempts = 0
             do {
                 inviteCode = InvitationEntity.generateInviteCode()
+                attempts++
+                if (attempts > 10) {
+                    return Result.failure(Exception("No se pudo generar un código único"))
+                }
             } while (isCodeExists(inviteCode))
 
             val invitation = InvitationEntity(
@@ -50,10 +63,41 @@ class InvitationRepository @Inject constructor(
             val docRef = invitationsCollection.add(invitation.toFirestoreMap()).await()
             Result.success(invitation.copy(id = docRef.id))
         } catch (e: Exception) {
-            Result.failure(e)
+            e.printStackTrace()
+            Result.failure(Exception("Error al crear invitación: ${e.message}"))
         }
     }
+    suspend fun deleteInvitation(invitationId: String): Result<Unit> {
+        return try {
+            val trainerId = auth.currentUser?.uid ?: return Result.failure(
+                Exception("Usuario no autenticado")
+            )
 
+            // Verificar que la invitación pertenece al trainer actual
+            val invitationDoc = invitationsCollection.document(invitationId).get().await()
+
+            if (!invitationDoc.exists()) {
+                return Result.failure(Exception("Invitación no encontrada"))
+            }
+
+            val invitation = InvitationEntity.fromFirestore(
+                invitationDoc.data ?: emptyMap(),
+                invitationDoc.id
+            )
+
+            if (invitation.trainerId != trainerId) {
+                return Result.failure(Exception("No tienes permisos para eliminar esta invitación"))
+            }
+
+            // Eliminar el documento
+            invitationsCollection.document(invitationId).delete().await()
+
+            Result.success(Unit)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            Result.failure(Exception("Error al eliminar invitación: ${e.message}"))
+        }
+    }
     /**
      * Verifica si un código ya existe
      */
@@ -161,7 +205,8 @@ class InvitationRepository @Inject constructor(
 
             Result.success(invitations)
         } catch (e: Exception) {
-            Result.failure(e)
+            e.printStackTrace()
+            Result.failure(Exception("Error al obtener invitaciones: ${e.message}"))
         }
     }
 

@@ -246,7 +246,6 @@ class MainActivity : ComponentActivity() {
         }
         builder.show()
     }
-    // OBLIGATORIO: Acceso a ContentResolver
     private fun getFileName(uri: Uri): String? {
         return try {
             when (uri.scheme) {
@@ -305,7 +304,6 @@ fun AppNavigation(navController: NavHostController) {
             BodyMeasurementsHistoryScreen(
                 onBack = { navController.popBackStack() },
                 onEditMeasurement = { historyItem ->
-                    // Navegar a la pantalla de edición con datos precargados
                     navController.navigate(NavigationRoutes.Measurements.route)
                 }
             )
@@ -323,7 +321,7 @@ fun AppNavigation(navController: NavHostController) {
                 CreateRoutineScreen(
                     onBack = { navController.popBackStack() },
                     navController = navController,
-                    currentUserRole = role // Agregar este parámetro
+                    currentUserRole = role
                 )
             } ?: run {
                 Text("Cargando...")
@@ -340,14 +338,29 @@ fun AppNavigation(navController: NavHostController) {
                     navController.popBackStack()
                 },
                 initialData = emptyMap(),
-                // ✅ AÑADIR PARÁMETROS FALTANTES - funciones vacías porque no se usan en este contexto
-                onMeasurementsClick = { }, // No hace nada en el contexto de MainActivity
+                onMeasurementsClick = { },
                 onMeasurementsHistoryClick = {
-                    // Navegar al historial desde MainActivity
                     navController.navigate(NavigationRoutes.MeasurementsHistory.route)
                 }
             )
         }
+        composable(NavigationRoutes.TrainerInvitations.route) {
+            com.develop.traiscore.presentation.screens.TrainerInvitationsScreen(
+                onBack = { navController.popBackStack() }
+            )
+        }
+        composable(NavigationRoutes.EnterInvitation.route) {
+            com.develop.traiscore.presentation.screens.EnterInvitationScreen(
+                onBack = { navController.popBackStack() },
+                onSuccess = {
+                    navController.navigate(NavigationRoutes.Main.route) {
+                        popUpTo(NavigationRoutes.EnterInvitation.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+
 
 
     }

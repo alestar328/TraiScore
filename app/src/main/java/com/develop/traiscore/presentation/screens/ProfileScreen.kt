@@ -203,7 +203,7 @@ fun ProfileScreen(
                     contentColor = Color.White,
                     icon = Icons.Default.AddCircle,
                     onClick = {
-                        navController.navigate("trainer_invitations")
+                        navController.navigate(NavigationRoutes.TrainerInvitations.route)
                     }
                 )
                 Spacer(Modifier.height(12.dp))

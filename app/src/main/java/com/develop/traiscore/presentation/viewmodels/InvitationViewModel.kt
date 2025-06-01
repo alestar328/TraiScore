@@ -41,7 +41,18 @@ class InvitationViewModel @Inject constructor(
             _isLoading.value = false
         }
     }
-
+    fun deleteInvitation(invitationId: String) {
+        viewModelScope.launch {
+            invitationRepository.deleteInvitation(invitationId).fold(
+                onSuccess = {
+                    loadInvitations() // Recargar la lista para reflejar los cambios
+                },
+                onFailure = { exception ->
+                    _error.value = "Error al eliminar invitación: ${exception.message}"
+                }
+            )
+        }
+    }
     fun createInvitation(
         trainerName: String,
         trainerEmail: String,
@@ -49,19 +60,22 @@ class InvitationViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             _isLoading.value = true
+            _error.value = null
+
             invitationRepository.createInvitation(
                 trainerName = trainerName,
                 trainerEmail = trainerEmail,
                 expirationDays = expirationDays
             ).fold(
-                onSuccess = {
+                onSuccess = { invitation ->
+                    _error.value = null
                     loadInvitations() // Recargar la lista
                 },
                 onFailure = { exception ->
                     _error.value = "Error al crear invitación: ${exception.message}"
+                    _isLoading.value = false
                 }
             )
-            _isLoading.value = false
         }
     }
 
