@@ -32,8 +32,51 @@ fun ClientProfileScreen(
     onBack: () -> Unit,
     onStatsClick: (String) -> Unit,
     onMeasurementsClick: (String) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onRoutinesClick: (String) -> Unit,
+    onRemoveClient: (String, () -> Unit) -> Unit,
 ) {
+    var showRemoveDialog by remember { mutableStateOf(false) } // ✅ NUEVO ESTADO
+
+    if (showRemoveDialog) {
+        AlertDialog(
+            onDismissRequest = { showRemoveDialog = false },
+            title = {
+                Text(
+                    text = "Confirmar eliminación",
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold
+                )
+            },
+            text = {
+                Text(
+                    text = "¿Estás seguro de que quieres dar de baja a ${client.getFullName()}?\n\nEsta acción eliminará la vinculación del cliente contigo y no se puede deshacer.",
+                    color = Color.Black
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showRemoveDialog = false
+                        onRemoveClient(client.uid) {
+                            onBack() // Volver atrás después de eliminar
+                        }
+                    }
+                ) {
+                    Text("Dar de baja", color = Color.Red, fontWeight = FontWeight.Bold)
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showRemoveDialog = false }
+                ) {
+                    Text("Cancelar", color = traiBlue)
+                }
+            }
+        )
+    }
+
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -81,6 +124,11 @@ fun ClientProfileScreen(
                 PersonalInfoCard(client = client)
             }
 
+            // Información adicional
+            item {
+                AdditionalInfoCard(client = client)
+            }
+
             // Botón de Estadísticas
             item {
                 ActionButton(
@@ -96,7 +144,7 @@ fun ClientProfileScreen(
                 ActionButton(
                     text = "Rutinas Asignadas",
                     icon = Icons.Default.Person,
-                    onClick = { /* TODO: Implementar rutinas */ },
+                    onClick = { onRoutinesClick(client.uid) },
                     containerColor = traiOrange
                 )
             }
@@ -111,9 +159,13 @@ fun ClientProfileScreen(
                 )
             }
 
-            // Información adicional
             item {
-                AdditionalInfoCard(client = client)
+                ActionButton(
+                    text = "Dar de baja",
+                    icon = Icons.Default.Delete,
+                    onClick = { showRemoveDialog = true },
+                    containerColor = Color.Red
+                )
             }
 
             // Espaciado final

@@ -78,7 +78,44 @@ class MyClientsViewModel @Inject constructor(
             }
         }
     }
+    fun removeClient(
+        clientId: String,
+        onComplete: (success: Boolean, error: String?) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val currentTrainerId = auth.currentUser?.uid
+                if (currentTrainerId == null) {
+                    onComplete(false, "No se pudo identificar al entrenador")
+                    return@launch
+                }
 
+                android.util.Log.d("MyClientsVM", "Dando de baja cliente: $clientId")
+
+                // Eliminar la vinculación del cliente con el trainer
+                firestore.collection("users")
+                    .document(clientId)
+                    .update(
+                        mapOf(
+                            "linkedTrainerUid" to null,
+                            "isActive" to false // Opcional: marcar como inactivo
+                        )
+                    )
+                    .await()
+
+                android.util.Log.d("MyClientsVM", "Cliente dado de baja exitosamente: $clientId")
+
+                // Actualizar la lista local eliminando el cliente
+                _clients.value = _clients.value.filter { it.uid != clientId }
+
+                onComplete(true, null)
+
+            } catch (e: Exception) {
+                android.util.Log.e("MyClientsVM", "Error dando de baja cliente", e)
+                onComplete(false, "Error al dar de baja cliente: ${e.message}")
+            }
+        }
+    }
     fun refreshClients() {
         loadClients()
     }

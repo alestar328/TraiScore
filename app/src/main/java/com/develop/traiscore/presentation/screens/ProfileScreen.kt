@@ -224,23 +224,16 @@ fun ProfileScreen(
             }
 
             // Botones principales
-            ProfileButton(
-                text = "Mis medidas",
-                containerColor = traiBlue,
-                contentColor = Color.Black,
-                icon = Icons.Default.Home,
-                onClick = onMeasurementsClick
-            )
-            Spacer(Modifier.height(12.dp))
-
-            ProfileButton(
-                text = "Favoritos",
-                containerColor = traiOrange,
-                contentColor = Color.Black,
-                icon = Icons.Default.Favorite,
-                onClick = { /* … */ }
-            )
-            Spacer(Modifier.height(12.dp))
+            if (currentUserRole == UserRole.CLIENT) {
+                ProfileButton(
+                    text = "Mis medidas",
+                    containerColor = traiBlue,
+                    contentColor = Color.Black,
+                    icon = Icons.Default.Home,
+                    onClick = onMeasurementsClick
+                )
+                Spacer(Modifier.height(12.dp))
+            }
 
             ProfileButton(
                 text = "Cerrar sesión",

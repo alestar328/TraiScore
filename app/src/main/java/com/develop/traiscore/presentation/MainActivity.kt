@@ -20,6 +20,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.windowsizeclass.ExperimentalMaterial3WindowSizeClassApi
 import androidx.compose.material3.windowsizeclass.calculateWindowSizeClass
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -30,6 +31,7 @@ import androidx.compose.ui.Alignment
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
@@ -53,10 +55,13 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import com.develop.traiscore.presentation.screens.LoginScreenRoute
+import com.develop.traiscore.presentation.screens.RoutineMenuScreen
+import com.develop.traiscore.presentation.screens.RoutineScreen
 import com.develop.traiscore.presentation.screens.SettingsScreen
 import com.develop.traiscore.presentation.screens.StatScreen
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import com.develop.traiscore.presentation.viewmodels.MyClientsViewModel
+import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
 import java.io.File
 
@@ -417,6 +422,7 @@ fun AppNavigation(navController: NavHostController) {
 
             val myClientsViewModel: MyClientsViewModel = hiltViewModel()
             val clients by myClientsViewModel.clients.collectAsState()
+            val context = LocalContext.current // ✅ AGREGAR para mostrar Toast
 
             val client = clients.find { it.uid == clientId }
 
@@ -427,8 +433,29 @@ fun AppNavigation(navController: NavHostController) {
                     onStatsClick = { clientUid ->
                         navController.navigate("client_stats/$clientUid")
                     },
-                    onMeasurementsClick = { clientUid -> // ✅ AGREGAR este parámetro
+                    onMeasurementsClick = { clientUid ->
                         navController.navigate("client_measurements_history/$clientUid")
+                    },
+                    onRoutinesClick = { clientUid ->
+                        navController.navigate("client_routines/$clientUid")
+                    },
+                    onRemoveClient = { clientUid, onSuccess -> // ✅ NUEVO CALLBACK
+                        myClientsViewModel.removeClient(clientUid) { success, error ->
+                            if (success) {
+                                Toast.makeText(
+                                    context,
+                                    "Cliente dado de baja exitosamente",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                                onSuccess() // Ejecutar callback de éxito (navegar atrás)
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    error ?: "Error al dar de baja cliente",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
                     }
                 )
             } else {
@@ -439,6 +466,109 @@ fun AppNavigation(navController: NavHostController) {
                     CircularProgressIndicator()
                 }
             }
+        }
+
+        composable(
+            route = "client_routines/{clientId}",
+            arguments = listOf(navArgument("clientId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+
+            val routineViewModel: RoutineViewModel = hiltViewModel()
+            val myClientsViewModel: MyClientsViewModel = hiltViewModel()
+            val clients by myClientsViewModel.clients.collectAsState()
+            val context = LocalContext.current // ✅ MOVER FUERA del LaunchedEffect
+
+            // Buscar el nombre del cliente
+            val client = clients.find { it.uid == clientId }
+            val clientName = client?.getFullName() ?: "Cliente"
+
+            // Configurar el ViewModel para cargar rutinas del cliente específico
+            LaunchedEffect(clientId) {
+                routineViewModel.setTargetClient(clientId)
+                // ✅ USAR context que está fuera del LaunchedEffect
+                routineViewModel.loadRoutines(context = context) { }
+            }
+
+            // Limpiar cuando se sale de la pantalla
+            DisposableEffect(Unit) {
+                onDispose {
+                    routineViewModel.clearTargetClient()
+                }
+            }
+
+            // Usar RoutineMenuScreen con título personalizado
+            RoutineMenuScreen(
+                onRoutineClick = { docId, type ->
+                    navController.navigate("client_routine_detail/$clientId/$docId/$type")
+                },
+                onAddClick = {
+                    navController.navigate("create_routine_for_client/$clientId")
+                },
+                viewModel = routineViewModel,
+                screenTitle = "Rutinas del Cliente",
+                clientName = clientName
+            )
+        }
+
+
+        composable(
+            route = "client_routine_detail/{clientId}/{docId}/{type}",
+            arguments = listOf(
+                navArgument("clientId") { type = NavType.StringType },
+                navArgument("docId") { type = NavType.StringType },
+                navArgument("type") { type = NavType.StringType }
+            )
+        ) { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+            val docId = backStackEntry.arguments?.getString("docId") ?: return@composable
+            val type = backStackEntry.arguments?.getString("type") ?: return@composable
+
+            // ✅ CORRECCIÓN: Usar interpolación de strings correctamente
+            val routineViewModel: RoutineViewModel = hiltViewModel(
+                key = "client_routine_${clientId}_$docId" // ✅ Usar ${} para interpolación
+            )
+
+            // Configurar el ViewModel para el cliente específico
+            LaunchedEffect(clientId) {
+                routineViewModel.setTargetClient(clientId)
+            }
+
+            // ✅ LIMPIAR cuando se sale de la pantalla
+            DisposableEffect(Unit) {
+                onDispose {
+                    routineViewModel.clearTargetClient()
+                }
+            }
+
+            RoutineScreen(
+                documentId = docId,
+                selectedType = type,
+                onBack = { navController.popBackStack() },
+                currentUserRole = UserRole.TRAINER,
+                routineViewModel = routineViewModel
+            )
+        }
+        composable(
+            route = "create_routine_for_client/{clientId}",
+            arguments = listOf(navArgument("clientId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+
+            val myClientsViewModel: MyClientsViewModel = hiltViewModel()
+            val clients by myClientsViewModel.clients.collectAsState()
+
+            // Buscar el nombre del cliente
+            val client = clients.find { it.uid == clientId }
+            val clientName = client?.getFullName() ?: "Cliente"
+
+            CreateRoutineScreen(
+                onBack = { navController.popBackStack() },
+                navController = navController,
+                currentUserRole = UserRole.TRAINER,
+                targetClientId = clientId, // ✅ PASAR el ID del cliente
+                clientName = clientName // ✅ PASAR el nombre del cliente
+            )
         }
         composable(
             route = "client_measurements_history/{clientId}",

@@ -30,8 +30,30 @@ class RoutineViewModel : ViewModel() {
         private set
     var isLoading by mutableStateOf(true)
         private set
-
+    private var targetClientId: String? = null
+    private var isWorkingOnClientRoutines: Boolean = false
     val routineTypes = mutableStateListOf<RoutineDocument>()
+
+    fun setTargetClient(clientId: String) {
+        targetClientId = clientId
+        isWorkingOnClientRoutines = true
+
+        // ✅ LIMPIAR INMEDIATAMENTE al cambiar cliente
+        routineTypes.clear()
+        routineDocument = null
+        hasShownEmptyDialog = false
+        isLoading = true
+
+        Log.d("RoutineViewModel", "Configurado para cliente: $clientId - Lista limpiada")
+    }
+
+
+    fun getTargetUserId(): String? {
+        return targetClientId ?: FirebaseAuth.getInstance().currentUser?.uid
+    }
+
+    fun isClientMode(): Boolean = isWorkingOnClientRoutines
+
 
     fun markEmptyDialogShown() {
         hasShownEmptyDialog = true
@@ -137,14 +159,26 @@ class RoutineViewModel : ViewModel() {
 
     fun loadRoutines(
         context: Context,
-        onComplete: (Boolean) -> Unit // true si hay rutinas, false si está vacío
+        onComplete: (Boolean) -> Unit
     ) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid
+        val userId = getTargetUserId()
         if (userId == null) {
             isLoading = false
             onComplete(false)
             return
         }
+
+        Log.d("RoutineViewModel", "=== LOAD ROUTINES DEBUG ===")
+        Log.d("RoutineViewModel", "Target user: $userId")
+        Log.d("RoutineViewModel", "Current list size BEFORE clear: ${routineTypes.size}")
+
+        // ✅ LIMPIAR SIEMPRE al inicio
+        routineTypes.clear()
+
+        Log.d("RoutineViewModel", "List cleared, size: ${routineTypes.size}")
+
+        // ✅ MARCAR COMO CARGANDO
+        isLoading = true
 
         FirebaseFirestore.getInstance()
             .collection("users")
@@ -152,8 +186,15 @@ class RoutineViewModel : ViewModel() {
             .collection("routines")
             .get()
             .addOnSuccessListener { result ->
-                routineTypes.clear()
-                val uniqueTypes = mutableSetOf<Pair<String, String>>()
+                Log.d("RoutineViewModel", "Firebase query successful, documents: ${result.size()}")
+
+                // ✅ VERIFICAR QUE LA LISTA SIGUE VACÍA (por si acaso)
+                if (routineTypes.isNotEmpty()) {
+                    Log.w("RoutineViewModel", "⚠️ Lista no estaba vacía después del clear! Forzando limpieza...")
+                    routineTypes.clear()
+                }
+
+                val newRoutines = mutableListOf<RoutineDocument>()
 
                 for (document in result) {
                     val docId = document.id
@@ -162,34 +203,39 @@ class RoutineViewModel : ViewModel() {
                     val createdAt = document.getTimestamp("createdAt")
                     val trainerId = document.getString("trainerId")
                     val sectionsRaw = document.get("sections") as? List<Map<String, Any>> ?: emptyList()
+                    val firstSectionType = sectionsRaw.firstOrNull()?.get("type") as? String ?: ""
 
-                    for (section in sectionsRaw) {
-                        val type = section["type"] as? String ?: continue
-                        if (uniqueTypes.add(Pair(type, docId))) {
-                            routineTypes.add(
-                                RoutineDocument(
-                                    userId = userId,
-                                    trainerId = trainerId,
-                                    type = type,
-                                    documentId = docId,
-                                    createdAt = createdAt,
-                                    clientName = clientName,
-                                    routineName = routineName,
-                                    sections = emptyList()
-                                )
-                            )
-                        }
-                    }
+                    newRoutines.add(
+                        RoutineDocument(
+                            userId = userId,
+                            trainerId = trainerId,
+                            type = firstSectionType,
+                            documentId = docId,
+                            createdAt = createdAt,
+                            clientName = clientName,
+                            routineName = routineName,
+                            sections = emptyList()
+                        )
+                    )
+
+                    Log.d("RoutineViewModel", "Routine added: $docId - $routineName")
                 }
+
+                // ✅ AGREGAR TODAS LAS RUTINAS DE UNA VEZ
+                routineTypes.addAll(newRoutines)
+
+                Log.d("RoutineViewModel", "Final list size: ${routineTypes.size}")
                 isLoading = false
                 onComplete(routineTypes.isNotEmpty())
             }
-            .addOnFailureListener {
-                Log.e("RoutineViewModel", "Error loading routines", it)
+            .addOnFailureListener { exception ->
+                Log.e("RoutineViewModel", "Error loading routines for user $userId", exception)
+                routineTypes.clear() // ✅ Limpiar también en caso de error
                 isLoading = false
                 onComplete(false)
             }
     }
+
     private fun isValidTraiScoreJson(context: Context, uri: Uri): Boolean {
         return try {
             val inputStream = context.contentResolver.openInputStream(uri)
@@ -244,13 +290,23 @@ class RoutineViewModel : ViewModel() {
             false
         }
     }
-    fun loadRoutine(documentId: String, userId: String) {
+    fun loadRoutine(documentId: String, userId: String? = null) {
+        val targetUserId = userId ?: getTargetUserId() ?: return
+
+        Log.d("RoutineViewModel", "=== LOAD ROUTINE DEBUG ===")
+        Log.d("RoutineViewModel", "Loading routine: $documentId")
+        Log.d("RoutineViewModel", "Target user: $targetUserId")
+        Log.d("RoutineViewModel", "Is client mode: $isWorkingOnClientRoutines")
+
         Firebase.firestore
-            .collection("users").document(userId)
+            .collection("users").document(targetUserId)
             .collection("routines").document(documentId)
             .get()
             .addOnSuccessListener { snap ->
-                if (!snap.exists()) return@addOnSuccessListener
+                if (!snap.exists()) {
+                    Log.e("RoutineViewModel", "Documento no existe: $documentId")
+                    return@addOnSuccessListener
+                }
 
                 // 1) Campos básicos
                 val clientName  = snap.getString("clientName") ?: ""
@@ -258,8 +314,12 @@ class RoutineViewModel : ViewModel() {
                 val createdAt   = snap.getTimestamp("createdAt")
                 val trainerId   = snap.getString("trainerId")
 
+                Log.d("RoutineViewModel", "Routine data found: $routineName")
+
                 // 2) Secciones (convertir a List<RoutineSection>)
                 val sectionsRaw = snap.get("sections") as? List<Map<String,Any>> ?: emptyList()
+                Log.d("RoutineViewModel", "Sections found: ${sectionsRaw.size}")
+
                 val routineSections = sectionsRaw.mapNotNull { section ->
                     val type = section["type"] as? String ?: return@mapNotNull null
                     val exercisesRaw = section["exercises"] as? List<Map<String,Any>> ?: emptyList()
@@ -275,9 +335,11 @@ class RoutineViewModel : ViewModel() {
                     RoutineSection(type = type, exercises = exercises)
                 }
 
+                Log.d("RoutineViewModel", "Parsed sections: ${routineSections.size}")
+
                 // 3) Asignamos a nuestro estado
                 routineDocument = RoutineDocument(
-                    userId      = userId,
+                    userId      = targetUserId,
                     trainerId   = trainerId,
                     type        = "",
                     documentId  = documentId,
@@ -286,11 +348,15 @@ class RoutineViewModel : ViewModel() {
                     routineName = routineName,
                     sections    = routineSections
                 )
+
+                Log.d("RoutineViewModel", "✅ Routine loaded successfully: ${routineDocument?.routineName}")
             }
             .addOnFailureListener { e ->
-                Log.e("RoutineVM", "no pude cargar routine", e)
+                Log.e("RoutineVM", "Error cargando routine para usuario $targetUserId", e)
             }
     }
+
+
     fun getExercisesByType(type: String): List<SimpleExercise> {
         return routineDocument?.sections?.firstOrNull { it.type == type }?.exercises ?: emptyList()
     }
@@ -351,12 +417,12 @@ class RoutineViewModel : ViewModel() {
     }
 
 
+    // ✅ MODIFICAR: deleteRoutineType para usar targetClientId cuando esté disponible
     fun deleteRoutineType(
         documentId: String,
         onResult: (Boolean) -> Unit
     ) {
-        val uid = FirebaseAuth.getInstance().currentUser?.uid
-            ?: return onResult(false)
+        val uid = getTargetUserId() ?: return onResult(false) // ✅ CAMBIO: usar getTargetUserId()
 
         val docRef = FirebaseFirestore.getInstance()
             .collection("users")
@@ -369,6 +435,18 @@ class RoutineViewModel : ViewModel() {
             .addOnFailureListener { onResult(false) }
     }
 
+    fun clearTargetClient() {
+        targetClientId = null
+        isWorkingOnClientRoutines = false
+
+        // ✅ LIMPIAR COMPLETAMENTE al salir del modo cliente
+        routineTypes.clear()
+        routineDocument = null
+        hasShownEmptyDialog = false
+        isLoading = true
+
+        Log.d("RoutineViewModel", "Cliente objetivo eliminado, estado limpiado completamente")
+    }
 
     fun cleanRoutine() {
         routineDocument = routineDocument?.let { data ->

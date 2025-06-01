@@ -68,7 +68,7 @@ fun RoutineScreen(
 
     // Inicializa el estado del ViewModel con los datos iniciales solo una vez
     LaunchedEffect(documentId) {
-        routineViewModel.loadRoutine(documentId, userId)
+        routineViewModel.loadRoutine(documentId)
     }
 
 

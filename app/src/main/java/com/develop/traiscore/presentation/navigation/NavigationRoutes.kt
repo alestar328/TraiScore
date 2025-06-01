@@ -23,5 +23,8 @@ sealed class NavigationRoutes(val route: String) {
     object ClientMeasurementsHistory : NavigationRoutes("client_measurements_history/{clientId}") {
         fun createRoute(clientId: String) = "client_measurements_history/$clientId"
     }
+    object ClientRoutines : NavigationRoutes("client_routines/{clientId}") {
+        fun createRoute(clientId: String) = "client_routines/$clientId"
+    }
 
 }

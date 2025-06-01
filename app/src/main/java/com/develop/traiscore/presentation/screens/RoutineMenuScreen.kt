@@ -1,6 +1,7 @@
 package com.develop.traiscore.presentation.screens
 
 import android.net.Uri
+import android.util.Log
 import android.widget.Toast
 import android.widget.Toast.LENGTH_SHORT
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -77,16 +78,34 @@ import com.google.firebase.firestore.FirebaseFirestore
 fun RoutineMenuScreen(
     onRoutineClick: (String, String) -> Unit,
     onAddClick: () -> Unit,
-    viewModel: RoutineViewModel,
-    importViewModel: ImportRoutineViewModel = hiltViewModel()
+    viewModel: RoutineViewModel ,
+    importViewModel: ImportRoutineViewModel = hiltViewModel(),
+    screenTitle: String = "Mis Rutinas",
+    clientName: String? = null
 
 ) {
-    val routineTypes = remember { mutableStateListOf<RoutineDocument>() }
     val context = LocalContext.current
-    var isLoading by remember { mutableStateOf(true) }
     var showEmptyDialog by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var routineToDelete by remember { mutableStateOf<Pair<Int, RoutineDocument>?>(null) }
+
+    val currentTargetUser = if (viewModel.isClientMode()) {
+        viewModel.getTargetUserId() // Necesitarás hacer este método público
+    } else {
+        FirebaseAuth.getInstance().currentUser?.uid
+    }
+
+    LaunchedEffect(currentTargetUser) {
+        Log.d("RoutineMenuScreen", "LaunchedEffect triggered for user: $currentTargetUser")
+
+        if (currentTargetUser != null) {
+            viewModel.loadRoutines(context) { hasRoutines ->
+                if (!hasRoutines && !viewModel.hasShownEmptyDialog) {
+                    showEmptyDialog = true
+                }
+            }
+        }
+    }
 
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -106,59 +125,6 @@ fun RoutineMenuScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid
-        if (userId == null) {
-            showEmptyDialog = true
-            isLoading = false
-            return@LaunchedEffect
-        }
-        FirebaseFirestore.getInstance()
-            .collection("users")
-            .document(userId)
-            .collection("routines")
-            .get()
-            .addOnSuccessListener { result ->
-                val uniqueTypes = mutableSetOf<Pair<String, String>>() // Pair<type, docId>
-                for (document in result) {
-                    val docId = document.id
-                    val clientName = document.getString("clientName") ?: "Cliente"
-                    val routineName = document.getString("routineName") ?: clientName
-                    val createdAt = document.getTimestamp("createdAt")
-                    val trainerId = document.getString("trainerId")  // puede ser null
-                    val sectionsRaw =
-                        document.get("sections") as? List<Map<String, Any>> ?: emptyList()
-
-                    for (section in sectionsRaw) { // Fixed: was 'sections' instead of 'sectionsRaw'
-                        val type = section["type"] as? String ?: continue
-                        if (uniqueTypes.add(Pair(type, docId))) {
-                            // Create a RoutineDocument with the new structure
-                            routineTypes.add(
-                                RoutineDocument(
-                                    userId = userId,
-                                    trainerId = trainerId,
-                                    type = type,
-                                    documentId = docId,
-                                    createdAt = createdAt,
-                                    clientName = clientName,
-                                    routineName = routineName,
-                                    sections = emptyList()       // solo menú, sin ejercicios
-                                )
-                            )
-                        }
-                    }
-                }
-                isLoading = false
-                if (result.isEmpty && !viewModel.hasShownEmptyDialog) {
-                    showEmptyDialog = true
-                }
-            }
-            .addOnFailureListener {
-                Toast.makeText(context, "Error al cargar rutinas", Toast.LENGTH_SHORT).show()
-                isLoading = false
-                showEmptyDialog = true
-            }
-    }
 
     // Diálogo de confirmación para eliminar rutina
     if (showDeleteDialog && routineToDelete != null) {
@@ -185,7 +151,8 @@ fun RoutineMenuScreen(
                         routineToDelete?.let { (index, routine) ->
                             viewModel.deleteRoutineType(routine.documentId) { success ->
                                 if (success) {
-                                    routineTypes.removeAt(index)
+                                    // ✅ Actualizar la lista del viewModel en lugar de la lista local
+                                    viewModel.routineTypes.removeAt(index)
                                     Toast.makeText(context, "Rutina eliminada", LENGTH_SHORT).show()
                                 } else {
                                     Toast.makeText(
@@ -216,13 +183,20 @@ fun RoutineMenuScreen(
         )
     }
 
-
     // Si no hay rutinas, mostramos el diálogo y salimos
-    if (showEmptyDialog && !isLoading) {
+    if (showEmptyDialog && !viewModel.isLoading) {
         AlertDialog(
             onDismissRequest = { showEmptyDialog = false },
             title = { Text("Sin rutinas") },
-            text = { Text("No tienes rutinas guardadas") },
+            text = {
+                Text(
+                    if (viewModel.isClientMode()) {
+                        "Este cliente no tiene rutinas guardadas"
+                    } else {
+                        "No tienes rutinas guardadas"
+                    }
+                )
+            },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -241,10 +215,19 @@ fun RoutineMenuScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Mis Rutinas",
+                        text = screenTitle,
                         color = Color.White
                     )
+
+                    clientName?.let {
+                        Text(
+                            text = it,
+                            color = Color.White.copy(alpha = 0.7f),
+                            fontSize = 14.sp
+                        )
+                    }
                 },
+
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = navbarDay
                 )
@@ -265,7 +248,7 @@ fun RoutineMenuScreen(
                     modifier = Modifier.size(48.dp)
                 ) {
                     Icon(
-                        imageVector  = Icons.Default.Search,
+                        imageVector = Icons.Default.Search,
                         contentDescription = "Download routines"
                     )
                 }
@@ -290,16 +273,15 @@ fun RoutineMenuScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             itemsIndexed(
-                routineTypes,
-                key = { _, r -> "${r.documentId}-${r.type}" }) { index, routine ->
+                viewModel.routineTypes,
+                key = { index, r -> "${r.documentId}-${r.type}-$index" }
+            ) { index, routine ->
                 val dismissState = rememberDismissState(
                     confirmStateChange = { newValue ->
                         if (newValue == DismissValue.DismissedToStart) {
-                            // En lugar de eliminar directamente, mostramos el diálogo
                             routineToDelete = Pair(index, routine)
                             showDeleteDialog = true
                         }
-                        // Siempre retornamos false para que el elemento regrese a su posición
                         false
                     }
                 )

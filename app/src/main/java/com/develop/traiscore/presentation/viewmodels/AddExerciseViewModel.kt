@@ -21,6 +21,7 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
     var lastUsedExerciseName by mutableStateOf<String?>(null)
         private set
     private val userId = FirebaseAuth.getInstance().currentUser!!.uid
+    private val firestore = Firebase.firestore
 
     private val routinesRef = Firebase.firestore
         .collection("users")
@@ -98,6 +99,65 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
             }
     }
 
+    fun saveSectionToRoutineForUser(
+        userId: String,
+        routineId: String,
+        sectionType: DefaultCategoryExer,
+        exercises: List<SimpleExercise>,
+        onComplete: (Boolean, String?) -> Unit
+    ) {
+        val section = hashMapOf(
+            "type" to sectionType.name,
+            "exercises" to exercises.map { exercise ->
+                hashMapOf(
+                    "name" to exercise.name,
+                    "series" to exercise.series,
+                    "reps" to exercise.reps,
+                    "weight" to exercise.weight,
+                    "rir" to exercise.rir
+                )
+            }
+        )
+
+        firestore
+            .collection("users")
+            .document(userId) // ✅ USAR el userId proporcionado
+            .collection("routines")
+            .document(routineId)
+            .update("sections", FieldValue.arrayUnion(section))
+            .addOnSuccessListener {
+                onComplete(true, null)
+            }
+            .addOnFailureListener { exception ->
+                onComplete(false, exception.message)
+            }
+    }
+    fun createRoutineForUser(
+        userId: String,
+        clientName: String,
+        trainerId: String? = null,
+        onComplete: (String?, String?) -> Unit
+    ) {
+        val routineDocument = hashMapOf(
+            "clientName" to clientName,
+            "routineName" to clientName,
+            "createdAt" to FieldValue.serverTimestamp(),
+            "trainerId" to trainerId,
+            "sections" to emptyList<Map<String, Any>>()
+        )
+
+        firestore
+            .collection("users")
+            .document(userId) // ✅ USAR el userId proporcionado
+            .collection("routines")
+            .add(routineDocument)
+            .addOnSuccessListener { documentReference ->
+                onComplete(documentReference.id, null)
+            }
+            .addOnFailureListener { exception ->
+                onComplete(null, exception.message)
+            }
+    }
     fun refreshExercises() {
         Firebase.firestore.collection("exercises")
             .get()

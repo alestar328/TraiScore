@@ -73,6 +73,7 @@ fun MainScreen(
         UserRole.CLIENT -> !(selectedIndex == 4 &&
                 (routineScreenState is ScreenState.BODY_MEASUREMENTS_SCREEN ||
                         routineScreenState is ScreenState.MEASUREMENTS_HISTORY_SCREEN))
+
         UserRole.TRAINER -> true // Siempre mostrar navbar para trainers
         null -> false // No mostrar mientras se carga el rol
     }
@@ -84,7 +85,12 @@ fun MainScreen(
             currentUserRole = role
         }
     }
-
+    LaunchedEffect(currentUserRole) {
+        if (currentUserRole != null) {
+            // Limpiar cualquier estado previo del cliente
+            routineViewModel.clearTargetClient()
+        }
+    }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
@@ -98,6 +104,7 @@ fun MainScreen(
                             }
                         )
                     }
+
                     UserRole.CLIENT -> {
                         BottomNavigationBar(
                             navItemList = navItemList,
@@ -111,6 +118,7 @@ fun MainScreen(
                             }
                         )
                     }
+
                     null -> {
                         // Mientras se carga el rol, no mostramos navbar
                     }
@@ -161,6 +169,7 @@ sealed class ScreenState {
     object MAIN_ROUTINE_MENU : ScreenState()
     data class FIREBASE_ROUTINE_SCREEN(val documentId: String, val selectedType: String) :
         ScreenState()
+
     object CREATE_ROUTINE_SCREEN : ScreenState()
     object BODY_MEASUREMENTS_SCREEN : ScreenState()
     object MEASUREMENTS_HISTORY_SCREEN : ScreenState()
@@ -196,17 +205,21 @@ fun ContentScreen(
                     navController.navigate(NavigationRoutes.TrainerInvitations.route)
                 }
             )
+
             1 -> {
                 when (routineScreenState) {
-                    is ScreenState.MAIN_ROUTINE_MENU -> RoutineMenuScreen(
-                        onRoutineClick = { docId, type ->
-                            onRoutineSelected(docId, type)
-                        },
-                        onAddClick = {
-                            onCreateRoutine()
-                        },
-                        viewModel = routineViewModel
-                    )
+                    is ScreenState.MAIN_ROUTINE_MENU ->
+                        RoutineMenuScreen(
+                            onRoutineClick = { docId, type ->
+                                onRoutineSelected(docId, type)
+                            },
+                            onAddClick = {
+                                onCreateRoutine()
+                            },
+                            viewModel = routineViewModel,
+                            screenTitle = "Mis Rutinas de Entrenador", // ✅ TÍTULO ESPECÍFICO PARA TRAINER
+                            clientName = null
+                        )
 
                     is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
                         RoutineScreen(
@@ -228,6 +241,7 @@ fun ContentScreen(
                     else -> Unit
                 }
             }
+
             2 -> ProfileScreen(
                 navController = navController,
                 onMeasurementsClick = {
@@ -246,15 +260,18 @@ fun ContentScreen(
         2 -> Text("Pantalla Add (opcional)")
         3 -> {
             when (routineScreenState) {
-                is ScreenState.MAIN_ROUTINE_MENU -> RoutineMenuScreen(
-                    onRoutineClick = { docId, type ->
-                        onRoutineSelected(docId, type)
-                    },
-                    onAddClick = {
-                        onCreateRoutine()
-                    },
-                    viewModel = routineViewModel
-                )
+                is ScreenState.MAIN_ROUTINE_MENU ->
+                    RoutineMenuScreen(
+                        onRoutineClick = { docId, type ->
+                            onRoutineSelected(docId, type)
+                        },
+                        onAddClick = {
+                            onCreateRoutine()
+                        },
+                        viewModel = routineViewModel,
+                        screenTitle = "Mis Rutinas", // ✅ TÍTULO ESTÁNDAR
+                        clientName = null
+                    )
 
                 is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
                     currentUserRole?.let { role ->
