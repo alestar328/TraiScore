@@ -2,6 +2,7 @@
 LoginScreen
 Propósito
 Pantalla de autenticación y registro de usuarios con formulario completo de perfil.
+![Imagen de WhatsApp 2025-06-03 a las 09 33 55_a439a63c](https://github.com/user-attachments/assets/64f24705-6913-4efe-a71e-eb514293737b)
 
 Funcionalidades
 ✅ Login con email/contraseña
