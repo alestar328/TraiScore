@@ -1,6 +1,5 @@
 package com.develop.traiscore.data.Authentication
 
-import android.annotation.SuppressLint
 import android.util.Log
 import com.develop.traiscore.core.UserRole
 import com.google.firebase.auth.FirebaseAuth
@@ -9,9 +8,7 @@ import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.tasks.await
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
-import kotlin.coroutines.suspendCoroutine
+
 
 object UserRoleManager {
 

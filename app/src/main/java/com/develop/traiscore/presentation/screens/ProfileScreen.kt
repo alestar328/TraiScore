@@ -33,6 +33,7 @@ import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.theme.*
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.ListenerRegistration
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 
@@ -47,7 +48,6 @@ data class TrainerInfo(
 fun ProfileScreen(
     navController: NavHostController,
     onMeasurementsClick: () -> Unit,
-    // Removemos el parámetro onEnterInvitationClick ya que usaremos navController directamente
 ) {
     val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
@@ -61,19 +61,54 @@ fun ProfileScreen(
     var trainerInfo by remember { mutableStateOf<TrainerInfo?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
-    LaunchedEffect(navController.currentBackStackEntry) { // <- Cambiar esto
+    // Estado para controlar el listener de Firestore
+    var firestoreListener by remember { mutableStateOf<ListenerRegistration?>(null) }
+
+    // Función para limpiar el listener
+    fun cleanupListener() {
+        firestoreListener?.remove()
+        firestoreListener = null
+    }
+
+    // Función para obtener información del trainer
+    suspend fun fetchTrainerInfo(trainerId: String): TrainerInfo? {
+        return try {
+            val trainerDoc = FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(trainerId)
+                .get()
+                .await()
+
+            android.util.Log.d("ProfileScreen", "Datos del trainer: ${trainerDoc.data}")
+
+            val trainerName = "${trainerDoc.getString("firstName") ?: ""} ${trainerDoc.getString("lastName") ?: ""}".trim()
+            val trainerEmail = trainerDoc.getString("email") ?: ""
+            val trainerPhoto = trainerDoc.getString("photoURL")
+
+            android.util.Log.d("ProfileScreen", "Trainer encontrado: $trainerName")
+
+            if (trainerName.isNotEmpty()) {
+                TrainerInfo(trainerName, trainerEmail, trainerPhoto)
+            } else null
+        } catch (e: Exception) {
+            android.util.Log.e("ProfileScreen", "Error cargando trainer info", e)
+            null
+        }
+    }
+
+    LaunchedEffect(navController.currentBackStackEntry) {
         // Obtener rol del usuario
         UserRoleManager.getCurrentUserRole { role ->
             currentUserRole = role
         }
 
-        // Si es cliente, buscar información del trainer
+        // Si es cliente, configurar listener en tiempo real
         val currentUser = auth.currentUser
         if (currentUser != null) {
             scope.launch {
                 try {
-                    isLoading = true // <- Agregar esto
-                    trainerInfo = null // <- Resetear antes de buscar
+                    isLoading = true
+                    trainerInfo = null
 
                     val userDoc = FirebaseFirestore.getInstance()
                         .collection("users")
@@ -83,42 +118,66 @@ fun ProfileScreen(
 
                     val userRole = userDoc.getString("userRole")
                     if (userRole == "CLIENT") {
-                        val linkedTrainerUid = userDoc.getString("linkedTrainerUid")
-                        android.util.Log.d("ProfileScreen", "linkedTrainerUid: $linkedTrainerUid") // <- Debug
+                        // Limpiar listener anterior si existe
+                        cleanupListener()
 
-                        if (linkedTrainerUid != null) {
-                            // Obtener información del trainer
-                            val trainerDoc = FirebaseFirestore.getInstance()
-                                .collection("users")
-                                .document(linkedTrainerUid)
-                                .get()
-                                .await()
+                        // Configurar listener en tiempo real para detectar cambios en la vinculación
+                        firestoreListener = FirebaseFirestore.getInstance()
+                            .collection("users")
+                            .document(currentUser.uid)
+                            .addSnapshotListener { snapshot, error ->
+                                if (error != null) {
+                                    android.util.Log.e("ProfileScreen", "Error en listener", error)
+                                    isLoading = false
+                                    return@addSnapshotListener
+                                }
 
-                            android.util.Log.d("ProfileScreen", "Datos del trainer: ${trainerDoc.data}") // <- AGREGAR
+                                if (snapshot?.exists() == true) {
+                                    val linkedTrainerUid = snapshot.getString("linkedTrainerUid")
+                                    android.util.Log.d("ProfileScreen", "Listener - linkedTrainerUid: $linkedTrainerUid")
 
-                            val trainerName = "${trainerDoc.getString("firstName") ?: ""} ${trainerDoc.getString("lastName") ?: ""}".trim()
-                            val trainerEmail = trainerDoc.getString("email") ?: ""
-
-                            android.util.Log.d("ProfileScreen", "firstName: ${trainerDoc.getString("firstName")}") // <- AGREGAR
-                            android.util.Log.d("ProfileScreen", "lastName: ${trainerDoc.getString("lastName")}") // <- AGREGAR
-                            android.util.Log.d("ProfileScreen", "email: ${trainerDoc.getString("email")}") // <- AGREGAR
-                            val trainerPhoto = trainerDoc.getString("photoURL")
-
-                            android.util.Log.d("ProfileScreen", "Trainer encontrado: $trainerName") // <- Debug
-
-                            if (trainerName.isNotEmpty()) {
-                                trainerInfo = TrainerInfo(trainerName, trainerEmail, trainerPhoto)
+                                    if (linkedTrainerUid != null) {
+                                        // Tiene trainer, obtener información
+                                        scope.launch {
+                                            try {
+                                                val fetchedTrainerInfo = fetchTrainerInfo(linkedTrainerUid)
+                                                trainerInfo = fetchedTrainerInfo
+                                                isLoading = false
+                                            } catch (e: Exception) {
+                                                android.util.Log.e("ProfileScreen", "Error obteniendo info del trainer", e)
+                                                trainerInfo = null
+                                                isLoading = false
+                                            }
+                                        }
+                                    } else {
+                                        // No tiene trainer vinculado
+                                        android.util.Log.d("ProfileScreen", "Cliente sin trainer vinculado")
+                                        trainerInfo = null
+                                        isLoading = false
+                                    }
+                                } else {
+                                    trainerInfo = null
+                                    isLoading = false
+                                }
                             }
-                        }
+                    } else {
+                        isLoading = false
                     }
-                    isLoading = false
                 } catch (e: Exception) {
-                    android.util.Log.e("ProfileScreen", "Error cargando trainer info", e) // <- Debug
+                    android.util.Log.e("ProfileScreen", "Error inicial", e)
                     isLoading = false
                 }
             }
         }
     }
+
+    // Limpiar listener cuando se destruye la composición
+    DisposableEffect(Unit) {
+        onDispose {
+            cleanupListener()
+        }
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -242,6 +301,9 @@ fun ProfileScreen(
                 icon = Icons.Default.Clear,
                 onClick = {
                     scope.launch {
+                        // Limpiar listener antes de cerrar sesión
+                        cleanupListener()
+
                         auth.signOut()
                         googleSignInClient?.signOut()?.addOnCompleteListener {
                             navController.navigate(NavigationRoutes.Login.route) {

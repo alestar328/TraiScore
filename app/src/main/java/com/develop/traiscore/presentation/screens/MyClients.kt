@@ -22,12 +22,6 @@ import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.theme.traiBackgroundDay
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.MyClientsViewModel
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import kotlinx.coroutines.tasks.await
-
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,17 +29,14 @@ fun MyClients(
     onClientClick: (UserEntity) -> Unit,
     onAddClientClick: () -> Unit,
     onInvitationsClick: () -> Unit,
-    viewModel: MyClientsViewModel = hiltViewModel() // <- Agregar ViewModel
-
+    viewModel: MyClientsViewModel = hiltViewModel()
 ) {
     val clients by viewModel.clients.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
 
-    // Cargar clientes del entrenador actual
-    LaunchedEffect(Unit) {
-        viewModel.loadClients()
-    }
+    // Ya no necesitamos LaunchedEffect porque el ViewModel configura
+    // automáticamente el listener en tiempo real en su init
 
     Scaffold(
         topBar = {
@@ -60,14 +51,15 @@ fun MyClients(
                     containerColor = navbarDay
                 ),
                 actions = {
-                    // Botón de invitaciones
+                    // Botón de actualizar
                     IconButton(onClick = { viewModel.refreshClients() }) {
                         Icon(
-                            Icons.Default.Refresh, // <- Necesitarás importar este icono
+                            Icons.Default.Refresh,
                             contentDescription = "Actualizar",
                             tint = Color.White
                         )
                     }
+                    // Botón de invitaciones
                     IconButton(onClick = onInvitationsClick) {
                         Icon(
                             Icons.Default.Add,
@@ -127,7 +119,7 @@ fun MyClients(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Button(
-                            onClick = { /* Retry logic */ },
+                            onClick = { viewModel.refreshClients() }, // Usar refreshClients en lugar de retry manual
                             colors = ButtonDefaults.buttonColors(
                                 containerColor = traiBlue
                             )
