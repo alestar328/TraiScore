@@ -38,7 +38,9 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -66,9 +68,12 @@ import com.develop.traiscore.R
 import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.data.firebaseData.RoutineDocument
 import com.develop.traiscore.exports.ImportRoutineViewModel
+import com.develop.traiscore.presentation.components.TraiScoreTopBar
+import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.theme.traiBackgroundDay
 import com.develop.traiscore.presentation.theme.traiBlue
+import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -78,7 +83,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 fun RoutineMenuScreen(
     onRoutineClick: (String, String) -> Unit,
     onAddClick: () -> Unit,
-    viewModel: RoutineViewModel ,
+    viewModel: RoutineViewModel,
     importViewModel: ImportRoutineViewModel = hiltViewModel(),
     screenTitle: String = "Mis Rutinas",
     clientName: String? = null
@@ -210,125 +215,140 @@ fun RoutineMenuScreen(
         )
         return
     }
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = screenTitle,
-                        color = Color.White
-                    )
 
-                    clientName?.let {
-                        Text(
-                            text = it,
-                            color = Color.White.copy(alpha = 0.7f),
-                            fontSize = 14.sp
-                        )
-                    }
-                },
 
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = navbarDay
-                )
-            )
-        },
-        containerColor = Color.DarkGray,
-        floatingActionButton = {
-            Column(
-                horizontalAlignment = Alignment.End,
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.navigationBarsPadding()
-            ) {
-                // 1) Botón de descarga (solo UI por ahora)
-                FloatingActionButton(
-                    onClick = { filePickerLauncher.launch("*/*") },
-                    containerColor = Color.Yellow,
-                    contentColor = traiBlue,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Search,
-                        contentDescription = "Download routines"
-                    )
-                }
-                ExtendedFloatingActionButton(
-                    onClick = onAddClick,
-                    icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                    text = { Text("Nueva rutina") },
-                    containerColor = traiBlue,
-                    contentColor = Color.Black,
-                    modifier = Modifier.navigationBarsPadding() // evita solapamiento con nav‐bar
-                )
-            }
-        }
-    ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(traiBackgroundDay)
-                .padding(innerPadding)
-                .navigationBarsPadding(),          // evita que el contenido quede tras la nav‐bar
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            itemsIndexed(
-                viewModel.routineTypes,
-                key = { index, r -> "${r.documentId}-${r.type}-$index" }
-            ) { index, routine ->
-                val dismissState = rememberDismissState(
-                    confirmStateChange = { newValue ->
-                        if (newValue == DismissValue.DismissedToStart) {
-                            routineToDelete = Pair(index, routine)
-                            showDeleteDialog = true
-                        }
-                        false
-                    }
-                )
-                SwipeToDismiss(
-                    state = dismissState,
-                    directions = setOf(DismissDirection.EndToStart),
-                    background = {
-                        // Fondo rojo con icono de basura
-                        if (dismissState.targetValue != DismissValue.Default) {
-                            Box(
-                                Modifier
-                                    .fillMaxSize()
-                                    .background(Color.Red)
-                                    .padding(end = 20.dp),
-                                contentAlignment = Alignment.CenterEnd
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Delete,
-                                    contentDescription = "Eliminar rutina",
-                                    tint = Color.White
-                                )
-                            }
-                        }
-                    },
-                    dismissContent = {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { onRoutineClick(routine.documentId, routine.type) }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = TraiScoreTheme.dimens.paddingMedium)
+    ) {
+        Scaffold(
+            topBar = {
+                TraiScoreTopBar(
+                    leftIcon = {
+                        FloatingActionButton(
+                            onClick = {
+                                println("⏱️ Icono de cronometro")
+                            },
+                            modifier = Modifier.size(30.dp),
+                            containerColor = MaterialTheme.tsColors.ledCyan,
+                            contentColor = Color.White,
+                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
                         ) {
-                            RoutineItem(
-                                name = routine.clientName,
-                                imageResId = try {
-                                    DefaultCategoryExer.valueOf(routine.type.uppercase()).imageCat
-                                } catch (_: Exception) {
-                                    DefaultCategoryExer.BACK.imageCat  // fallback si no coincide
-                                },
-                                onClick = { onRoutineClick(routine.documentId, routine.type) }
+                            Icon(
+                                painter = painterResource(id = R.drawable.timer_icon),
+                                contentDescription = "Temporizador",
+                                tint = Color.Black
                             )
                         }
 
+                    },
+                    rightIcon = {
+                        FloatingActionButton(
+                            onClick = {
+                                filePickerLauncher.launch("*/*")
+
+                            },
+                            modifier = Modifier.size(30.dp),
+                            containerColor = MaterialTheme.tsColors.ledCyan,
+                            contentColor = Color.White,
+                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.import_icon),
+                                contentDescription = "Search",
+                                tint = Color.Black
+                            )
+                        }
                     }
                 )
-            }
+            },
+            containerColor = Color.DarkGray,
+            floatingActionButton = {
+                Column(
+                    horizontalAlignment = Alignment.End,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.navigationBarsPadding()
+                ) {
 
-            item {
-                Spacer(modifier = Modifier.height(80.dp))
+                    ExtendedFloatingActionButton(
+                        onClick = onAddClick,
+                        icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                        text = { Text("Nueva rutina") },
+                        containerColor = traiBlue,
+                        contentColor = Color.Black,
+                        modifier = Modifier.navigationBarsPadding() // evita solapamiento con nav‐bar
+                    )
+                }
+            }
+        ) { innerPadding ->
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(MaterialTheme.tsColors.primaryBackgroundColor)
+                    .padding(innerPadding)
+                    .navigationBarsPadding(),          // evita que el contenido quede tras la nav‐bar
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                itemsIndexed(
+                    viewModel.routineTypes,
+                    key = { index, r -> "${r.documentId}-${r.type}-$index" }
+                ) { index, routine ->
+                    val dismissState = rememberDismissState(
+                        confirmStateChange = { newValue ->
+                            if (newValue == DismissValue.DismissedToStart) {
+                                routineToDelete = Pair(index, routine)
+                                showDeleteDialog = true
+                            }
+                            false
+                        }
+                    )
+                    SwipeToDismiss(
+                        state = dismissState,
+                        directions = setOf(DismissDirection.EndToStart),
+                        background = {
+                            // Fondo rojo con icono de basura
+                            if (dismissState.targetValue != DismissValue.Default) {
+                                Box(
+                                    Modifier
+                                        .fillMaxSize()
+                                        .background(Color.Red)
+                                        .padding(end = 20.dp),
+                                    contentAlignment = Alignment.CenterEnd
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = "Eliminar rutina",
+                                        tint = Color.White
+                                    )
+                                }
+                            }
+                        },
+                        dismissContent = {
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .clickable { onRoutineClick(routine.documentId, routine.type) }
+                            ) {
+                                RoutineItem(
+                                    name = routine.clientName,
+                                    imageResId = try {
+                                        DefaultCategoryExer.valueOf(routine.type.uppercase()).imageCat
+                                    } catch (_: Exception) {
+                                        DefaultCategoryExer.BACK.imageCat  // fallback si no coincide
+                                    },
+                                    onClick = { onRoutineClick(routine.documentId, routine.type) }
+                                )
+                            }
+
+                        }
+                    )
+                }
+
+                item {
+                    Spacer(modifier = Modifier.height(80.dp))
+                }
             }
         }
     }
@@ -362,12 +382,11 @@ fun RoutineItem(name: String, imageResId: Int, onClick: () -> Unit) {
 
 @Preview(showBackground = true)
 @Composable
-fun RoutineMenuPreview() {
-    RoutineMenuScreen(
-        onRoutineClick = { docId, type ->
-            println("Clicked routine with ID: $docId and Type: $type")
-        },
-        onAddClick = { println("Add new routine") },
-        viewModel = RoutineViewModel()
+fun RoutineItemPreview() {
+    // Preview solo del item individual
+    RoutineItem(
+        name = "Rutina de Pecho",
+        imageResId = R.drawable.chest_pic, // Ajustar según tu drawable
+        onClick = {}
     )
 }

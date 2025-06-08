@@ -36,6 +36,7 @@ import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.data.local.entity.WorkoutWithExercise
 import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.FilterableDropdown
+import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.components.WorkoutCard
 import com.develop.traiscore.presentation.components.WorkoutCardList
 import com.develop.traiscore.presentation.theme.TSStyle
@@ -69,25 +70,30 @@ fun ExercisesScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .padding(horizontal = TraiScoreTheme.dimens.paddingNormal)
+            .padding(horizontal = TraiScoreTheme.dimens.paddingMedium)
     ) {
         Scaffold(
             topBar = {
-                TopAppBar(
-                    title = {
-                        Box(
-                            modifier = Modifier.fillMaxWidth(),
-                            contentAlignment = Alignment.Center
+                TraiScoreTopBar(
+                    leftIcon = {
+                        FloatingActionButton(
+                            onClick = {
+                                println("⏱️ Icono de cronometro")
+                            },
+                            modifier = Modifier.size(30.dp),
+                            containerColor = MaterialTheme.tsColors.ledCyan,
+                            contentColor = Color.White,
+                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
                         ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.trailogoup),
-                                contentDescription = "Logo cabecera",
-                                modifier = Modifier.height(30.dp)
+                            Icon(
+                                painter = painterResource(id = R.drawable.timer_icon),
+                                contentDescription = "Temporizador",
+                                tint = Color.Black
                             )
                         }
+
                     },
-                    navigationIcon = {
-                        // Search a la izquierda
+                    rightIcon = {
                         FloatingActionButton(
                             onClick = {
                                 println("🔍 Icono de busqueda clicado")
@@ -107,27 +113,7 @@ fun ExercisesScreen(
                                 tint = Color.Black
                             )
                         }
-                    },
-                    actions = {
-                        FloatingActionButton(
-                            onClick = {
-                                println("⏱️ Icono de cronometro")
-                            },
-                            modifier = Modifier.size(30.dp), // Mismo tamaño que search
-                            containerColor = MaterialTheme.tsColors.ledCyan,
-                            contentColor = Color.White,
-                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.timer_icon),
-                                contentDescription = "Temporizador",
-                                tint = Color.Black // Mismo color que search
-                            )
-                        }
-                    },
-                    colors = TopAppBarDefaults.topAppBarColors(
-                        containerColor = MaterialTheme.tsColors.primaryBackgroundColor
-                    )
+                    }
                 )
             },
             content = { paddingValues ->

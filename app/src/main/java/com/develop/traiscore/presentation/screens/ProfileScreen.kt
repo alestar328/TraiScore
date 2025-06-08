@@ -29,6 +29,7 @@ import com.develop.traiscore.R
 import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.presentation.MainActivity
+import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.theme.*
 import com.google.firebase.auth.FirebaseAuth
@@ -81,7 +82,8 @@ fun ProfileScreen(
 
             android.util.Log.d("ProfileScreen", "Datos del trainer: ${trainerDoc.data}")
 
-            val trainerName = "${trainerDoc.getString("firstName") ?: ""} ${trainerDoc.getString("lastName") ?: ""}".trim()
+            val trainerName =
+                "${trainerDoc.getString("firstName") ?: ""} ${trainerDoc.getString("lastName") ?: ""}".trim()
             val trainerEmail = trainerDoc.getString("email") ?: ""
             val trainerPhoto = trainerDoc.getString("photoURL")
 
@@ -134,24 +136,35 @@ fun ProfileScreen(
 
                                 if (snapshot?.exists() == true) {
                                     val linkedTrainerUid = snapshot.getString("linkedTrainerUid")
-                                    android.util.Log.d("ProfileScreen", "Listener - linkedTrainerUid: $linkedTrainerUid")
+                                    android.util.Log.d(
+                                        "ProfileScreen",
+                                        "Listener - linkedTrainerUid: $linkedTrainerUid"
+                                    )
 
                                     if (linkedTrainerUid != null) {
                                         // Tiene trainer, obtener información
                                         scope.launch {
                                             try {
-                                                val fetchedTrainerInfo = fetchTrainerInfo(linkedTrainerUid)
+                                                val fetchedTrainerInfo =
+                                                    fetchTrainerInfo(linkedTrainerUid)
                                                 trainerInfo = fetchedTrainerInfo
                                                 isLoading = false
                                             } catch (e: Exception) {
-                                                android.util.Log.e("ProfileScreen", "Error obteniendo info del trainer", e)
+                                                android.util.Log.e(
+                                                    "ProfileScreen",
+                                                    "Error obteniendo info del trainer",
+                                                    e
+                                                )
                                                 trainerInfo = null
                                                 isLoading = false
                                             }
                                         }
                                     } else {
                                         // No tiene trainer vinculado
-                                        android.util.Log.d("ProfileScreen", "Cliente sin trainer vinculado")
+                                        android.util.Log.d(
+                                            "ProfileScreen",
+                                            "Cliente sin trainer vinculado"
+                                        )
                                         trainerInfo = null
                                         isLoading = false
                                     }
@@ -178,141 +191,162 @@ fun ProfileScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Image(
-                        painter = painterResource(id = R.drawable.trailogoup),
-                        contentDescription = "Logo cabecera",
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                },
-                actions = {
-                    IconButton(onClick = {
-                        navController.navigate(NavigationRoutes.Settings.route)
-                    }) {
-                        Icon(Icons.Default.Settings, contentDescription = "Settings")
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = TraiScoreTheme.dimens.paddingMedium)
+    ) {
+        Scaffold(
+            topBar = {
+                TraiScoreTopBar(
+                    leftIcon = {
+                        FloatingActionButton(
+                            onClick = {
+                                println("⏱️ Icono de cronometro")
+                            },
+                            modifier = Modifier.size(30.dp),
+                            containerColor = MaterialTheme.tsColors.ledCyan,
+                            contentColor = Color.White,
+                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.timer_icon),
+                                contentDescription = "Temporizador",
+                                tint = Color.Black
+                            )
+                        }
+                    },
+                    rightIcon = {
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp) // Igualado al tamaño del FloatingActionButton
+                                .clickable {
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                Icons.Default.Settings,
+                                modifier = Modifier.size(30.dp),
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.tsColors.ledCyan
+                            )
+                        }
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = navbarDay
                 )
-            )
-        },
-    ) { padding ->
-        Column(
-            modifier = Modifier
-                .padding(padding)
-                .fillMaxSize()
-                .background(traiBackgroundDay),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Spacer(Modifier.height(16.dp))
-
-            // Avatar con badge en hexágono
-            Box(contentAlignment = Alignment.BottomEnd) {
-                Image(
-                    painter = painterResource(R.drawable.user_png),
-                    contentDescription = "Foto de perfil",
-                    modifier = Modifier
-                        .size(96.dp)
-                        .clip(RoundedCornerShape(48.dp))
-                )
-                HexagonBadge(
-                    number = "1",
-                    modifier = Modifier
-                        .offset(x = 4.dp, y = 4.dp)
-                        .size(24.dp)
-                )
-            }
-
-            Spacer(Modifier.height(16.dp))
-
-            // Estadísticas
-            Row(
+            },
+        ) { padding ->
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 32.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    .padding(padding)
+                    .fillMaxSize()
+                    .background(MaterialTheme.tsColors.primaryBackgroundColor),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                ProfileStat(count = "0", label = "Piques")
-                Divider(
+                Spacer(Modifier.height(16.dp))
+
+                // Avatar con badge en hexágono
+                Box(contentAlignment = Alignment.BottomEnd) {
+                    Image(
+                        painter = painterResource(R.drawable.user_png),
+                        contentDescription = "Foto de perfil",
+                        modifier = Modifier
+                            .size(96.dp)
+                            .clip(RoundedCornerShape(48.dp))
+                    )
+                    HexagonBadge(
+                        number = "1",
+                        modifier = Modifier
+                            .offset(x = 4.dp, y = 4.dp)
+                            .size(24.dp)
+                    )
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Estadísticas
+                Row(
                     modifier = Modifier
-                        .height(32.dp)
-                        .width(1.dp)
-                        .background(Color.LightGray)
-                )
-                ProfileStat(count = "0", label = "Amigos")
-                Divider(
-                    modifier = Modifier
-                        .height(32.dp)
-                        .width(1.dp)
-                        .background(Color.LightGray)
-                )
-                ProfileStat(count = "0", label = "SEGUIDOS")
-            }
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    ProfileStat(count = "0", label = "Piques")
+                    Divider(
+                        modifier = Modifier
+                            .height(32.dp)
+                            .width(1.dp)
+                            .background(Color.LightGray)
+                    )
+                    ProfileStat(count = "0", label = "Amigos")
+                    Divider(
+                        modifier = Modifier
+                            .height(32.dp)
+                            .width(1.dp)
+                            .background(Color.LightGray)
+                    )
+                    ProfileStat(count = "0", label = "SEGUIDOS")
+                }
 
-            Spacer(Modifier.height(24.dp))
+                Spacer(Modifier.height(24.dp))
 
-            // Sección de Trainer para CLIENTES
-            if (currentUserRole == UserRole.CLIENT) {
-                TrainerSection(
-                    trainerInfo = trainerInfo,
-                    isLoading = isLoading,
-                    onAddTrainer = {
-                        // Navegamos directamente a la pantalla de invitación
-                        navController.navigate(NavigationRoutes.EnterInvitation.route)
-                    }
-                )
-                Spacer(Modifier.height(20.dp))
-            }
+                // Sección de Trainer para CLIENTES
+                if (currentUserRole == UserRole.CLIENT) {
+                    TrainerSection(
+                        trainerInfo = trainerInfo,
+                        isLoading = isLoading,
+                        onAddTrainer = {
+                            // Navegamos directamente a la pantalla de invitación
+                            navController.navigate(NavigationRoutes.EnterInvitation.route)
+                        }
+                    )
+                    Spacer(Modifier.height(20.dp))
+                }
 
-            // Botón de invitaciones para TRAINERS
-            if (currentUserRole == UserRole.TRAINER) {
+                // Botón de invitaciones para TRAINERS
+                if (currentUserRole == UserRole.TRAINER) {
+                    ProfileButton(
+                        text = "Gestionar Invitaciones",
+                        containerColor = traiBlue,
+                        contentColor = Color.White,
+                        icon = Icons.Default.AddCircle,
+                        onClick = {
+                            navController.navigate(NavigationRoutes.TrainerInvitations.route)
+                        }
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
+
+                // Botones principales
+                if (currentUserRole == UserRole.CLIENT) {
+                    ProfileButton(
+                        text = "Mis medidas",
+                        containerColor = traiBlue,
+                        contentColor = Color.Black,
+                        icon = Icons.Default.Home,
+                        onClick = onMeasurementsClick
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
+
                 ProfileButton(
-                    text = "Gestionar Invitaciones",
-                    containerColor = traiBlue,
+                    text = "Cerrar sesión",
+                    containerColor = Color.Red,
                     contentColor = Color.White,
-                    icon = Icons.Default.AddCircle,
+                    icon = Icons.Default.Clear,
                     onClick = {
-                        navController.navigate(NavigationRoutes.TrainerInvitations.route)
-                    }
-                )
-                Spacer(Modifier.height(12.dp))
-            }
+                        scope.launch {
+                            // Limpiar listener antes de cerrar sesión
+                            cleanupListener()
 
-            // Botones principales
-            if (currentUserRole == UserRole.CLIENT) {
-                ProfileButton(
-                    text = "Mis medidas",
-                    containerColor = traiBlue,
-                    contentColor = Color.Black,
-                    icon = Icons.Default.Home,
-                    onClick = onMeasurementsClick
-                )
-                Spacer(Modifier.height(12.dp))
-            }
-
-            ProfileButton(
-                text = "Cerrar sesión",
-                containerColor = Color.Red,
-                contentColor = Color.White,
-                icon = Icons.Default.Clear,
-                onClick = {
-                    scope.launch {
-                        // Limpiar listener antes de cerrar sesión
-                        cleanupListener()
-
-                        auth.signOut()
-                        googleSignInClient?.signOut()?.addOnCompleteListener {
-                            navController.navigate(NavigationRoutes.Login.route) {
-                                popUpTo(navController.graph.id) { inclusive = true }
+                            auth.signOut()
+                            googleSignInClient?.signOut()?.addOnCompleteListener {
+                                navController.navigate(NavigationRoutes.Login.route) {
+                                    popUpTo(navController.graph.id) { inclusive = true }
+                                }
                             }
                         }
                     }
-                }
-            )
+                )
+            }
         }
     }
 }
@@ -325,7 +359,7 @@ private fun TrainerSection(
 ) {
     Card(
         modifier = Modifier
-            .fillMaxWidth(0.9f)
+            .fillMaxWidth()
             .clip(RoundedCornerShape(16.dp)),
         colors = CardDefaults.cardColors(
             containerColor = Color.White
@@ -338,8 +372,7 @@ private fun TrainerSection(
             isLoading -> {
                 Box(
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(24.dp),
+                        .fillMaxWidth(),
                     contentAlignment = Alignment.Center
                 ) {
                     CircularProgressIndicator(
@@ -493,7 +526,7 @@ fun ProfileButton(
     Button(
         onClick = onClick,
         modifier = modifier
-            .fillMaxWidth(0.9f)
+            .fillMaxWidth()
             .height(56.dp),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
