@@ -27,6 +27,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -61,6 +63,7 @@ import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.theme.traiBackgroundDay
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.theme.traiOrange
+import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
 
@@ -134,28 +137,36 @@ fun StatScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Image(
-                        painter = painterResource(id = R.drawable.trailogoup),
-                        contentDescription = "Logo cabecera",
+                    Box(
                         modifier = Modifier.fillMaxWidth(),
-                    )
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Image(
+                            painter = painterResource(id = R.drawable.trailogoup),
+                            contentDescription = "Logo cabecera",
+                            modifier = Modifier.height(30.dp)
+                        )
+                    }
                 },
                 actions = {
-                    // Ícono de búsqueda
-                    IconButton(onClick = { println("Search clicked") }) {
-                        CircleDot(color = traiBlue) {
-                            Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search",
-                                tint = Color.White,
-                                modifier = Modifier.size(TraiScoreTheme.dimens.iconSizeSmall)
-                            )
-                        }
+                    FloatingActionButton(
+                        onClick = {
+                            println("⏱️ Icono de cronometro")
+                        },
+                        modifier = Modifier.size(30.dp), // Mismo tamaño que search
+                        containerColor = MaterialTheme.tsColors.ledCyan,
+                        contentColor = Color.White,
+                        elevation = FloatingActionButtonDefaults.elevation(0.dp)
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.timer_icon),
+                            contentDescription = "Temporizador",
+                            tint = Color.Black // Mismo color que search
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = navbarDay, // Fondo de la barra
-                    titleContentColor = MaterialTheme.colorScheme.onSurface // Color del texto
+                    containerColor = MaterialTheme.tsColors.primaryBackgroundColor
                 )
             )
         },
@@ -172,7 +183,7 @@ fun StatScreen(
                             Modifier
                         }
                     )
-                    .background(traiBackgroundDay)
+                    .background(MaterialTheme.tsColors.primaryBackgroundColor)
                     .fillMaxSize()
             ) {
                 // Toggle Buttons justo debajo del TopAppBar

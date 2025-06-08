@@ -57,12 +57,14 @@ import dagger.hilt.android.AndroidEntryPoint
 import com.develop.traiscore.presentation.screens.LoginScreenRoute
 import com.develop.traiscore.presentation.screens.RoutineMenuScreen
 import com.develop.traiscore.presentation.screens.RoutineScreen
+import com.develop.traiscore.presentation.screens.ScreenModeUI
 import com.develop.traiscore.presentation.screens.SettingsScreen
 import com.develop.traiscore.presentation.screens.StatScreen
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import com.develop.traiscore.presentation.viewmodels.MyClientsViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
+import com.develop.traiscore.presentation.viewmodels.ThemeViewModel
 import java.io.File
 
 
@@ -89,8 +91,14 @@ class MainActivity : ComponentActivity() {
         setContent {
             //Creamos esta variable
             val windowSize = calculateWindowSizeClass(this)
+
+            val themeViewModel: ThemeViewModel = hiltViewModel()
+            val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
+
             //Insertamos la propiedad aqui
             TraiScoreTheme(
+                darkTheme = isDarkTheme,
+                dynamicColor = false,
                 windowSize = windowSize.widthSizeClass
             ) {
                 val navController = rememberNavController()
@@ -312,9 +320,16 @@ fun AppNavigation(navController: NavHostController) {
 
             )
         }
+        composable("screen_mode") {
+            ScreenModeUI(
+                onBack = { navController.popBackStack() }
+            )
+        }
         composable(NavigationRoutes.Settings.route) {
             SettingsScreen(
-                onBack = { navController.popBackStack() }
+                onBack = { navController.popBackStack() },
+                onNavigateToScreenMode = { navController.navigate("screen_mode") }
+
             )
         }
         composable(NavigationRoutes.Main.route) {

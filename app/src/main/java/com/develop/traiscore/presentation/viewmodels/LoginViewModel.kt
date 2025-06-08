@@ -27,25 +27,37 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
 
     private val db = Firebase.firestore
     private val auth = FirebaseAuth.getInstance()
-    // Campos de estado para email y password
+
+    // Estados para email/password login
     var email by mutableStateOf("")
         private set
     var password by mutableStateOf("")
         private set
+
+    // Estados para Google Sign-In
     var isNewUser by mutableStateOf(false)
+        private set
+    var googleUserEmail by mutableStateOf("")
+        private set
+    var googleUserName by mutableStateOf("")
+        private set
+    var googleUserPhotoUrl by mutableStateOf<String?>(null)
+        private set
 
     // Mensaje de error
     private val _errorMsg = MutableStateFlow<String?>(null)
     val errorMsg = _errorMsg.asStateFlow()
 
+    // Eventos
     private val _requireRegistration = MutableSharedFlow<Unit>()
     val requireRegistration = _requireRegistration.asSharedFlow()
 
-    // Evento de éxito en login
     private val _loginSuccess = MutableSharedFlow<Unit>()
     val loginSuccess: SharedFlow<Unit> = _loginSuccess.asSharedFlow()
+
     private val _registrationSuccess = MutableSharedFlow<Unit>()
     val registrationSuccess: SharedFlow<Unit> = _registrationSuccess.asSharedFlow()
+
     // Actualizar campos
     fun onEmailChange(newEmail: String) {
         email = newEmail
@@ -58,11 +70,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun sendPasswordResetEmail(email: String) {
-        println("🔥 DEBUG: sendPasswordResetEmail called with: '$email'")
-
         if (email.isBlank()) {
-            println("🔥 DEBUG: Email is blank")
-
             _errorMsg.value = "Ingresa tu email para recuperar la contraseña"
             return
         }
@@ -71,8 +79,6 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 auth.sendPasswordResetEmail(email)
                     .addOnSuccessListener {
-                        println("🔥 DEBUG: Firebase SUCCESS - Email sent")
-
                         _errorMsg.value = "✅ Se ha enviado un enlace de recuperación a tu email"
                     }
                     .addOnFailureListener { exception ->
@@ -85,13 +91,12 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                         }
                     }
             } catch (exception: Exception) {
-                println("🔥 DEBUG: Exception caught - ${exception.message}")
-
                 _errorMsg.value = "Error inesperado: ${exception.message}"
             }
         }
     }
-    // Lógica de login con email
+
+    // Email/Password Sign In
     fun signInWithEmail() {
         if (email.isBlank() || password.isBlank()) {
             _errorMsg.value = "Email y contraseña son obligatorios"
@@ -120,6 +125,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // Email/Password Sign Up
     fun registerWithEmail() {
         if (email.isBlank() || password.isBlank()) {
             _errorMsg.value = "Email y contraseña son obligatorios"
@@ -134,8 +140,9 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
             try {
                 auth.createUserWithEmailAndPassword(email, password)
                     .addOnSuccessListener {
-                        // Después del registro exitoso, mostrar formulario de perfil
                         isNewUser = true
+                        // Para registro con email, mantener los campos
+                        googleUserEmail = email
                         viewModelScope.launch {
                             _requireRegistration.emit(Unit)
                         }
@@ -153,42 +160,42 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // Lógica de login con Google
+    // Google Sign In
     fun signInWithGoogle(authManager: AuthenticationManager) {
         viewModelScope.launch {
             authManager.signInWithGoogle()
-                .collect { resp ->
-                    Log.d("AuthDebug", "ViewModel received AuthResponse: $resp") // <-- Add this
-                    when (resp) {
+                .collect { response ->
+                    Log.d("AuthDebug", "ViewModel received AuthResponse: $response")
+                    when (response) {
                         AuthResponse.Success -> {
-                            Log.d("AuthDebug", "ViewModel emitting _loginSuccess") // <-- Add this
+                            Log.d("AuthDebug", "ViewModel emitting _loginSuccess")
                             _loginSuccess.emit(Unit)
                         }
 
-                        AuthResponse.NewUser -> {
+                        is AuthResponse.NewUser -> {
+                            Log.d("AuthDebug", "ViewModel received NewUser with email: ${response.email}")
                             isNewUser = true
-                            Log.d(
-                                "AuthDebug",
-                                "ViewModel emitting _requireRegistration"
-                            ) // <-- Add this
+                            // ✅ Pre-llenar datos de Google
+                            googleUserEmail = response.email
+                            googleUserName = response.displayName
+                            googleUserPhotoUrl = response.photoUrl
+
+                            // Para Google Sign-In, limpiar password (no lo necesita)
+                            password = ""
+
                             _requireRegistration.emit(Unit)
                         }
 
                         is AuthResponse.Error -> {
-                            Log.d(
-                                "AuthDebug",
-                                "ViewModel setting errorMsg: ${resp.message}"
-                            ) // <-- Add this
-                            _errorMsg.value = resp.message
+                            Log.d("AuthDebug", "ViewModel setting errorMsg: ${response.message}")
+                            _errorMsg.value = response.message
                         }
                     }
                 }
         }
     }
 
-
-
-
+    // Completar registro (tanto para email como Google)
     fun completeRegistration(
         firstName: String,
         lastName: String,
@@ -204,22 +211,20 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     return@launch
                 }
 
-                // Pre-llenar con datos de Google si están vacíos
-                val googleDisplayName = currentUser.displayName ?: ""
-                val nameParts = googleDisplayName.split(" ")
-
-                val finalFirstName = if (firstName.isBlank()) {
-                    nameParts.getOrNull(0) ?: ""
+                // Usar datos de Google si están disponibles, sino usar los del formulario
+                val finalFirstName = if (firstName.isBlank() && googleUserName.isNotBlank()) {
+                    googleUserName.split(" ").getOrNull(0) ?: ""
                 } else {
                     firstName
                 }
-                val finalLastName = if (lastName.isBlank()) {
-                    nameParts.drop(1).joinToString(" ")
+
+                val finalLastName = if (lastName.isBlank() && googleUserName.isNotBlank()) {
+                    googleUserName.split(" ").drop(1).joinToString(" ")
                 } else {
                     lastName
                 }
 
-                // Validar datos
+                // Validar datos requeridos
                 if (finalFirstName.isBlank() || finalLastName.isBlank()) {
                     _errorMsg.value = "Nombre y apellido son obligatorios"
                     return@launch
@@ -230,11 +235,11 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     uid = currentUser.uid,
                     firstName = finalFirstName.trim(),
                     lastName = finalLastName.trim(),
-                    email = currentUser.email ?: "",
-                    birthYear = birthDate.year,  // ← Extraer año de LocalDate
+                    email = currentUser.email ?: googleUserEmail,
+                    birthYear = birthDate.year,
                     gender = gender,
                     userRole = userRole,
-                    photoURL = currentUser.photoUrl?.toString()
+                    photoURL = currentUser.photoUrl?.toString() ?: googleUserPhotoUrl
                 )
 
                 // Guardar en Firestore
@@ -242,9 +247,9 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     .document(currentUser.uid)
                     .set(userEntity)
                     .addOnSuccessListener {
+                        Log.d("Registration", "Usuario registrado exitosamente: ${userEntity.uid}")
                         viewModelScope.launch {
-                            Log.d("Registration", "Usuario registrado exitosamente: ${userEntity.uid}")
-                            isNewUser = false
+                            resetRegistrationState()
                             _registrationSuccess.emit(Unit)
                         }
                     }
@@ -259,39 +264,48 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
     }
-    fun getGoogleUserData(): Pair<String, String> {
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            val displayName = currentUser.displayName ?: ""
-            val nameParts = displayName.split(" ")
-            val firstName = nameParts.getOrNull(0) ?: ""
-            val lastName = nameParts.drop(1).joinToString(" ")
-            return Pair(firstName, lastName)
-        }
-        return Pair("", "")
-    }
-    // Verificar si el usuario ya existe en Firestore
-    private suspend fun checkIfUserExists(uid: String): Boolean {
-        return try {
-            val document = db.collection("users").document(uid).get()
-            document.result.exists()
-        } catch (exception: Exception) {
-            Log.e("AuthDebug", "Error checking user existence", exception)
-            false
-        }
+
+    // Obtener datos prellenados para el formulario
+    fun getPrefilledData(): Triple<String, String, String> {
+        return Triple(
+            googleUserEmail.ifBlank { email },
+            if (googleUserName.isNotBlank()) googleUserName.split(" ").getOrNull(0) ?: "" else "",
+            if (googleUserName.isNotBlank()) googleUserName.split(" ").drop(1).joinToString(" ") else ""
+        )
     }
 
-    // Resetear estado cuando sea necesario
-    fun resetState() {
+    // Reset estados de registro
+    private fun resetRegistrationState() {
         isNewUser = false
+        googleUserEmail = ""
+        googleUserName = ""
+        googleUserPhotoUrl = null
+    }
+
+    // Reset completo
+    fun resetState() {
+        resetRegistrationState()
         _errorMsg.value = null
         email = ""
         password = ""
     }
 
-    // Limpiar mensaje de error
     fun clearError() {
         _errorMsg.value = null
     }
 
+    // ✅ Navegación a registro manual (email)
+    fun onNavigateToRegister() {
+        isNewUser = true
+        // Para registro manual, no pre-llenar datos de Google
+        googleUserEmail = ""
+        googleUserName = ""
+        googleUserPhotoUrl = null
+    }
+
+    // ✅ Volver al login
+    fun onBackToLogin() {
+        resetRegistrationState()
+        clearError()
+    }
 }

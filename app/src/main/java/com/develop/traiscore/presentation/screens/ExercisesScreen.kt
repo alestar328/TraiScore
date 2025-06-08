@@ -3,10 +3,12 @@ package com.develop.traiscore.presentation.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -21,6 +23,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -35,9 +38,12 @@ import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.WorkoutCard
 import com.develop.traiscore.presentation.components.WorkoutCardList
+import com.develop.traiscore.presentation.theme.TSStyle
+import com.develop.traiscore.presentation.theme.TSStyleColors.ledCyan
 import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.theme.traiBackgroundDay
 import com.develop.traiscore.presentation.theme.traiBlue
+import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.util.Date
 
@@ -47,7 +53,8 @@ fun ExercisesScreen(
     viewModel: WorkoutEntryViewModel = hiltViewModel()
 ) {
     val entries = viewModel.entries.value
-    val showBottomSheet = remember { mutableStateOf(false) } // ✅ CAMBIO: showDialog → showBottomSheet
+    val showBottomSheet =
+        remember { mutableStateOf(false) } // ✅ CAMBIO: showDialog → showBottomSheet
     val selectedEntry = remember { mutableStateOf<WorkoutEntry?>(null) }
     val groupedEntries = viewModel.groupWorkoutsByDate(entries)
     val showSearchBar = remember { mutableStateOf(false) }
@@ -59,100 +66,132 @@ fun ExercisesScreen(
         groupedEntries
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Image(
-                        painter = painterResource(id = R.drawable.trailogoup),
-                        contentDescription = "Logo cabecera",
-                        modifier = Modifier.fillMaxWidth(),
-                    )
-                },
-                actions = {
-                    IconButton(
-                        onClick = {
-                            println("🔍 Icono de busqueda clicado")
-                            showSearchBar.value = !showSearchBar.value
-                            if (!showSearchBar.value) {
-                                selectedSearch.value = "" // Reinicia el filtro al cerrar
-                            }
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = TraiScoreTheme.dimens.paddingNormal)
+    ) {
+        Scaffold(
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Box(
+                            modifier = Modifier.fillMaxWidth(),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.trailogoup),
+                                contentDescription = "Logo cabecera",
+                                modifier = Modifier.height(30.dp)
+                            )
                         }
-                    ) {
-                        CircleDot(color = traiBlue) {
+                    },
+                    navigationIcon = {
+                        // Search a la izquierda
+                        FloatingActionButton(
+                            onClick = {
+                                println("🔍 Icono de busqueda clicado")
+                                showSearchBar.value = !showSearchBar.value
+                                if (!showSearchBar.value) {
+                                    selectedSearch.value = "" // Reinicia el filtro al cerrar
+                                }
+                            },
+                            modifier = Modifier.size(30.dp),
+                            containerColor = MaterialTheme.tsColors.ledCyan,
+                            contentColor = Color.White,
+                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.Search,
                                 contentDescription = "Search",
-                                tint = Color.White,
-                                modifier = Modifier.size(TraiScoreTheme.dimens.iconSizeSmall)
+                                tint = Color.Black
                             )
                         }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = navbarDay,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
-            )
-        },
-        content = { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black)
-                    .padding(top = paddingValues.calculateTopPadding())
-            ) {
-                // Barra de búsqueda
-                if (showSearchBar.value) {
-                    FilterableDropdown(
-                        items = viewModel.entries.value.map { it.title }.distinct(),
-                        selectedValue = selectedSearch.value,
-                        onItemSelected = { selectedSearch.value = it },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .background(Color.Black)
-                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    },
+                    actions = {
+                        FloatingActionButton(
+                            onClick = {
+                                println("⏱️ Icono de cronometro")
+                            },
+                            modifier = Modifier.size(30.dp), // Mismo tamaño que search
+                            containerColor = MaterialTheme.tsColors.ledCyan,
+                            contentColor = Color.White,
+                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.timer_icon),
+                                contentDescription = "Temporizador",
+                                tint = Color.Black // Mismo color que search
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.tsColors.primaryBackgroundColor
                     )
-                }
-
-                // Lista de entrenamientos
-                LazyColumn(
+                )
+            },
+            content = { paddingValues ->
+                Column(
                     modifier = Modifier
-                        .background(traiBackgroundDay)
                         .fillMaxSize()
-                        .padding(TraiScoreTheme.dimens.paddingMedium),
-                    contentPadding = PaddingValues(
-                        bottom = paddingValues.calculateBottomPadding() + 100.dp
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                        .background(MaterialTheme.tsColors.primaryBackgroundColor)
+                        .padding(top = paddingValues.calculateTopPadding())
                 ) {
-                    filteredGrouped.forEach { (date, dailyWorkouts) ->
-                        item {
-                            Text(
-                                text = date,
-                                color = Color.White,
-                                style = MaterialTheme.typography.titleMedium,
-                                modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
-                            )
-                        }
+                    // Barra de búsqueda
+                    if (showSearchBar.value) {
+                        FilterableDropdown(
+                            items = viewModel.entries.value.map { it.title }.distinct(),
+                            selectedValue = selectedSearch.value,
+                            onItemSelected = { selectedSearch.value = it },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.tsColors.primaryBackgroundColor)
+                                .padding(
+                                    horizontal = TraiScoreTheme.dimens.paddingMedium,
+                                    vertical = 4.dp
+                                )
+                        )
+                    }
 
-                        item {
-                            WorkoutCardList(
-                                workouts = dailyWorkouts,
-                                onEditClick = { workout ->
-                                    selectedEntry.value = workout
-                                    showBottomSheet.value = true // ✅ CAMBIO: Mostrar bottom sheet
-                                },
-                                onDeleteClick = { workout ->
-                                    workout.uid?.let { viewModel.deleteWorkoutEntry(it) }
-                                }
-                            )
+                    // Lista de entrenamientos
+                    LazyColumn(
+                        modifier = Modifier
+                            .background(TSStyle.primaryBackgroundColor)
+                            .fillMaxSize(),
+                        contentPadding = PaddingValues(
+                            bottom = paddingValues.calculateBottomPadding() + 100.dp
+                        ),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        filteredGrouped.forEach { (date, dailyWorkouts) ->
+                            item {
+                                Text(
+                                    text = date,
+                                    color = Color.White,
+                                    style = MaterialTheme.typography.titleLarge,
+                                    modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
+                                )
+                            }
+
+                            item {
+                                WorkoutCardList(
+                                    workouts = dailyWorkouts,
+                                    onEditClick = { workout ->
+                                        selectedEntry.value = workout
+                                        showBottomSheet.value =
+                                            true // ✅ CAMBIO: Mostrar bottom sheet
+                                    },
+                                    onDeleteClick = { workout ->
+                                        workout.uid?.let { viewModel.deleteWorkoutEntry(it) }
+                                    }
+                                )
+                            }
                         }
                     }
                 }
             }
-        }
-    )
+        )
+    }
 
     // ✅ CAMBIO: Reemplazar Dialog con AddExerciseBottomSheet
     AddExerciseBottomSheet(

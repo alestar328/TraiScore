@@ -2,6 +2,7 @@
 agp = "8.6.1"
 composeCharts = "latest_version"
 coreSplashscreen = "1.0.1"
+credentialsPlayServicesAuth = "1.5.0"
 gson = "2.10.1"
 hiltAndroid = "2.51.1"
 kotlin = "2.0.21"
@@ -30,6 +31,7 @@ playServicesFido = "20.0.1"
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 #  el nombre alias: La mierda de abajo no acepta la palabra 'class'
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "coreSplashscreen" }
+androidx-credentials-play-services-auth = { module = "androidx.credentials:credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
 androidx-lifecycle-runtime-compose = { module = "androidx.lifecycle:lifecycle-runtime-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-viewmodel-compose = { module = "androidx.lifecycle:lifecycle-viewmodel-compose", version.ref = "lifecycleRuntimeKtx" }
 androidx-lifecycle-viewmodel-ktx = { module = "androidx.lifecycle:lifecycle-viewmodel-ktx", version.ref = "lifecycleRuntimeKtx" }

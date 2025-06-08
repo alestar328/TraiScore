@@ -1,6 +1,7 @@
 package com.develop.traiscore.di
 
 import android.content.Context
+import com.develop.traiscore.data.preferences.ThemePreferences
 import com.develop.traiscore.data.repository.InvitationRepository
 import com.develop.traiscore.presentation.viewmodels.MyClientsViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -15,8 +16,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
-
-    // Si tienes otros providers existentes, mantenlos aquí
 
     @Provides
     @Singleton
@@ -44,5 +43,13 @@ object AppModule {
     ): InvitationRepository {
         return InvitationRepository(firestore, auth)
     }
+
+
+    @Provides
+    @Singleton
+    fun provideThemePreferences(context: Context): ThemePreferences {
+        return ThemePreferences(context)
+    }
+
 
 }

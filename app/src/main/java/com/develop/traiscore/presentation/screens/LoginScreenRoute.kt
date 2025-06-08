@@ -17,52 +17,81 @@ fun LoginScreenRoute(
     val context = LocalContext.current
     val authManager = remember { AuthenticationManager(context) }
 
-    // Observar eventos del ViewModel
+    // ✅ Observar evento de login exitoso
     LaunchedEffect(Unit) {
         loginViewModel.loginSuccess.collect {
             onLoginSuccess()
         }
     }
 
+    // ✅ Observar evento de registro requerido
     LaunchedEffect(Unit) {
         loginViewModel.requireRegistration.collect {
-            // Esto activa automáticamente isNewUser = true en el ViewModel
-            // El LoginScreen detectará el cambio y mostrará el formulario de registro
+            // El ViewModel ya maneja isNewUser = true automáticamente
+            // Solo necesitamos que el UI reaccione al cambio
         }
     }
 
+    // ✅ Observar evento de registro completado exitosamente
     LaunchedEffect(Unit) {
         loginViewModel.registrationSuccess.collect {
-            // Después del registro exitoso, ir a la pantalla principal
+            // Después del registro exitoso, navegar a la pantalla principal
             onLoginSuccess()
         }
     }
 
-    // Tu LoginScreen existente con todas las conexiones
+    // ✅ Obtener datos prellenados para el formulario
+    val (prefilledEmail, prefilledFirstName, prefilledLastName) = loginViewModel.getPrefilledData()
+
     LoginScreen(
         errorMsg = loginViewModel.errorMsg.collectAsState().value,
+
+        // ✅ Google Sign-In
         onGoogleClick = {
             loginViewModel.signInWithGoogle(authManager)
         },
-        onRegisterClick = {
-            loginViewModel.isNewUser = true
-        },
-        onBackToLogin = { // ✅ NUEVO
-            loginViewModel.isNewUser = false
-            loginViewModel.clearError()
-        },
-        onForgotPassword = { email -> // ✅ NUEVO
-            println("🔥 DEBUG: LoginScreenRoute onForgotPassword called with: '$email'")
 
+        // ✅ Navegación entre pantallas
+        onRegisterClick = {
+            // Para registro manual con email (no Google)
+            loginViewModel.onNavigateToRegister()
+        },
+        onBackToLogin = {
+            loginViewModel.onBackToLogin()
+        },
+
+        // ✅ Recuperar contraseña
+        onForgotPassword = { email ->
             loginViewModel.sendPasswordResetEmail(email)
         },
+
+        // ✅ Estado del formulario
         isNewUser = loginViewModel.isNewUser,
-        onCompleteRegistration = loginViewModel::completeRegistration,
-        email = loginViewModel.email,
+
+        // ✅ Completar registro (tanto Google como email)
+        onCompleteRegistration = { firstName, lastName, birthDate, gender, userRole ->
+            loginViewModel.completeRegistration(
+                firstName = firstName,
+                lastName = lastName,
+                birthDate = birthDate,
+                gender = gender,
+                userRole = userRole
+            )
+        },
+
+        // ✅ Campos de email/password con datos prellenados
+        email = if (loginViewModel.isNewUser) prefilledEmail else loginViewModel.email,
         password = loginViewModel.password,
         onEmailChange = loginViewModel::onEmailChange,
         onPasswordChange = loginViewModel::onPasswordChange,
+
+        // ✅ Autenticación con email
         onEmailSignIn = loginViewModel::signInWithEmail,
-        onEmailSignUp = loginViewModel::registerWithEmail
+        onEmailSignUp = loginViewModel::registerWithEmail,
+
+        // ✅ NUEVOS: Datos prellenados de Google para el formulario
+        prefilledFirstName = prefilledFirstName,
+        prefilledLastName = prefilledLastName,
+        isGoogleSignIn = loginViewModel.googleUserEmail.isNotEmpty()
     )
 }

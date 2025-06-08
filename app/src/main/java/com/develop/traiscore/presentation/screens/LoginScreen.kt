@@ -81,14 +81,15 @@ fun LoginScreen(
     onEmailSignIn: () -> Unit = {},
     onEmailSignUp: () -> Unit = {},
     onBackToLogin: () -> Unit = {},
-    onForgotPassword: (String) -> Unit = {}
-
-
+    onForgotPassword: (String) -> Unit = {},
+    // ✅ NUEVOS PARÁMETROS
+    prefilledFirstName: String = "",
+    prefilledLastName: String = "",
+    isGoogleSignIn: Boolean = false
 ) {
-    var showDatePicker by remember { mutableStateOf(false) }  // ← Añadir esto
+    var showDatePicker by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
-    var isRegistering by remember { mutableStateOf(false) } // ✅ AÑADIR estado para tracking
-
+    var isRegistering by remember { mutableStateOf(false) }
 
     Box(
         modifier = Modifier
@@ -100,7 +101,7 @@ fun LoginScreen(
 
                 TopSection(
                     title = if (isNewUser || isRegistering) "Registro" else "Login",
-                    showBackButton = isNewUser || isRegistering, // ✅ NUEVO
+                    showBackButton = isNewUser || isRegistering,
                     onBackClick = {
                         isRegistering = false
                         onBackToLogin()
@@ -125,12 +126,9 @@ fun LoginScreen(
                                 onEmailSignUp()
                             },
                             onForgotPassword = {
-                                println("🔥 DEBUG: onForgotPassword called with email: '$email'")
-
-                                onForgotPassword(email) // ✅ CAMBIAR: Siempre llamar, que el ViewModel valide
+                                onForgotPassword(email)
                             }
                         )
-
 
                         val uiColor = if (isSystemInDarkTheme()) Color.White else Black
 
@@ -141,7 +139,6 @@ fun LoginScreen(
                             contentAlignment = Alignment.BottomCenter
                         ) {
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
-
                                 Text(
                                     text = "¿No tienes una cuenta?",
                                     color = Color(0xFF94A3B8),
@@ -158,8 +155,7 @@ fun LoginScreen(
                                     fontWeight = FontWeight.Medium,
                                     modifier = Modifier
                                         .clickable {
-                                            isRegistering =
-                                                true // ✅ AÑADIR: Marcar como registrando
+                                            isRegistering = true
                                             onRegisterClick()
                                         }
                                         .padding(vertical = 8.dp)
@@ -167,25 +163,28 @@ fun LoginScreen(
                             }
                         }
                     } else {
-                        // Pantalla de Registro - completar perfil
+                        // ✅ Pantalla de Registro con datos prellenados
                         RegistrationSection(
                             onCompleteRegistration = onCompleteRegistration,
                             errorMsg = errorMsg,
                             selectedDate = selectedDate,
                             onDateSelected = { selectedDate = it },
                             onShowDatePicker = { showDatePicker = true },
-                            // ✅ NUEVOS PARÁMETROS:
                             initialEmail = email,
                             initialPassword = password,
                             onEmailChange = onEmailChange,
-                            onPasswordChange = onPasswordChange
+                            onPasswordChange = onPasswordChange,
+                            // ✅ NUEVOS: Datos prellenados de Google
+                            prefilledFirstName = prefilledFirstName,
+                            prefilledLastName = prefilledLastName,
+                            isGoogleSignIn = isGoogleSignIn
                         )
                     }
                 }
             }
-
         }
-        // DatePicker de pantalla completa - FUERA del Surface
+
+        // DatePicker de pantalla completa
         AnimatedVisibility(
             visible = showDatePicker,
             enter = slideInVertically(
@@ -211,7 +210,6 @@ fun LoginScreen(
         }
     }
 }
-
 @Composable
 private fun RegistrationSection(
     onCompleteRegistration: (String, String, LocalDate, Gender, UserRole) -> Unit,
@@ -222,17 +220,22 @@ private fun RegistrationSection(
     initialEmail: String = "",
     initialPassword: String = "",
     onEmailChange: (String) -> Unit = {},
-    onPasswordChange: (String) -> Unit = {}
+    onPasswordChange: (String) -> Unit = {},
+    // ✅ NUEVOS PARÁMETROS
+    prefilledFirstName: String = "",
+    prefilledLastName: String = "",
+    isGoogleSignIn: Boolean = false
 ) {
     var email by remember { mutableStateOf(initialEmail) }
     var password by remember { mutableStateOf(initialPassword) }
-    var firstName by remember { mutableStateOf("") }
-    var lastName by remember { mutableStateOf("") }
+    var firstName by remember { mutableStateOf(prefilledFirstName) }
+    var lastName by remember { mutableStateOf(prefilledLastName) }
     var selectedGender by remember { mutableStateOf<Gender?>(null) }
     var selectedUserType by remember { mutableStateOf<UserRole?>(null) }
 
+    // ✅ Validación mejorada para Google Sign-In
     val isFormValid = email.isNotBlank() &&
-            password.isNotBlank() &&
+            (isGoogleSignIn || password.isNotBlank()) && // No requerir password para Google
             firstName.isNotBlank() &&
             lastName.isNotBlank() &&
             selectedDate != null &&
@@ -244,12 +247,12 @@ private fun RegistrationSection(
         unfocusedBorderColor = Color.Gray,
         cursorColor = traiBlue,
         textColor = Color.Black,
-        focusedLabelColor = traiBlue,           // Label cuando tiene foco
-        unfocusedLabelColor = Color.Black,      // Label cuando no tiene foco
-        placeholderColor = Color.Gray,          // Placeholder más suave
-        disabledLabelColor = Color.Black,       // Label cuando está deshabilitado
-        errorLabelColor = Color.Red,            // Label cuando hay error
-        backgroundColor = Color.Transparent     // Fondo transparente
+        focusedLabelColor = traiBlue,
+        unfocusedLabelColor = Color.Black,
+        placeholderColor = Color.Gray,
+        disabledLabelColor = Color.Black,
+        errorLabelColor = Color.Red,
+        backgroundColor = Color.Transparent
     )
 
     LazyColumn(
@@ -257,24 +260,26 @@ private fun RegistrationSection(
             .fillMaxSize()
             .padding(horizontal = 8.dp),
         verticalArrangement = Arrangement.spacedBy(10.dp),
-        contentPadding = PaddingValues(
-            bottom = 50.dp
-        )
+        contentPadding = PaddingValues(bottom = 50.dp)
     ) {
         item {
             Text(
-                text = "Completa tu perfil",
+                text = if (isGoogleSignIn) "Completa tu perfil Google" else "Completa tu perfil",
                 style = MaterialTheme.typography.headlineSmall,
                 color = Black,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
         }
+
+        // ✅ Email (solo lectura para Google Sign-In)
         item {
             OutlinedTextField(
                 value = email,
                 onValueChange = { newEmail ->
-                    email = newEmail
-                    onEmailChange(newEmail) // ✅ Propagar el cambio al padre
+                    if (!isGoogleSignIn) { // Solo editable si no es Google
+                        email = newEmail
+                        onEmailChange(newEmail)
+                    }
                 },
                 label = {
                     Text(
@@ -284,29 +289,35 @@ private fun RegistrationSection(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
+                enabled = !isGoogleSignIn, // Deshabilitado para Google
                 colors = defaultColors
             )
         }
 
-        item {
-            OutlinedTextField(
-                value = password,
-                onValueChange = { newPassword ->
-                    password = newPassword
-                    onPasswordChange(newPassword) // ✅ Propagar el cambio al padre
-                },
-                label = {
-                    Text(
-                        text = "Contraseña",
-                        color = if (password.isEmpty()) Color.Black else traiBlue
-                    )
-                },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true,
-                visualTransformation = PasswordVisualTransformation(),
-                colors = defaultColors
-            )
+        // ✅ Password (oculto para Google Sign-In)
+        if (!isGoogleSignIn) {
+            item {
+                OutlinedTextField(
+                    value = password,
+                    onValueChange = { newPassword ->
+                        password = newPassword
+                        onPasswordChange(newPassword)
+                    },
+                    label = {
+                        Text(
+                            text = "Contraseña",
+                            color = if (password.isEmpty()) Color.Black else traiBlue
+                        )
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    visualTransformation = PasswordVisualTransformation(),
+                    colors = defaultColors
+                )
+            }
         }
+
+        // ✅ Nombre (prellenado si viene de Google)
         item {
             OutlinedTextField(
                 value = firstName,
@@ -314,19 +325,20 @@ private fun RegistrationSection(
                 label = {
                     Text(
                         text = "Nombre",
-                        color = if (firstName.isEmpty()) Color.Black else traiBlue // Negro cuando vacío, azul cuando tiene contenido
+                        color = if (firstName.isEmpty()) Color.Black else traiBlue
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = defaultColors,
-                keyboardOptions = KeyboardOptions.Default.copy( // ✅ AÑADIR: Configuración del teclado
+                keyboardOptions = KeyboardOptions.Default.copy(
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Done
                 ),
             )
         }
 
+        // ✅ Apellido (prellenado si viene de Google)
         item {
             OutlinedTextField(
                 value = lastName,
@@ -334,13 +346,13 @@ private fun RegistrationSection(
                 label = {
                     Text(
                         text = "Apellido",
-                        color = if (lastName.isEmpty()) Color.Black else traiBlue // Negro cuando vacío, azul cuando tiene contenido
+                        color = if (lastName.isEmpty()) Color.Black else traiBlue
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 colors = defaultColors,
-                keyboardOptions = KeyboardOptions.Default.copy( // ✅ AÑADIR: Configuración del teclado
+                keyboardOptions = KeyboardOptions.Default.copy(
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Done
                 ),
@@ -350,7 +362,7 @@ private fun RegistrationSection(
         item {
             DatePickerSection(
                 selectedDate = selectedDate,
-                onDateSelected = onDateSelected,  // No se usa aquí, pero mantenemos compatibilidad
+                onDateSelected = onDateSelected,
                 onShowDatePicker = onShowDatePicker,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -443,7 +455,7 @@ private fun RegistrationSection(
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Text(
-                    text = "Completar Registro",
+                    text = if (isGoogleSignIn) "Completar Registro con Google" else "Completar Registro",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold
                 )
@@ -452,16 +464,17 @@ private fun RegistrationSection(
 
         item {
             Text(
-                text = "Todos los campos son obligatorios",
+                text = if (isGoogleSignIn)
+                    "Completa los campos restantes para finalizar tu registro"
+                else
+                    "Todos los campos son obligatorios",
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray,
                 modifier = Modifier.padding(top = 8.dp)
             )
         }
     }
-
 }
-
 @Composable
 private fun SocialMediaSection(
     onGoogleClick: () -> Unit,

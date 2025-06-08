@@ -1,5 +1,7 @@
 package com.develop.traiscore.presentation.navigation
 
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.height
 import androidx.compose.material3.Icon
 import androidx.compose.material3.NavigationBar
@@ -11,11 +13,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import com.develop.traiscore.presentation.components.NavItem
-import com.develop.traiscore.presentation.theme.navbarDay
-import com.develop.traiscore.presentation.theme.primaryBlack
-import com.develop.traiscore.presentation.theme.traiBlue
 import androidx.compose.foundation.layout.size
-
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.unit.sp
+import com.develop.traiscore.presentation.theme.TraiScoreTheme
+import com.develop.traiscore.presentation.theme.tsColors
 
 
 @Composable
@@ -27,45 +30,59 @@ fun BottomNavigationBar(
 ) {
     NavigationBar(
         modifier = modifier.height(100.dp),
-        containerColor = navbarDay,
-        contentColor = Color.Black
+        containerColor = MaterialTheme.tsColors.backgroundBottomColor,
+        contentColor = MaterialTheme.tsColors.primaryText
     ) {
         navItemList.forEachIndexed { index, navItem ->
             NavigationBarItem(
                 selected = selectedIndex == index,
                 onClick = { onItemClick(index) },
                 icon = {
-                    when {
-                        navItem.imageVector != null -> {
-                            Icon(
-                                imageVector = navItem.imageVector,
-                                contentDescription = navItem.label,
-                                tint = if (selectedIndex == index) traiBlue else primaryBlack,
-                                modifier = Modifier.size(24.dp) // Tamaño consistente
-                            )
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.spacedBy((-1).dp) // Ajusta este valor
+                    ) {
+                        when {
+                            navItem.imageVector != null -> {
+                                Icon(
+                                    imageVector = navItem.imageVector,
+                                    contentDescription = navItem.label,
+                                    tint = if (selectedIndex == index)
+                                        MaterialTheme.tsColors.ledCyan
+                                    else
+                                        MaterialTheme.tsColors.secondaryText,
+                                    modifier = Modifier.size(TraiScoreTheme.dimens.iconSizeSmall)
+                                )
+                            }
+                            navItem.painter != null -> {
+                                Icon(
+                                    painter = navItem.painter,
+                                    contentDescription = navItem.label,
+                                    tint = if (selectedIndex == index)
+                                        MaterialTheme.tsColors.ledCyan
+                                    else
+                                        MaterialTheme.tsColors.secondaryText,
+                                    modifier = Modifier.size(TraiScoreTheme.dimens.iconSizeSmall)
+                                )
+                            }
                         }
-                        navItem.painter != null -> {
-                            Icon(
-                                painter = navItem.painter,
-                                contentDescription = navItem.label,
-                                tint = if (selectedIndex == index) traiBlue else primaryBlack,
-                                modifier = Modifier.size(24.dp) // Tamaño consistente
+                        // Solo mostrar texto si está seleccionado
+                        if (selectedIndex == index) {
+                            Text(
+                                text = navItem.label,
+                                color = MaterialTheme.tsColors.ledCyan,
+                                fontSize = 12.sp
                             )
                         }
                     }
                 },
-                label = {
-                    Text(
-                        text = navItem.label,
-                        color = if (selectedIndex == index) traiBlue else primaryBlack,
-                    )
-                },
+
                 alwaysShowLabel = false,
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = traiBlue,
-                    unselectedIconColor = primaryBlack,
-                    selectedTextColor = traiBlue,
-                    unselectedTextColor = primaryBlack,
+                    selectedIconColor = MaterialTheme.tsColors.primaryText,
+                    unselectedIconColor = MaterialTheme.tsColors.secondaryText,
+                    selectedTextColor = MaterialTheme.tsColors.primaryText,
+                    unselectedTextColor = MaterialTheme.tsColors.secondaryText,
                     indicatorColor = Color.Transparent
                 )
             )

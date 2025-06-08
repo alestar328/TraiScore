@@ -20,8 +20,8 @@ android {
         applicationId = "com.develop.traiscore"
         minSdk = 30
         targetSdk = 34
-        versionCode = 2
-        versionName = "1.0"
+        versionCode = 9
+        versionName = "1.0.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -64,10 +64,16 @@ android {
 }
 
 dependencies {
+
+
+    implementation ("androidx.datastore:datastore-preferences:1.1.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")
+    implementation("androidx.compose.runtime:runtime-livedata:1.8.2")
+
     implementation("io.coil-kt.coil3:coil-compose:3.2.0")
     implementation(libs.gson)
     implementation("androidx.credentials:credentials:1.5.0")
-    implementation("androidx.credentials:credentials-play-services-auth:1.5.0")
+    implementation(libs.androidx.credentials.play.services.auth)
     implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
     implementation("com.google.android.gms:play-services-auth:21.3.0")
     implementation(libs.androidx.paging.common.android)

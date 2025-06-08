@@ -1,6 +1,7 @@
 package com.develop.traiscore.presentation.components
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,6 +44,7 @@ fun WorkoutCard(
             .fillMaxWidth()
             .background(color = Color.DarkGray)
             .padding(5.dp)
+            .clickable { onEditClick() }
     ) {
         Column(
             modifier = Modifier.fillMaxWidth()
@@ -51,7 +53,8 @@ fun WorkoutCard(
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
                     .height(30.dp)
             ) {
                 Text(
@@ -60,13 +63,16 @@ fun WorkoutCard(
                     color = Color.White,
                     fontSize = 13.sp
                 )
-                Row {
-                    IconButton(onClick = onEditClick) {
-                        Icon(Icons.Default.Edit, contentDescription = "Edit", tint = Color.Yellow ,  modifier = Modifier.size(17.dp))
-                    }
-                    IconButton(onClick = onDeleteClick) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete", tint = Color.Red,  modifier = Modifier.size(17.dp))
-                    }
+
+
+                IconButton(onClick = onDeleteClick) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = Color.Red,
+                        modifier = Modifier.size(17.dp)
+                    )
+
                 }
             }
             // Detalles del ejercicio
@@ -113,7 +119,10 @@ fun WorkoutCard(
                 }
 
                 Text(
-                    text = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(workout.timestamp),
+                    text = SimpleDateFormat(
+                        "dd/MM/yyyy",
+                        Locale.getDefault()
+                    ).format(workout.timestamp),
                     fontSize = 11.sp,
                     color = Color.White,
                     modifier = Modifier.padding(start = 8.dp)
@@ -123,6 +132,7 @@ fun WorkoutCard(
         }
     }
 }
+
 @Preview(showBackground = true)
 @Composable
 fun WorkoutCardPreview() {

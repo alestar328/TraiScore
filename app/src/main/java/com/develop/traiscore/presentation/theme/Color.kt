@@ -31,7 +31,39 @@ val BlueGray = Color(0xFF334155)
 
 val traiOrange = Color(0xFFFFA519)
 
+object ColorUtils {
+    /**
+     * Crea un Color desde valores RGB individuales (0-255)
+     */
+    fun Color.Companion.fromRGB(red: Int, green: Int, blue: Int): Color {
+        require(red in 0..255) { "Invalid red component" }
+        require(green in 0..255) { "Invalid green component" }
+        require(blue in 0..255) { "Invalid blue component" }
+        return Color(red = red / 255f, green = green / 255f, blue = blue / 255f)
+    }
 
+    /**
+     * Crea un Color desde un valor RGB hexadecimal
+     */
+    fun Color.Companion.fromRGB(rgb: Int): Color {
+        val red = (rgb shr 16) and 0xFF
+        val green = (rgb shr 8) and 0xFF
+        val blue = rgb and 0xFF
+        return Color(red = red / 255f, green = green / 255f, blue = blue / 255f)
+    }
+
+    /**
+     * Crea un Color desde una cadena hexadecimal
+     */
+    fun Color.Companion.fromHex(hex: String): Color {
+        val hexSanitized = hex.trim().removePrefix("#")
+        val rgb = hexSanitized.toLong(16)
+        val red = ((rgb and 0xFF0000) shr 16) / 255f
+        val green = ((rgb and 0x00FF00) shr 8) / 255f
+        val blue = (rgb and 0x0000FF) / 255f
+        return Color(red = red, green = green, blue = blue)
+    }
+}
 val ColorScheme.focusedTextFieldText
     @Composable
     get() = if(isSystemInDarkTheme()) Color.White else Color.Black

@@ -17,6 +17,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -53,7 +54,8 @@ import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 @Composable
 fun SettingsScreen(
     modifier: Modifier = Modifier,
-    onBack: () -> Unit = {}
+    onBack: () -> Unit = {},
+    onNavigateToScreenMode: () -> Unit = {}
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val viewModel: AddExerciseViewModel = hiltViewModel()
@@ -128,6 +130,11 @@ fun SettingsScreen(
                     icon = { Icon(Icons.Default.Person, contentDescription = "Datos personales", tint = Color.Cyan) },
                     label = "Datos personales",
                     onClick = { /* TODO */ }
+                )
+                SettingsOptionRow(
+                    icon = { Icon(Icons.Default.Build, contentDescription = "Modo", tint = Color.Cyan) },
+                    label = "Cambiar modo de pantalla",
+                    onClick = { onNavigateToScreenMode()}
                 )
             }
 

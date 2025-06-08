@@ -23,7 +23,7 @@ fun CircleDot(
 ){
     Box(
         modifier = modifier
-            .size(TraiScoreTheme.dimens.iconSizeSmall)
+            .size(TraiScoreTheme.dimens.iconSizeNormal)
             .clip(shape = CircleShape)
             .background(color)
     ){

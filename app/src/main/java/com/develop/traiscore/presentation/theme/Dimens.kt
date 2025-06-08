@@ -7,7 +7,7 @@ data class Dimens(
     val borderNormal: Dp = 4.dp,
     val buttonHeightNormal: Dp = 56.dp,
     val iconSizeSmall: Dp = 24.dp,
-    val iconSizeNormal: Dp = 36.dp,
+    val iconSizeNormal: Dp = 30.dp,
     val paddingSmall: Dp = 4.dp,
     val paddingNormal: Dp = 8.dp,
     val paddingMedium: Dp = 16.dp,
