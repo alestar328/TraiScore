@@ -361,12 +361,6 @@ fun StatScreen(
                                         )
                                     }
                                     Column {
-                                        Text(
-                                            text = "Progreso General:",
-                                            style = MaterialTheme.typography.titleLarge,
-                                            color = Color.White,
-                                            modifier = Modifier.padding(bottom = 8.dp)
-                                        )
 
                                         if (isLoadingRadarData) {
                                             Box(
@@ -395,8 +389,8 @@ fun StatScreen(
                                             ProgressRadarChart(
                                                 radarData = radarChartData!!,
                                                 modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(350.dp)
+                                                    .fillMaxWidth(),
+
                                             )
                                         } else {
                                             Box(

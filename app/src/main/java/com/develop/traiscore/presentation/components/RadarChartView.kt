@@ -1,6 +1,7 @@
 package com.develop.traiscore.presentation.components
 
 import android.text.TextPaint
+import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -8,11 +9,14 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -28,6 +32,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.develop.traiscore.domain.model.ExerciseProgressData
 import com.develop.traiscore.domain.model.RadarChartData
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.theme.traiOrange
@@ -59,17 +64,18 @@ fun ProgressRadarChart(
         // Radar Chart
         Box(
             modifier = Modifier
-                .size(280.dp)
+                .fillMaxWidth() 
+                .height(250.dp) // ✅ Altura fija rectangular, no cuadrado
                 .clip(RoundedCornerShape(12.dp))
                 .background(Color.DarkGray.copy(alpha = 0.3f))
-                .padding(16.dp),
+                .padding(12.dp), // ✅ Padding interno
             contentAlignment = Alignment.Center
         ) {
             Canvas(modifier = Modifier.fillMaxSize()) {
                 val centerX = size.width / 2
                 val centerY = size.height / 2
                 val centerPoint = Offset(centerX, centerY)
-                val radius = min(size.width, size.height) / 2 - 60.dp.toPx()
+                val radius = min(size.width, size.height) / 2 - 40.dp.toPx() // ✅ REDUCIR margen de 60dp a 40dp
 
                 // Dibujar grilla de fondo (círculos concéntricos)
                 drawBackgroundGrid(centerPoint, radius)
@@ -87,11 +93,11 @@ fun ProgressRadarChart(
                 drawProgressValues(centerPoint, radius, radarData.dataPoints, radarData.categories)
             }
         }
-
-        // Leyenda de progreso
         ProgressLegend(
-            topExercises = radarData.topExercises.take(3), // Solo mostrar top 3 en leyenda
-            modifier = Modifier.padding(top = 12.dp)
+            topExercises = radarData.topExercises.take(3),
+            modifier = Modifier
+                .padding(top = 16.dp)
+                .fillMaxWidth()
         )
     }
 }
@@ -198,7 +204,7 @@ private fun DrawScope.drawCategoryLabels(
     categories: List<String>
 ) {
     val angleStep = (2 * Math.PI / categories.size).toFloat()
-    val labelRadius = radius + 25.dp.toPx()
+    val labelRadius = radius + 35.dp.toPx() // ✅ AUMENTAR de 25dp a 35dp
 
     categories.forEachIndexed { i, category ->
         val angle = angleStep * i - (Math.PI / 2).toFloat()
@@ -206,10 +212,18 @@ private fun DrawScope.drawCategoryLabels(
         val labelY = center.y + labelRadius * sin(angle)
 
         // Truncar nombres largos
-        val displayName = if (category.length > 12) {
-            "${category.take(9)}..."
-        } else {
-            category
+        val displayName = when {
+            category.length <= 15 -> category // Mostrar completo si es corto
+            category.contains(" ") -> {
+                // Si tiene espacios, dividir en líneas
+                val words = category.split(" ")
+                if (words.size >= 2) {
+                    "${words[0]}\n${words.drop(1).joinToString(" ")}"
+                } else {
+                    category
+                }
+            }
+            else -> "${category.take(12)}..." // Solo truncar si es muy largo y sin espacios
         }
 
         drawContext.canvas.nativeCanvas.drawText(
@@ -218,9 +232,11 @@ private fun DrawScope.drawCategoryLabels(
             labelY + 5,
             TextPaint().apply {
                 color = Color.White.toArgb()
-                textSize = 11.sp.toPx()
+                textSize = 12.sp.toPx()
                 isAntiAlias = true
                 textAlign = android.graphics.Paint.Align.CENTER
+                isFakeBoldText = true
+
             }
         )
     }
@@ -260,11 +276,19 @@ private fun DrawScope.drawProgressValues(
 
 @Composable
 private fun ProgressLegend(
-    topExercises: List<com.develop.traiscore.domain.model.ExerciseProgressData>,
+    topExercises: List<ExerciseProgressData>,
     modifier: Modifier = Modifier
 ) {
+    LaunchedEffect(topExercises) {
+        Log.d("RadarChart", "ProgressLegend called with ${topExercises.size} exercises")
+        topExercises.take(3).forEachIndexed { index, exercise ->
+            Log.d("RadarChart", "Exercise $index: ${exercise.exerciseName} = ${exercise.progressScore}%")
+        }
+    }
     Column(
-        modifier = modifier,
+        modifier = modifier
+            .background(Color.Red.copy(alpha = 0.1f)) // ✅ TEMPORAL: fondo rojo para debug
+            .padding(8.dp), // ✅ AGREGAR padding interno
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -274,93 +298,27 @@ private fun ProgressLegend(
             fontWeight = FontWeight.Bold
         )
 
-        topExercises.forEachIndexed { index, exercise ->
-            if (exercise.progressScore > 0) {
+        val exercisesToShow = topExercises.take(3).filter {
+            it.progressScore > 0f && !it.exerciseName.startsWith("Ejercicio")
+
+        }
+
+        if (exercisesToShow.isEmpty()) {
+            Text(
+                text = "Sin datos suficientes",
+                style = MaterialTheme.typography.bodySmall,
+                color = Color.Gray,
+                modifier = Modifier.padding(vertical = 4.dp)
+            )
+        } else {
+            exercisesToShow.forEachIndexed { index, exercise ->
                 Text(
                     text = "${index + 1}. ${exercise.exerciseName}: ${exercise.getFormattedProgressScore()}",
                     style = MaterialTheme.typography.bodySmall,
                     color = Color.White.copy(alpha = 0.8f),
-                    modifier = Modifier.padding(vertical = 1.dp)
+                    modifier = Modifier.padding(vertical = 2.dp) // ✅ AUMENTAR padding vertical
                 )
             }
         }
-    }
-}
-
-@Preview
-@Composable
-fun ProgressRadarChartPreview() {
-    // Datos de prueba
-    val mockProgressData = listOf(
-        com.develop.traiscore.domain.model.ExerciseProgressData(
-            exerciseName = "Press Banca",
-            progressScore = 85f,
-            totalVolume = 12500f,
-            maxWeight = 80f,
-            maxReps = 12,
-            workoutCount = 25,
-            averageRIR = 2.1f,
-            consistencyScore = 78f,
-            improvementRate = 65f
-        ),
-        com.develop.traiscore.domain.model.ExerciseProgressData(
-            exerciseName = "Sentadilla",
-            progressScore = 92f,
-            totalVolume = 15800f,
-            maxWeight = 120f,
-            maxReps = 10,
-            workoutCount = 30,
-            averageRIR = 1.8f,
-            consistencyScore = 88f,
-            improvementRate = 72f
-        ),
-        com.develop.traiscore.domain.model.ExerciseProgressData(
-            exerciseName = "Peso Muerto",
-            progressScore = 78f,
-            totalVolume = 11200f,
-            maxWeight = 140f,
-            maxReps = 8,
-            workoutCount = 22,
-            averageRIR = 2.5f,
-            consistencyScore = 70f,
-            improvementRate = 58f
-        ),
-        com.develop.traiscore.domain.model.ExerciseProgressData(
-            exerciseName = "Press Militar",
-            progressScore = 65f,
-            totalVolume = 6800f,
-            maxWeight = 45f,
-            maxReps = 15,
-            workoutCount = 18,
-            averageRIR = 3.2f,
-            consistencyScore = 62f,
-            improvementRate = 48f
-        ),
-        com.develop.traiscore.domain.model.ExerciseProgressData(
-            exerciseName = "Remo",
-            progressScore = 70f,
-            totalVolume = 8900f,
-            maxWeight = 65f,
-            maxReps = 12,
-            workoutCount = 20,
-            averageRIR = 2.8f,
-            consistencyScore = 68f,
-            improvementRate = 55f
-        )
-    )
-
-    val mockRadarData = com.develop.traiscore.domain.model.ExerciseProgressCalculator.generateRadarChartData(mockProgressData)
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color.Black)
-            .padding(16.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        ProgressRadarChart(
-            radarData = mockRadarData,
-            modifier = Modifier.size(400.dp)
-        )
     }
 }

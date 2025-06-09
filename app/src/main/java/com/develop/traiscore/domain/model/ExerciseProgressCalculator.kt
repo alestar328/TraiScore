@@ -96,7 +96,7 @@ object ExerciseProgressCalculator {
     }
 
     private fun calculateTotalVolume(entries: List<WorkoutEntry>): Float {
-        return entries.sumOf { (it.weight * it.reps).toDouble() }.toFloat()
+        return entries.sumOf { (it.weight * it.reps * it.series).toDouble() }.toFloat()
     }
 
     private fun calculateVolumeScore(totalVolume: Float): Float {

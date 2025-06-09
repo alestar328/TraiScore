@@ -131,16 +131,19 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                         // Convertir documentos a WorkoutEntry
                         val workoutEntries = snapshot.documents.mapNotNull { doc ->
                             try {
-                                com.develop.traiscore.data.local.entity.WorkoutEntry(
-                                    id = 0, // No importa para el cálculo
+                                val series = doc.getLong("series")?.toInt() ?: 1 // ✅ Leer series de Firebase
+                                Log.d("StatsVM", "📄 Doc: ${doc.getString("title")} - series from Firebase: $series") // ✅ Log series
+
+                                WorkoutEntry(
+                                    id = 0,
                                     uid = doc.id,
-                                    exerciseId = 0, // No importa para el cálculo
+                                    exerciseId = 0,
                                     title = doc.getString("title") ?: return@mapNotNull null,
                                     weight = doc.getDouble("weight")?.toFloat() ?: 0f,
-                                    series = 1, // Asumimos 1 serie por entrada
+                                    series = series, // ✅ Usar valor real en lugar de hardcodear 1
                                     reps = doc.getLong("reps")?.toInt() ?: 0,
                                     rir = doc.getLong("rir")?.toInt() ?: 0,
-                                    type = "", // No importa para el cálculo
+                                    type = "",
                                     timestamp = doc.getDate("timestamp") ?: return@mapNotNull null
                                 )
                             } catch (e: Exception) {
@@ -165,12 +168,18 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
         }
     }
 
-    private fun processRadarChartData(workoutEntries: List<WorkoutEntry>) {
+    private fun processRadarChartData(workoutEntries: List<com.develop.traiscore.data.local.entity.WorkoutEntry>) {
         Log.d("StatsVM", "🔄 Procesando ${workoutEntries.size} workout entries para radar")
 
         if (workoutEntries.isEmpty()) {
+            Log.d("StatsVM", "❌ No hay workout entries, generando datos vacíos")
             _radarChartData.value = ExerciseProgressCalculator.generateRadarChartData(emptyList())
             return
+        }
+
+        // ✅ LOGGING DETALLADO: Mostrar algunos ejemplos de workout entries
+        workoutEntries.take(3).forEach { entry ->
+            Log.d("StatsVM", "📄 Sample entry: ${entry.title} - ${entry.weight}kg x ${entry.reps} x ${entry.series} = ${entry.weight * entry.reps * entry.series}kg volumen")
         }
 
         // Obtener lista única de ejercicios
@@ -179,21 +188,29 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
 
         // Calcular progreso para cada ejercicio
         val progressDataList = uniqueExercises.map { exerciseName ->
+            val exerciseEntries = workoutEntries.filter { it.title == exerciseName }
+            Log.d("StatsVM", "📊 $exerciseName: ${exerciseEntries.size} entradas")
+
             ExerciseProgressCalculator.calculateProgressScore(workoutEntries, exerciseName)
         }
 
         // Log de resultados para debugging
         progressDataList.forEach { progress ->
             Log.d("StatsVM", "📈 ${progress.exerciseName}: ${progress.getFormattedProgressScore()} " +
-                    "(Vol: ${progress.getFormattedVolume()}, Max: ${progress.getFormattedMaxWeight()})")
+                    "(Vol: ${progress.getFormattedVolume()}, Max: ${progress.getFormattedMaxWeight()}, " +
+                    "Workouts: ${progress.workoutCount}, Consistency: ${"%.1f".format(progress.consistencyScore)})")
         }
 
         // Generar datos para el radar chart
         val radarData = ExerciseProgressCalculator.generateRadarChartData(progressDataList)
         _radarChartData.value = radarData
 
-        Log.d("StatsVM", "✅ Radar chart data generado: ${radarData.categories}")
+        Log.d("StatsVM", "✅ Radar chart data generado:")
+        Log.d("StatsVM", "   Categories: ${radarData.categories}")
+        Log.d("StatsVM", "   Data points: ${radarData.dataPoints}")
+        Log.d("StatsVM", "   Top exercises: ${radarData.topExercises.map { "${it.exerciseName}:${it.progressScore}" }}")
     }
+
 
     /**
      * NUEVO: Establecer el ID del usuario del cual queremos ver estadísticas
@@ -205,7 +222,7 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
         // Recargar datos para el nuevo usuario
         viewModelScope.launch {
             fetchExerciseOptions()
-            loadRadarChartData() // ✅ AGREGAR esta línea
+            loadRadarChartData()
             _selectedExercise.value?.let { exercise ->
                 loadAllProgressFor(exercise)
                 calculateTotalWeightLifted(exercise)
