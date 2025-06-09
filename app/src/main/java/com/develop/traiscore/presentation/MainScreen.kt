@@ -69,16 +69,9 @@ fun MainScreen(
     var isBottomSheetVisible by remember { mutableStateOf(false) }
     var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
 
-    val showNavBar = when (currentUserRole) {
-        UserRole.CLIENT -> !(selectedIndex == 4 &&
-                (routineScreenState is ScreenState.BODY_MEASUREMENTS_SCREEN ||
-                        routineScreenState is ScreenState.MEASUREMENTS_HISTORY_SCREEN))
+    val shouldShowNavBar = currentUserRole != null || true // Siempre mostrar
 
-        UserRole.TRAINER -> true // Siempre mostrar navbar para trainers
-        null -> false // No mostrar mientras se carga el rol
-    }
 
-    val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
     LaunchedEffect(Unit) {
         UserRoleManager.getCurrentUserRole { role ->
@@ -94,7 +87,7 @@ fun MainScreen(
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            if (showNavBar) {
+            if (shouldShowNavBar) {
                 when (currentUserRole) {
                     UserRole.TRAINER -> {
                         TrainerBottomNavigationBar(
@@ -120,7 +113,17 @@ fun MainScreen(
                     }
 
                     null -> {
-                        // Mientras se carga el rol, no mostramos navbar
+                        BottomNavigationBar(
+                            navItemList = navItemList,
+                            selectedIndex = selectedIndex,
+                            onItemClick = { index ->
+                                if (index == 2) {
+                                    isBottomSheetVisible = true
+                                } else {
+                                    selectedIndex = index
+                                }
+                            }
+                        )
                     }
                 }
             }

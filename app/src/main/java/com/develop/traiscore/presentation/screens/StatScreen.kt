@@ -58,6 +58,7 @@ import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.CircularProgressView
 import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.LineChartView
+import com.develop.traiscore.presentation.components.ProgressRadarChart
 import com.develop.traiscore.presentation.components.ToggleButtonRowStats
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
@@ -98,6 +99,10 @@ fun StatScreen(
     var bodyChartData by remember { mutableStateOf<List<Pair<String, Float>>>(emptyList()) }
     var isLoadingBodyData by remember { mutableStateOf(false) }
 
+    var showAchievements by remember { mutableStateOf(false) }
+
+    val radarChartData by viewModel.radarChartData.collectAsState()
+    val isLoadingRadarData by viewModel.isLoadingRadarData.collectAsState()
 
     LaunchedEffect(clientId) {
         clientId?.let { id ->
@@ -164,6 +169,7 @@ fun StatScreen(
                             modifier = Modifier
                                 .size(30.dp) // Igualado al tamaño del FloatingActionButton
                                 .clickable {
+                                    showAchievements = true
                                 },
                             contentAlignment = Alignment.Center
                         ) {
@@ -171,7 +177,7 @@ fun StatScreen(
                                 painter = painterResource(id = R.drawable.trophy_icon),
                                 contentDescription = "Logros",
                                 tint = MaterialTheme.tsColors.ledCyan,
-                                modifier = Modifier.size(22.dp) // Ajustado proporcionalmente
+                                modifier = Modifier.size(22.dp)
                             )
                         }
 
@@ -200,7 +206,6 @@ fun StatScreen(
                         onTabSelected = { selectedTab = it },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = TraiScoreTheme.dimens.paddingMedium)
                             .padding(top = 8.dp)
                             .animateContentSize(
                                 animationSpec = tween(300)
@@ -315,6 +320,7 @@ fun StatScreen(
                                                 backgroundColor = traiOrange
                                             )
                                         }
+
                                     }
 
                                     // Gráfica Por peso
@@ -354,35 +360,80 @@ fun StatScreen(
                                                 .padding(horizontal = 0.dp)
                                         )
                                     }
-
-                                    // Resumen total
-                                    Column(
-                                        modifier = Modifier
-                                            .fillMaxWidth()
-                                            .background(Color.DarkGray, RoundedCornerShape(8.dp))
-                                            .padding(16.dp)
-                                    ) {
+                                    Column {
                                         Text(
-                                            text = "Haz levantado: $totalKg kg",
+                                            text = "Progreso General:",
                                             style = MaterialTheme.typography.titleLarge,
                                             color = Color.White,
                                             modifier = Modifier.padding(bottom = 8.dp)
                                         )
 
-                                        Text(
-                                            text = "Haz levantado: Un elefante!",
-                                            style = MaterialTheme.typography.titleLarge,
-                                            color = Color.White,
-                                            modifier = Modifier.padding(bottom = 8.dp)
-                                        )
+                                        if (isLoadingRadarData) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(300.dp)
+                                                    .background(
+                                                        Color.DarkGray,
+                                                        RoundedCornerShape(8.dp)
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Column(
+                                                    horizontalAlignment = Alignment.CenterHorizontally
+                                                ) {
+                                                    CircularProgressIndicator(color = traiBlue)
+                                                    Spacer(modifier = Modifier.height(8.dp))
+                                                    Text(
+                                                        "Calculando progreso...",
+                                                        color = Color.White,
+                                                        style = MaterialTheme.typography.bodyMedium
+                                                    )
+                                                }
+                                            }
+                                        } else if (radarChartData != null) {
+                                            ProgressRadarChart(
+                                                radarData = radarChartData!!,
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(350.dp)
+                                            )
+                                        } else {
+                                            Box(
+                                                modifier = Modifier
+                                                    .fillMaxWidth()
+                                                    .height(300.dp)
+                                                    .background(
+                                                        Color.DarkGray,
+                                                        RoundedCornerShape(8.dp)
+                                                    ),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Column(
+                                                    horizontalAlignment = Alignment.CenterHorizontally
+                                                ) {
+                                                    Text(
+                                                        text = "📊",
+                                                        style = MaterialTheme.typography.headlineLarge
+                                                    )
+                                                    Spacer(modifier = Modifier.height(8.dp))
+                                                    Text(
+                                                        "Sin datos de progreso",
+                                                        color = Color.White,
+                                                        style = MaterialTheme.typography.titleMedium
+                                                    )
+                                                    Text(
+                                                        "Registra más entrenamientos para ver tu progreso",
+                                                        color = Color.Gray,
+                                                        style = MaterialTheme.typography.bodyMedium,
+                                                        textAlign = TextAlign.Center
+                                                    )
+                                                }
+                                            }
 
-                                        Text(
-                                            text = "Energía consumida: 1000 kCal",
-                                            style = MaterialTheme.typography.titleLarge,
-                                            color = Color.White,
-                                            modifier = Modifier.padding(bottom = 8.dp)
-                                        )
+                                        }
                                     }
+
                                 }
                             }
                         }
@@ -566,6 +617,11 @@ fun StatScreen(
                 }
 
             }
+        )
+        AchivementsUI(
+            isVisible = showAchievements,
+            onDismiss = { showAchievements = false },
+            clientId = clientId // Pasar el clientId para mostrar logros del cliente correcto
         )
     }
 }

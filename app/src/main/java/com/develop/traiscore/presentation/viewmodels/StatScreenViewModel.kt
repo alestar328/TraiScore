@@ -4,6 +4,9 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.develop.traiscore.core.TimeRange
+import com.develop.traiscore.data.local.entity.WorkoutEntry
+import com.develop.traiscore.domain.model.ExerciseProgressCalculator
+import com.develop.traiscore.domain.model.RadarChartData
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
@@ -66,6 +69,12 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
     private val _errorState = MutableStateFlow<String?>(null)
     val errorState: StateFlow<String?> = _errorState
 
+    private val _radarChartData = MutableStateFlow<RadarChartData?>(null)
+    val radarChartData: StateFlow<RadarChartData?> = _radarChartData
+
+    private val _isLoadingRadarData = MutableStateFlow(false)
+    val isLoadingRadarData: StateFlow<Boolean> = _isLoadingRadarData
+
     init {
         viewModelScope.launch {
             // Inicializar con el usuario actual si no se especifica otro
@@ -75,6 +84,8 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
 
             // Cargar ejercicios primero
             fetchExerciseOptions()
+            loadRadarChartData()
+
 
             // Esperar a que se carguen los ejercicios antes de seleccionar el último
             _exerciseOptions
@@ -98,6 +109,92 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
         }
     }
 
+    fun loadRadarChartData() {
+        val userId = getTargetUserId()
+        if (userId == null) {
+            Log.e("StatsVM", "Usuario no identificado para radar chart")
+            return
+        }
+
+        _isLoadingRadarData.value = true
+        Log.d("StatsVM", "🎯 Cargando datos para radar chart - usuario: $userId")
+
+        viewModelScope.launch {
+            try {
+                db.collection("users")
+                    .document(userId)
+                    .collection("workoutEntries")
+                    .get()
+                    .addOnSuccessListener { snapshot ->
+                        Log.d("StatsVM", "📊 Documentos para radar: ${snapshot.size()}")
+
+                        // Convertir documentos a WorkoutEntry
+                        val workoutEntries = snapshot.documents.mapNotNull { doc ->
+                            try {
+                                com.develop.traiscore.data.local.entity.WorkoutEntry(
+                                    id = 0, // No importa para el cálculo
+                                    uid = doc.id,
+                                    exerciseId = 0, // No importa para el cálculo
+                                    title = doc.getString("title") ?: return@mapNotNull null,
+                                    weight = doc.getDouble("weight")?.toFloat() ?: 0f,
+                                    series = 1, // Asumimos 1 serie por entrada
+                                    reps = doc.getLong("reps")?.toInt() ?: 0,
+                                    rir = doc.getLong("rir")?.toInt() ?: 0,
+                                    type = "", // No importa para el cálculo
+                                    timestamp = doc.getDate("timestamp") ?: return@mapNotNull null
+                                )
+                            } catch (e: Exception) {
+                                Log.w("StatsVM", "Error procesando workout entry: ${doc.id}", e)
+                                null
+                            }
+                        }
+
+                        processRadarChartData(workoutEntries)
+                        _isLoadingRadarData.value = false
+                    }
+                    .addOnFailureListener { exception ->
+                        Log.e("StatsVM", "Error cargando datos para radar chart", exception)
+                        _isLoadingRadarData.value = false
+                        _radarChartData.value = null
+                    }
+            } catch (exception: Exception) {
+                Log.e("StatsVM", "Error inesperado en radar chart", exception)
+                _isLoadingRadarData.value = false
+                _radarChartData.value = null
+            }
+        }
+    }
+
+    private fun processRadarChartData(workoutEntries: List<WorkoutEntry>) {
+        Log.d("StatsVM", "🔄 Procesando ${workoutEntries.size} workout entries para radar")
+
+        if (workoutEntries.isEmpty()) {
+            _radarChartData.value = ExerciseProgressCalculator.generateRadarChartData(emptyList())
+            return
+        }
+
+        // Obtener lista única de ejercicios
+        val uniqueExercises = workoutEntries.map { it.title }.distinct()
+        Log.d("StatsVM", "🏋️ Ejercicios únicos encontrados: $uniqueExercises")
+
+        // Calcular progreso para cada ejercicio
+        val progressDataList = uniqueExercises.map { exerciseName ->
+            ExerciseProgressCalculator.calculateProgressScore(workoutEntries, exerciseName)
+        }
+
+        // Log de resultados para debugging
+        progressDataList.forEach { progress ->
+            Log.d("StatsVM", "📈 ${progress.exerciseName}: ${progress.getFormattedProgressScore()} " +
+                    "(Vol: ${progress.getFormattedVolume()}, Max: ${progress.getFormattedMaxWeight()})")
+        }
+
+        // Generar datos para el radar chart
+        val radarData = ExerciseProgressCalculator.generateRadarChartData(progressDataList)
+        _radarChartData.value = radarData
+
+        Log.d("StatsVM", "✅ Radar chart data generado: ${radarData.categories}")
+    }
+
     /**
      * NUEVO: Establecer el ID del usuario del cual queremos ver estadísticas
      * @param userId ID del cliente o null para usar el usuario actual
@@ -108,6 +205,7 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
         // Recargar datos para el nuevo usuario
         viewModelScope.launch {
             fetchExerciseOptions()
+            loadRadarChartData() // ✅ AGREGAR esta línea
             _selectedExercise.value?.let { exercise ->
                 loadAllProgressFor(exercise)
                 calculateTotalWeightLifted(exercise)
