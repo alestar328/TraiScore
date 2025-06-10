@@ -30,8 +30,8 @@ fun BottomNavigationBar(
 ) {
     NavigationBar(
         modifier = modifier.height(100.dp),
-        containerColor = MaterialTheme.tsColors.backgroundBottomColor,
-        contentColor = MaterialTheme.tsColors.primaryText
+        containerColor = MaterialTheme.colorScheme.surface,
+        contentColor = MaterialTheme.colorScheme.onSurface
     ) {
         navItemList.forEachIndexed { index, navItem ->
             NavigationBarItem(
@@ -50,7 +50,7 @@ fun BottomNavigationBar(
                                     tint = if (selectedIndex == index)
                                         MaterialTheme.tsColors.ledCyan
                                     else
-                                        MaterialTheme.tsColors.secondaryText,
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                     modifier = Modifier.size(TraiScoreTheme.dimens.iconSizeSmall)
                                 )
                             }
@@ -61,7 +61,7 @@ fun BottomNavigationBar(
                                     tint = if (selectedIndex == index)
                                         MaterialTheme.tsColors.ledCyan
                                     else
-                                        MaterialTheme.tsColors.secondaryText,
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                     modifier = Modifier.size(TraiScoreTheme.dimens.iconSizeSmall)
                                 )
                             }
@@ -80,9 +80,9 @@ fun BottomNavigationBar(
                 alwaysShowLabel = false,
                 colors = NavigationBarItemDefaults.colors(
                     selectedIconColor = MaterialTheme.tsColors.primaryText,
-                    unselectedIconColor = MaterialTheme.tsColors.secondaryText,
+                    unselectedIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // ✅ CAMBIO: Color adaptativo
                     selectedTextColor = MaterialTheme.tsColors.primaryText,
-                    unselectedTextColor = MaterialTheme.tsColors.secondaryText,
+                    unselectedTextColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f), // ✅ CAMBIO: Color adaptativo
                     indicatorColor = Color.Transparent
                 )
             )

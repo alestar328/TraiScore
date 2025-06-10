@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation.screens
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -8,7 +7,6 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -19,11 +17,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.*
 import com.develop.traiscore.R
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -34,16 +30,11 @@ import com.develop.traiscore.data.local.entity.ExerciseEntity
 import com.develop.traiscore.domain.model.WorkoutModel
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.data.local.entity.WorkoutWithExercise
-import com.develop.traiscore.presentation.components.CircleDot
 import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.components.WorkoutCard
 import com.develop.traiscore.presentation.components.WorkoutCardList
 import com.develop.traiscore.presentation.theme.TSStyle
-import com.develop.traiscore.presentation.theme.TSStyleColors.ledCyan
-import com.develop.traiscore.presentation.theme.navbarDay
-import com.develop.traiscore.presentation.theme.traiBackgroundDay
-import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.util.Date
@@ -120,7 +111,7 @@ fun ExercisesScreen(
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(MaterialTheme.tsColors.primaryBackgroundColor)
+                        .background(MaterialTheme.colorScheme.background)
                         .padding(top = paddingValues.calculateTopPadding())
                 ) {
                     // Barra de búsqueda
@@ -131,7 +122,7 @@ fun ExercisesScreen(
                             onItemSelected = { selectedSearch.value = it },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .background(MaterialTheme.tsColors.primaryBackgroundColor)
+                                .background(MaterialTheme.colorScheme.background)
                                 .padding(
                                     horizontal = TraiScoreTheme.dimens.paddingMedium,
                                     vertical = 4.dp
@@ -142,7 +133,7 @@ fun ExercisesScreen(
                     // Lista de entrenamientos
                     LazyColumn(
                         modifier = Modifier
-                            .background(TSStyle.primaryBackgroundColor)
+                            .background(MaterialTheme.colorScheme.background)
                             .fillMaxSize(),
                         contentPadding = PaddingValues(
                             bottom = paddingValues.calculateBottomPadding() + 100.dp
@@ -153,7 +144,7 @@ fun ExercisesScreen(
                             item {
                                 Text(
                                     text = date,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     style = MaterialTheme.typography.titleLarge,
                                     modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
                                 )
@@ -165,7 +156,7 @@ fun ExercisesScreen(
                                     onEditClick = { workout ->
                                         selectedEntry.value = workout
                                         showBottomSheet.value =
-                                            true // ✅ CAMBIO: Mostrar bottom sheet
+                                            true
                                     },
                                     onDeleteClick = { workout ->
                                         workout.uid?.let { viewModel.deleteWorkoutEntry(it) }

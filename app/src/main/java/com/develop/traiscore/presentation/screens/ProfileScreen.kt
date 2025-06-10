@@ -221,6 +221,7 @@ fun ProfileScreen(
                             modifier = Modifier
                                 .size(30.dp) // Igualado al tamaño del FloatingActionButton
                                 .clickable {
+                                    navController.navigate(NavigationRoutes.Settings.route)
                                 },
                             contentAlignment = Alignment.Center
                         ) {
