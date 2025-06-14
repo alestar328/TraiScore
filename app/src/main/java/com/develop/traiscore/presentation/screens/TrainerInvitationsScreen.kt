@@ -59,12 +59,12 @@ fun TrainerInvitationsScreen(
                         Icon(
                             Icons.Default.ArrowBack,
                             contentDescription = "Volver",
-                            tint = Color.White
+                            tint = MaterialTheme.colorScheme.onBackground
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = navbarDay
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },

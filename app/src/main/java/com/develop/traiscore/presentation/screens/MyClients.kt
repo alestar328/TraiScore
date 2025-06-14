@@ -18,6 +18,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.data.local.entity.UserEntity
 import com.develop.traiscore.presentation.components.ClientCard
+import com.develop.traiscore.presentation.components.trainers.TopBarTrainers
+import com.develop.traiscore.presentation.components.trainers.TopBarTrainersClients
+import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.theme.traiBackgroundDay
 import com.develop.traiscore.presentation.theme.traiBlue
@@ -39,47 +42,19 @@ fun MyClients(
     // automáticamente el listener en tiempo real en su init
 
     Scaffold(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = TraiScoreTheme.dimens.paddingMedium),
         topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = "Mis Clientes",
-                        color = Color.White
-                    )
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = navbarDay
-                ),
-                actions = {
-                    // Botón de actualizar
-                    IconButton(onClick = { viewModel.refreshClients() }) {
-                        Icon(
-                            Icons.Default.Refresh,
-                            contentDescription = "Actualizar",
-                            tint = Color.White
-                        )
-                    }
-                    // Botón de invitaciones
-                    IconButton(onClick = onInvitationsClick) {
-                        Icon(
-                            Icons.Default.Add,
-                            contentDescription = "Invitaciones",
-                            tint = Color.White
-                        )
-                    }
-                    // Contador de clientes
-                    Text(
-                        text = "${clients.size} clientes",
-                        color = Color.White.copy(alpha = 0.7f),
-                        fontSize = 14.sp,
-                        modifier = Modifier.padding(end = 16.dp)
-                    )
-                }
+            TopBarTrainersClients(
+                title = "Clientes",
+                clientCount = clients.size,
+                onRefreshClick = { viewModel.refreshClients() }
             )
         },
         floatingActionButton = {
             FloatingActionButton(
-                onClick = onAddClientClick,
+                onClick = onInvitationsClick,
                 containerColor = traiBlue,
                 contentColor = Color.White,
                 modifier = Modifier.navigationBarsPadding()
@@ -94,7 +69,7 @@ fun MyClients(
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(traiBackgroundDay)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
         ) {
             when {

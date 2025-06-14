@@ -66,9 +66,12 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.R
 import com.develop.traiscore.core.DefaultCategoryExer
+import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.data.firebaseData.RoutineDocument
 import com.develop.traiscore.exports.ImportRoutineViewModel
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
+import com.develop.traiscore.presentation.components.trainers.TopBarTrainers
+import com.develop.traiscore.presentation.components.trainers.TopBarTrainersRoutines
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.theme.traiBackgroundDay
@@ -86,7 +89,9 @@ fun RoutineMenuScreen(
     viewModel: RoutineViewModel,
     importViewModel: ImportRoutineViewModel = hiltViewModel(),
     screenTitle: String = "Mis Rutinas",
-    clientName: String? = null
+    clientName: String? = null,
+    userRole: UserRole = UserRole.CLIENT // Parámetro para determinar el rol del usuario
+
 
 ) {
     val context = LocalContext.current
@@ -95,7 +100,7 @@ fun RoutineMenuScreen(
     var routineToDelete by remember { mutableStateOf<Pair<Int, RoutineDocument>?>(null) }
 
     val currentTargetUser = if (viewModel.isClientMode()) {
-        viewModel.getTargetUserId() // Necesitarás hacer este método público
+        viewModel.getTargetUserId()
     } else {
         FirebaseAuth.getInstance().currentUser?.uid
     }
@@ -225,44 +230,57 @@ fun RoutineMenuScreen(
     ) {
         Scaffold(
             topBar = {
-                TraiScoreTopBar(
-                    leftIcon = {
-                        FloatingActionButton(
-                            onClick = {
-                                println("⏱️ Icono de cronometro")
-                            },
-                            modifier = Modifier.size(30.dp),
-                            containerColor = MaterialTheme.tsColors.ledCyan,
-                            contentColor = Color.White,
-                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.timer_icon),
-                                contentDescription = "Temporizador",
-                                tint = Color.Black
-                            )
-                        }
-
-                    },
-                    rightIcon = {
-                        FloatingActionButton(
-                            onClick = {
-                                filePickerLauncher.launch("*/*")
-
-                            },
-                            modifier = Modifier.size(30.dp),
-                            containerColor = MaterialTheme.tsColors.ledCyan,
-                            contentColor = Color.White,
-                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.import_icon),
-                                contentDescription = "Search",
-                                tint = Color.Black
-                            )
-                        }
+                // Usar TopBar apropiado según el rol del usuario
+                when (userRole) {
+                    UserRole.TRAINER -> {
+                        TopBarTrainersRoutines(
+                            title = screenTitle,
+                            onShareClick = {
+                                // Lógica para compartir rutinas
+                                println("🔗 Compartir rutinas")
+                                // Aquí puedes implementar la funcionalidad de compartir
+                            }
+                        )
                     }
-                )
+                    UserRole.CLIENT -> {
+                        TraiScoreTopBar(
+                            leftIcon = {
+                                FloatingActionButton(
+                                    onClick = {
+                                        println("⏱️ Icono de cronometro")
+                                    },
+                                    modifier = Modifier.size(30.dp),
+                                    containerColor = MaterialTheme.tsColors.ledCyan,
+                                    contentColor = Color.White,
+                                    elevation = FloatingActionButtonDefaults.elevation(0.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.timer_icon),
+                                        contentDescription = "Temporizador",
+                                        tint = Color.Black
+                                    )
+                                }
+                            },
+                            rightIcon = {
+                                FloatingActionButton(
+                                    onClick = {
+                                        filePickerLauncher.launch("*/*")
+                                    },
+                                    modifier = Modifier.size(30.dp),
+                                    containerColor = MaterialTheme.tsColors.ledCyan,
+                                    contentColor = Color.White,
+                                    elevation = FloatingActionButtonDefaults.elevation(0.dp)
+                                ) {
+                                    Icon(
+                                        painter = painterResource(id = R.drawable.import_icon),
+                                        contentDescription = "Importar",
+                                        tint = Color.Black
+                                    )
+                                }
+                            }
+                        )
+                    }
+                }
             },
             containerColor = Color.DarkGray,
             floatingActionButton = {

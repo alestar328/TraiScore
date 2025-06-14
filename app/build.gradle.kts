@@ -95,6 +95,7 @@ dependencies {
     implementation("androidx.compose.material3:material3:1.3.2")
     implementation("androidx.compose.material:material:1.8.1")
     implementation(libs.play.services.fido)
+    implementation(libs.firebase.storage.ktx)
 
     val lifecycle_version = "2.8.7"
 

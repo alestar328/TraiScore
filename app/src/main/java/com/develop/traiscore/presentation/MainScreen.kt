@@ -220,8 +220,8 @@ fun ContentScreen(
                                 onCreateRoutine()
                             },
                             viewModel = routineViewModel,
-                            screenTitle = "Mis Rutinas de Entrenador", // ✅ TÍTULO ESPECÍFICO PARA TRAINER
-                            clientName = null
+                            clientName = null,
+                            userRole = UserRole.TRAINER
                         )
 
                     is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
@@ -273,7 +273,8 @@ fun ContentScreen(
                         },
                         viewModel = routineViewModel,
                         screenTitle = "Mis Rutinas", // ✅ TÍTULO ESTÁNDAR
-                        clientName = null
+                        clientName = null,
+                        userRole = UserRole.CLIENT
                     )
 
                 is ScreenState.FIREBASE_ROUTINE_SCREEN -> {

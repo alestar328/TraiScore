@@ -6,6 +6,7 @@ import com.develop.traiscore.data.repository.InvitationRepository
 import com.develop.traiscore.presentation.viewmodels.MyClientsViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -29,12 +30,19 @@ object AppModule {
         return FirebaseFirestore.getInstance()
     }
 
-    // Ejemplo de otros providers que podrías tener:
+    // ← AGREGAR ESTA FUNCIÓN
+    @Provides
+    @Singleton
+    fun provideFirebaseStorage(): FirebaseStorage {
+        return FirebaseStorage.getInstance()
+    }
+
     @Provides
     @Singleton
     fun provideContext(@ApplicationContext context: Context): Context {
         return context
     }
+
     @Provides
     @Singleton
     fun provideInvitationRepository(
@@ -44,12 +52,9 @@ object AppModule {
         return InvitationRepository(firestore, auth)
     }
 
-
     @Provides
     @Singleton
     fun provideThemePreferences(context: Context): ThemePreferences {
         return ThemePreferences(context)
     }
-
-
 }

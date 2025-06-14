@@ -36,6 +36,7 @@ fun LineChartView(
     lineColor: Color = Color(0xFF00BCD4),   // un turquesa similar a Cyan
     axisColor: Color = Color.White.copy(alpha = 0.5f),
     backgroundChartColor: Color = Color.DarkGray,
+    baselineOffset: Float = 0.35f,
     modifier: Modifier = Modifier
 ) {
     val processedData = remember(dataPoints) {
@@ -45,12 +46,14 @@ fun LineChartView(
         val minV = dataPoints.minOf { it.second }
         val range = (maxV - minV).takeIf { it > 0f } ?: 1f
 
+        val effectiveArea = 1f - baselineOffset
+
         dataPoints.mapIndexed { index, (label, value) ->
             ProcessedDataPoint(
                 originalIndex = index,
                 label = label,
                 value = value,
-                normalizedValue = (value - minV) / range
+                normalizedValue = baselineOffset + ((value - minV) / range) * effectiveArea
             )
         }
     }

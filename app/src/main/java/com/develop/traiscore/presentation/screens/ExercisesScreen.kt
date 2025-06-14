@@ -1,6 +1,7 @@
 package com.develop.traiscore.presentation.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.*
@@ -20,6 +22,7 @@ import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -67,19 +70,17 @@ fun ExercisesScreen(
             topBar = {
                 TraiScoreTopBar(
                     leftIcon = {
-                        FloatingActionButton(
-                            onClick = {
-                                println("⏱️ Icono de cronometro")
-                            },
-                            modifier = Modifier.size(30.dp),
-                            containerColor = MaterialTheme.tsColors.ledCyan,
-                            contentColor = Color.White,
-                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
-                        ) {
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp) // Igualado al tamaño del FloatingActionButton
+                                .clickable {
+                                },
+                            contentAlignment = Alignment.Center
+                        )  {
                             Icon(
-                                painter = painterResource(id = R.drawable.timer_icon),
-                                contentDescription = "Temporizador",
-                                tint = Color.Black
+                                imageVector = Icons.Default.DateRange,
+                                contentDescription = "Calendario",
+                                tint = MaterialTheme.tsColors.ledCyan,
                             )
                         }
 

@@ -24,14 +24,18 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.develop.traiscore.R
 import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.presentation.MainActivity
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
+import com.develop.traiscore.presentation.components.general.ProfilePhotoComponent
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.theme.*
+import com.develop.traiscore.presentation.viewmodels.ProfileViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
@@ -49,7 +53,11 @@ data class TrainerInfo(
 fun ProfileScreen(
     navController: NavHostController,
     onMeasurementsClick: () -> Unit,
+    profileViewModel: ProfileViewModel = hiltViewModel() // ← Agregar esta línea
+
 ) {
+    val profileUiState by profileViewModel.uiState.collectAsStateWithLifecycle()
+
     val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -97,7 +105,16 @@ fun ProfileScreen(
             null
         }
     }
-
+    LaunchedEffect(Unit) {
+        profileViewModel.loadCurrentUserPhoto()
+    }
+    LaunchedEffect(profileUiState.error) {
+        profileUiState.error?.let { error ->
+            // Aquí puedes mostrar un Toast o Snackbar con el error
+            android.util.Log.e("ProfileScreen", "Error: $error")
+            profileViewModel.clearError()
+        }
+    }
     LaunchedEffect(navController.currentBackStackEntry) {
         // Obtener rol del usuario
         UserRoleManager.getCurrentUserRole { role ->
@@ -247,12 +264,12 @@ fun ProfileScreen(
 
                 // Avatar con badge en hexágono
                 Box(contentAlignment = Alignment.BottomEnd) {
-                    Image(
-                        painter = painterResource(R.drawable.user_png),
-                        contentDescription = "Foto de perfil",
-                        modifier = Modifier
-                            .size(96.dp)
-                            .clip(RoundedCornerShape(48.dp))
+                    ProfilePhotoComponent(
+                        currentPhotoUrl = profileUiState.photoUrl,
+                        isUploading = profileUiState.isUploadingPhoto,
+                        onPhotoSelected = { uri ->
+                            profileViewModel.uploadProfilePhoto(uri)
+                        }
                     )
                     HexagonBadge(
                         number = "1",
