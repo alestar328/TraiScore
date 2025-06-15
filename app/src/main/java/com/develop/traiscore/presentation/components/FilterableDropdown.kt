@@ -1,12 +1,9 @@
 package com.develop.traiscore.presentation.components
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
@@ -17,8 +14,9 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.PopupProperties
 import com.develop.traiscore.presentation.theme.traiBlue
 import java.text.Normalizer
 
@@ -30,7 +28,10 @@ fun FilterableDropdown(
     selectedValue: String,
     placeholder: String = "",
     modifier: Modifier = Modifier,
-    maxDisplayedItems: Int = 6
+    maxDisplayedItems: Int = 6,
+    textFieldHeight: Dp? = null,
+    textSize: TextUnit? = null,
+    contentPadding: PaddingValues? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
     var filterText by remember { mutableStateOf(TextFieldValue("")) }
@@ -85,22 +86,27 @@ fun FilterableDropdown(
             value = filterText,
             onValueChange = { newValue ->
                 filterText = newValue
-                // **CAMBIO 3**: Expandir solo cuando hay texto y resultados
-                expanded = newValue.text.isNotEmpty() &&
-                        items.any { item ->
-                            calculateRelevanceScore(
-                                normalizeText(item.lowercase()),
-                                normalizeText(newValue.text.lowercase()),
-                                item.lowercase(),
-                                newValue.text.lowercase()
-                            ) > 0
-                        }
+                userIsTyping = true // **CLAVE**: Siempre marcar que está escribiendo
+                expanded = true // **CLAVE**: Siempre expandir cuando escribe
+            },
+            textStyle = if (textSize != null) {
+                LocalTextStyle.current.copy(fontSize = textSize)
+            } else {
+                LocalTextStyle.current
             },
             placeholder = {
-                if (filterText.text.isEmpty()) Text(placeholder)
+                if (filterText.text.isEmpty()) {
+                    Text(
+                        text = placeholder,
+                        style = if (textSize != null) {
+                            LocalTextStyle.current.copy(fontSize = textSize)
+                        } else {
+                            LocalTextStyle.current
+                        }
+                    )
+                }
             },
             trailingIcon = {
-                // **CAMBIO**: Simplificar - siempre mostrar el icono
                 ExposedDropdownMenuDefaults.TrailingIcon(expanded = shouldShowDropdown)
             },
             singleLine = true,
@@ -120,6 +126,20 @@ fun FilterableDropdown(
             modifier = Modifier
                 .menuAnchor()
                 .fillMaxWidth()
+                .then(
+                    if (textFieldHeight != null) {
+                        Modifier.height(textFieldHeight)
+                    } else {
+                        Modifier
+                    }
+                )
+                .then(
+                    if (contentPadding != null) {
+                        Modifier.padding(contentPadding)
+                    } else {
+                        Modifier
+                    }
+                ) // **NUEVO**: Aplicar padding externo
         )
 
         // **SOLUCIÓN**: Usar ExposedDropdownMenu que maneja mejor el teclado

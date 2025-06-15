@@ -1,5 +1,10 @@
 package com.develop.traiscore.presentation.screens
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.with
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -17,7 +22,6 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.*
-import com.develop.traiscore.R
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -25,7 +29,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -37,23 +40,25 @@ import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.components.WorkoutCard
 import com.develop.traiscore.presentation.components.WorkoutCardList
-import com.develop.traiscore.presentation.theme.TSStyle
 import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.util.Date
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun ExercisesScreen(
     viewModel: WorkoutEntryViewModel = hiltViewModel()
 ) {
     val entries = viewModel.entries.value
     val showBottomSheet =
-        remember { mutableStateOf(false) } // ✅ CAMBIO: showDialog → showBottomSheet
+        remember { mutableStateOf(false) }
     val selectedEntry = remember { mutableStateOf<WorkoutEntry?>(null) }
     val groupedEntries = viewModel.groupWorkoutsByDate(entries)
     val showSearchBar = remember { mutableStateOf(false) }
     val selectedSearch = remember { mutableStateOf("") }
+
+    val showCalendarView = remember { mutableStateOf(false) }
+
 
     val filteredGrouped = if (selectedSearch.value.isNotBlank()) {
         viewModel.groupWorkoutsByDateFiltered(entries, selectedSearch.value)
@@ -72,8 +77,9 @@ fun ExercisesScreen(
                     leftIcon = {
                         Box(
                             modifier = Modifier
-                                .size(30.dp) // Igualado al tamaño del FloatingActionButton
+                                .size(30.dp)
                                 .clickable {
+                                    showCalendarView.value = !showCalendarView.value
                                 },
                             contentAlignment = Alignment.Center
                         )  {
@@ -131,38 +137,65 @@ fun ExercisesScreen(
                         )
                     }
 
-                    // Lista de entrenamientos
-                    LazyColumn(
-                        modifier = Modifier
-                            .background(MaterialTheme.colorScheme.background)
-                            .fillMaxSize(),
-                        contentPadding = PaddingValues(
-                            bottom = paddingValues.calculateBottomPadding() + 100.dp
-                        ),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        filteredGrouped.forEach { (date, dailyWorkouts) ->
-                            item {
-                                Text(
-                                    text = date,
-                                    color = MaterialTheme.colorScheme.onBackground,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
-                                )
-                            }
-
-                            item {
-                                WorkoutCardList(
-                                    workouts = dailyWorkouts,
-                                    onEditClick = { workout ->
-                                        selectedEntry.value = workout
-                                        showBottomSheet.value =
-                                            true
-                                    },
-                                    onDeleteClick = { workout ->
-                                        workout.uid?.let { viewModel.deleteWorkoutEntry(it) }
+                    AnimatedContent(
+                        targetState = showCalendarView.value,
+                        transitionSpec = {
+                            slideIntoContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Left,
+                                animationSpec = tween(300)
+                            ) with slideOutOfContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Right,
+                                animationSpec = tween(300)
+                            )
+                        },
+                        label = "ViewTransition"
+                    ) { isCalendarView ->
+                        if (isCalendarView) {
+                            CalendarScreen(
+                                groupedEntries = filteredGrouped,
+                                onEditClick = { workout ->
+                                    selectedEntry.value = workout
+                                    showBottomSheet.value = true
+                                },
+                                onDeleteClick = { workout ->
+                                    workout.uid?.let { viewModel.deleteWorkoutEntry(it) }
+                                }
+                            )
+                        } else {
+                            // Lista de entrenamientos
+                            LazyColumn(
+                                modifier = Modifier
+                                    .background(MaterialTheme.colorScheme.background)
+                                    .fillMaxSize(),
+                                contentPadding = PaddingValues(
+                                    bottom = paddingValues.calculateBottomPadding() + 100.dp
+                                ),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                filteredGrouped.forEach { (date, dailyWorkouts) ->
+                                    item {
+                                        Text(
+                                            text = date,
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                            style = MaterialTheme.typography.titleLarge,
+                                            modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
+                                        )
                                     }
-                                )
+
+                                    item {
+                                        WorkoutCardList(
+                                            workouts = dailyWorkouts,
+                                            onEditClick = { workout ->
+                                                selectedEntry.value = workout
+                                                showBottomSheet.value =
+                                                    true
+                                            },
+                                            onDeleteClick = { workout ->
+                                                workout.uid?.let { viewModel.deleteWorkoutEntry(it) }
+                                            }
+                                        )
+                                    }
+                                }
                             }
                         }
                     }

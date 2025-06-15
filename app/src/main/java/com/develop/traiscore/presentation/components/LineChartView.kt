@@ -74,23 +74,30 @@ fun LineChartView(
             .then(modifier)
     ) {
         Canvas(Modifier.fillMaxSize()) {
-            val paddingX = 12.dp.toPx()
+            val paddingX = 0.dp.toPx()
+            val labelMargin = 8.dp.toPx()
             val paddingY = 30.dp.toPx()
-            val chartWidth = size.width - paddingX * 2
+            val chartWidth = size.width - labelMargin * 2
             val chartHeight = size.height - paddingY * 2
             val stepX = chartWidth / (processedData.size - 1)
 
             // Usar datos procesados para coordenadas
             val coords = processedData.mapIndexed { i, processedPoint ->
-                val x = paddingX + stepX * i
+                val x = labelMargin + stepX * i  // Usar labelMargin para espaciar las etiquetas
+                val y = size.height - paddingY - (processedPoint.normalizedValue * chartHeight)
+                x to y
+            }
+
+            val lineCoords = processedData.mapIndexed { i, processedPoint ->
+                val x = (size.width / (processedData.size - 1)) * i  // Sin margen, extremo a extremo
                 val y = size.height - paddingY - (processedPoint.normalizedValue * chartHeight)
                 x to y
             }
 
             val smoothPath = Path().apply {
-                val (startX, startY) = coords.first()
+                val (startX, startY) = lineCoords.first()
                 moveTo(startX, startY)
-                coords.zipWithNext { (xA, yA), (xB, yB) ->
+                lineCoords.zipWithNext { (xA, yA), (xB, yB) ->
                     // usamos el punto medio en X como handle de control
                     val midX = (xA + xB) / 2f
                     cubicTo(
@@ -105,8 +112,8 @@ fun LineChartView(
             val yAxis = size.height - paddingY
             val fillPath = Path().apply {
                 addPath(smoothPath)
-                lineTo(coords.last().first, yAxis)
-                lineTo(coords.first().first, yAxis)
+                lineTo(lineCoords.last().first, yAxis)
+                lineTo(lineCoords.first().first, yAxis)
                 close()
             }
 
@@ -127,16 +134,13 @@ fun LineChartView(
                 style = Stroke(width = 4.dp.toPx(), cap = StrokeCap.Round)
             )
 
-            // Dibujamos puntos
-            coords.forEach { (x, y) ->
-                drawCircle(lineColor, radius = 5.dp.toPx(), center = Offset(x, y))
-            }
+
 
             // Dibujamos eje X
             drawLine(
                 axisColor,
-                Offset(paddingX, yAxis),
-                Offset(size.width - paddingX, yAxis),
+                Offset(0f, yAxis),
+                Offset(size.width , yAxis),
                 strokeWidth = 1.dp.toPx()
             )
 
