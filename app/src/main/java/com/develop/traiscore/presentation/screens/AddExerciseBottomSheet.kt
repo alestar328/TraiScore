@@ -88,6 +88,7 @@ private fun AddExerciseBottomSheetContent(
         )
     }
     var repsText by remember { mutableStateOf(workoutToEdit?.reps?.toString() ?: "") }
+    var exerciseId by remember { mutableStateOf(workoutToEdit?.exerciseId ?: 0) }
     var weightText by remember { mutableStateOf(workoutToEdit?.weight?.toString() ?: "") }
     var rirValue by remember { mutableStateOf(workoutToEdit?.rir ?: 2) }
     var repsError by remember { mutableStateOf(false) }
@@ -247,6 +248,7 @@ private fun AddExerciseBottomSheetContent(
                         // Guardar nuevo
                         viewModel.saveWorkoutEntry(
                             title = selectedExercise,
+                            exerciseId = exerciseId,
                             reps = repsText.toIntOrNull() ?: 0,
                             weight = weightText.toDoubleOrNull() ?: 0.0,
                             rir = rirValue
@@ -255,6 +257,7 @@ private fun AddExerciseBottomSheetContent(
                         // Editar existente
                         val updated: Map<String, Any> = mapOf(
                             "title" to selectedExercise as Any,
+                            "exerciseId" to exerciseId as Any, // ✅ CORRECCIÓN: Incluir exerciseId
                             "reps" to (repsText.toIntOrNull() ?: 0) as Any,
                             "weight" to (weightText.toDoubleOrNull() ?: 0.0) as Any,
                             "rir" to rirValue as Any

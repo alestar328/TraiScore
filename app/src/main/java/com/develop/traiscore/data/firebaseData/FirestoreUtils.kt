@@ -1,9 +1,16 @@
 package com.develop.traiscore.data.firebaseData
 
+import com.develop.traiscore.data.local.dao.ExerciseDao
+import com.develop.traiscore.data.local.entity.ExerciseEntity
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import java.util.Date
 
 fun updateRoutineInFirebase(documentId: String, routineDoc: RoutineDocument): Task<Void> {
     val db = Firebase.firestore
@@ -34,30 +41,44 @@ fun updateRoutineInFirebase(documentId: String, routineDoc: RoutineDocument): Ta
         .set(routineMap)
 }
 
-fun saveExerciseToFirebase(name: String, category: String) {
+suspend fun saveExerciseToFirebase(
+    name: String,
+    category: String,
+    exerciseDao: ExerciseDao
+) {
+    // Primero guardar en local para generar ID
+    val localExercise = ExerciseEntity(
+        id = 0,
+        idIntern = "",
+        name = name,
+        category = category,
+        isDefault = false
+    )
+
+    val localId = exerciseDao.insertExercise(localExercise)
+
+    // Luego sincronizar con Firebase (tu código existente)
     val db = Firebase.firestore
     val exercisesCollection = db.collection("exercises")
 
-    // Paso 1: Obtener todos los documentos que empiecen con "userExer"
     exercisesCollection.get()
         .addOnSuccessListener { snapshot ->
             val userExerciseDocs = snapshot.documents.filter {
                 it.id.startsWith("userExer")
             }
 
-            // Paso 2: Obtener el siguiente número disponible
             val nextNumber = (userExerciseDocs.mapNotNull {
                 it.id.removePrefix("userExer").toIntOrNull()
             }.maxOrNull() ?: 0) + 1
 
             val newDocId = "userExer$nextNumber"
 
-            // Paso 3: Guardar el nuevo ejercicio
             val newExercise = hashMapOf(
                 "name" to name,
                 "category" to category,
                 "isDefault" to false,
-                "createdBy" to null
+                "createdBy" to FirebaseAuth.getInstance().currentUser?.uid,
+                "localId" to localId
             )
 
             exercisesCollection
@@ -65,6 +86,15 @@ fun saveExerciseToFirebase(name: String, category: String) {
                 .set(newExercise)
                 .addOnSuccessListener {
                     println("✅ Ejercicio guardado con ID: $newDocId")
+
+                    // Actualizar el registro local con el Firebase ID
+                    CoroutineScope(Dispatchers.IO).launch {
+                        val updatedExercise = localExercise.copy(
+                            id = localId.toInt(),
+                            idIntern = newDocId
+                        )
+                        exerciseDao.updateExercise(updatedExercise)
+                    }
                 }
                 .addOnFailureListener { e ->
                     println("❌ Error al guardar el ejercicio: ${e.message}")
@@ -74,4 +104,3 @@ fun saveExerciseToFirebase(name: String, category: String) {
             println("❌ Error al obtener ejercicios existentes: ${e.message}")
         }
 }
-

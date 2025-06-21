@@ -8,5 +8,7 @@ data class ExerciseEntity(
     @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val idIntern: String = "",
     val name: String,
-    val isDefault: Boolean = false // Para identificar si es un ejercicio por defecto
+    val isDefault: Boolean = false,
+    val category: String = "" // ✅ AGREGADO: Campo category que faltaba
+
 )

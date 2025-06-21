@@ -30,6 +30,7 @@ import java.time.format.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.develop.traiscore.data.local.entity.WorkoutEntry
+import com.develop.traiscore.presentation.components.QuickStats
 import com.develop.traiscore.presentation.components.WorkoutCardList
 import com.develop.traiscore.presentation.theme.tsColors
 import java.text.SimpleDateFormat
@@ -67,6 +68,32 @@ fun CalendarScreen(
         }
     }
 
+    val totalExercises = remember(selectedDayWorkouts) {
+        if (selectedDayWorkouts.isNotEmpty()) {
+            selectedDayWorkouts
+                .groupBy { workout ->
+                    if (workout.exerciseId > 0) workout.exerciseId else workout.title
+                }
+                .keys
+                .size
+        } else {
+            0
+        }
+    }
+
+    val totalSeries = remember(selectedDayWorkouts) {
+        selectedDayWorkouts.size
+    }
+
+    val totalReps = remember(selectedDayWorkouts) {
+        selectedDayWorkouts.sumOf { it.reps }
+    }
+
+    val totalWeight = remember(selectedDayWorkouts) {
+        selectedDayWorkouts.sumOf { it.weight.toDouble() }
+    }
+
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -83,7 +110,14 @@ fun CalendarScreen(
                 .fillMaxWidth()
                 .padding(vertical = 8.dp)
         )
-
+        if (selectedDayWorkouts.isNotEmpty()) {
+            QuickStats(
+                totalExercises = totalExercises,
+                totalSeries = totalSeries,
+                totalReps = totalReps,
+                totalWeight = totalWeight
+            )
+        }
         // Lista de ejercicios del día seleccionado
         LazyColumn(
             modifier = Modifier.fillMaxSize(),

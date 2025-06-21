@@ -32,6 +32,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -49,6 +50,7 @@ import com.develop.traiscore.presentation.components.AddExerciseDialogToDB
 import com.develop.traiscore.presentation.components.AutoResizedText
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -59,13 +61,16 @@ fun SettingsScreen(
 ) {
     var showDialog by remember { mutableStateOf(false) }
     val viewModel: AddExerciseViewModel = hiltViewModel()
+    val coroutineScope = rememberCoroutineScope()
 
     if (showDialog) {
         AddExerciseDialogToDB(
             onDismiss = { showDialog = false },
             onSave = { name, category ->
-                saveExerciseToFirebase(name, category)
-                viewModel.refreshExercises()
+                // ✅ CORRECCIÓN: Llamar desde coroutine y usar método del ViewModel
+                coroutineScope.launch {
+                    viewModel.saveExerciseToDatabase(name, category)
+                }
             }
         )
     }

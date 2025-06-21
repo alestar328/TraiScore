@@ -6,6 +6,8 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.data.firebaseData.SimpleExercise
+import com.develop.traiscore.data.firebaseData.saveExerciseToFirebase
+import com.develop.traiscore.data.local.dao.ExerciseDao
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
@@ -15,7 +17,9 @@ import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
-class AddExerciseViewModel @Inject constructor() : ViewModel() {
+class AddExerciseViewModel @Inject constructor(
+    private val exerciseDao: ExerciseDao,
+) : ViewModel() {
     var exerciseNames by mutableStateOf<List<String>>(emptyList())
         private set
     var lastUsedExerciseName by mutableStateOf<String?>(null)
@@ -48,8 +52,14 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
             .addOnFailureListener { exception ->
             }
     }
+
+    suspend fun saveExerciseToDatabase(name: String, category: String) {
+        saveExerciseToFirebase(name, category, exerciseDao)
+        refreshExercises() // ✅ Llamar refresh después de guardar
+    }
     fun saveWorkoutEntry(
         title: String,
+        exerciseId : Int,
         reps: Int,
         weight: Double,
         rir: Int
@@ -63,6 +73,7 @@ class AddExerciseViewModel @Inject constructor() : ViewModel() {
         val workoutData = hashMapOf(
             "uid" to userId,
             "title" to title,
+            "exerciseId" to exerciseId,
             "reps" to reps,
             "weight" to weight,
             "rir" to rir,

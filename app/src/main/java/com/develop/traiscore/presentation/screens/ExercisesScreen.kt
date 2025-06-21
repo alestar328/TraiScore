@@ -2,15 +2,18 @@ package com.develop.traiscore.presentation.screens
 
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -39,10 +42,13 @@ import com.develop.traiscore.data.local.entity.WorkoutWithExercise
 import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.components.WorkoutCard
-import com.develop.traiscore.presentation.components.WorkoutCardList
 import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.util.Date
+
+import com.develop.traiscore.presentation.viewmodels.ViewMode
+import com.develop.traiscore.presentation.viewmodels.ViewModeSelector
+import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
@@ -50,15 +56,16 @@ fun ExercisesScreen(
     viewModel: WorkoutEntryViewModel = hiltViewModel()
 ) {
     val entries = viewModel.entries.value
-    val showBottomSheet =
-        remember { mutableStateOf(false) }
+    val showBottomSheet = remember { mutableStateOf(false) }
     val selectedEntry = remember { mutableStateOf<WorkoutEntry?>(null) }
     val groupedEntries = viewModel.groupWorkoutsByDate(entries)
     val showSearchBar = remember { mutableStateOf(false) }
     val selectedSearch = remember { mutableStateOf("") }
 
-    val showCalendarView = remember { mutableStateOf(false) }
-
+    // Estados para el nuevo sistema de vistas
+    val showViewModeSelector = remember { mutableStateOf(false) }
+    val currentViewMode = remember { mutableStateOf(ViewMode.TODAY) }
+    val selectedMonth = remember { mutableStateOf<YearMonth?>(null) }
 
     val filteredGrouped = if (selectedSearch.value.isNotBlank()) {
         viewModel.groupWorkoutsByDateFiltered(entries, selectedSearch.value)
@@ -79,25 +86,31 @@ fun ExercisesScreen(
                             modifier = Modifier
                                 .size(30.dp)
                                 .clickable {
-                                    showCalendarView.value = !showCalendarView.value
+                                    if (showSearchBar.value) {
+                                        showSearchBar.value = false
+                                        selectedSearch.value = ""
+                                    }
+                                    showViewModeSelector.value = !showViewModeSelector.value
                                 },
                             contentAlignment = Alignment.Center
-                        )  {
+                        ) {
                             Icon(
                                 imageVector = Icons.Default.DateRange,
-                                contentDescription = "Calendario",
+                                contentDescription = "Selector de vista",
                                 tint = MaterialTheme.tsColors.ledCyan,
                             )
                         }
-
                     },
                     rightIcon = {
                         FloatingActionButton(
                             onClick = {
-                                println("🔍 Icono de busqueda clicado")
+                                // ✅ CAMBIO: Toggle de búsqueda pero cierra selector si está abierto
+                                if (showViewModeSelector.value) {
+                                    showViewModeSelector.value = false
+                                }
                                 showSearchBar.value = !showSearchBar.value
                                 if (!showSearchBar.value) {
-                                    selectedSearch.value = "" // Reinicia el filtro al cerrar
+                                    selectedSearch.value = ""
                                 }
                             },
                             modifier = Modifier.size(30.dp),
@@ -122,7 +135,43 @@ fun ExercisesScreen(
                         .padding(top = paddingValues.calculateTopPadding())
                 ) {
                     // Barra de búsqueda
-                    if (showSearchBar.value) {
+                    AnimatedVisibility(
+                        visible = showViewModeSelector.value,
+                        enter = slideInVertically(
+                            initialOffsetY = { -it },
+                            animationSpec = tween(300)
+                        ) + fadeIn(animationSpec = tween(300)),
+                        exit = slideOutVertically(
+                            targetOffsetY = { -it },
+                            animationSpec = tween(200)
+                        ) + fadeOut(animationSpec = tween(200))
+                    ) {
+                        ViewModeSelector(
+                            selectedMode = currentViewMode.value,
+                            onModeSelected = { mode ->
+                                currentViewMode.value = mode
+                                showViewModeSelector.value = false // ✅ Se cierra automáticamente al seleccionar
+                            },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(MaterialTheme.colorScheme.background)
+                                .padding(
+                                    horizontal = TraiScoreTheme.dimens.paddingMedium,
+                                    vertical = 8.dp
+                                )
+                        )
+                    }
+                    AnimatedVisibility(
+                        visible = showSearchBar.value,
+                        enter = slideInVertically(
+                            initialOffsetY = { -it },
+                            animationSpec = tween(300)
+                        ) + fadeIn(animationSpec = tween(300)),
+                        exit = slideOutVertically(
+                            targetOffsetY = { -it },
+                            animationSpec = tween(200)
+                        ) + fadeOut(animationSpec = tween(200))
+                    ) {
                         FilterableDropdown(
                             items = viewModel.entries.value.map { it.title }.distinct(),
                             selectedValue = selectedSearch.value,
@@ -137,8 +186,9 @@ fun ExercisesScreen(
                         )
                     }
 
+                    // Contenido principal según el modo de vista seleccionado
                     AnimatedContent(
-                        targetState = showCalendarView.value,
+                        targetState = currentViewMode.value,
                         transitionSpec = {
                             slideIntoContainer(
                                 towards = AnimatedContentTransitionScope.SlideDirection.Left,
@@ -148,54 +198,43 @@ fun ExercisesScreen(
                                 animationSpec = tween(300)
                             )
                         },
-                        label = "ViewTransition"
-                    ) { isCalendarView ->
-                        if (isCalendarView) {
-                            CalendarScreen(
-                                groupedEntries = filteredGrouped,
-                                onEditClick = { workout ->
-                                    selectedEntry.value = workout
-                                    showBottomSheet.value = true
-                                },
-                                onDeleteClick = { workout ->
-                                    workout.uid?.let { viewModel.deleteWorkoutEntry(it) }
-                                }
-                            )
-                        } else {
-                            // Lista de entrenamientos
-                            LazyColumn(
-                                modifier = Modifier
-                                    .background(MaterialTheme.colorScheme.background)
-                                    .fillMaxSize(),
-                                contentPadding = PaddingValues(
-                                    bottom = paddingValues.calculateBottomPadding() + 100.dp
-                                ),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                filteredGrouped.forEach { (date, dailyWorkouts) ->
-                                    item {
-                                        Text(
-                                            text = date,
-                                            color = MaterialTheme.colorScheme.onBackground,
-                                            style = MaterialTheme.typography.titleLarge,
-                                            modifier = Modifier.padding(start = 8.dp, bottom = 4.dp)
-                                        )
+                        label = "ViewModeTransition"
+                    ) { viewMode ->
+                        when (viewMode) {
+                            ViewMode.YEAR -> {
+                                YearViewScreen(
+                                    groupedEntries = filteredGrouped,
+                                    onMonthSelected = { month ->
+                                        selectedMonth.value = month
+                                        currentViewMode.value = ViewMode.MONTH
                                     }
+                                )
+                            }
 
-                                    item {
-                                        WorkoutCardList(
-                                            workouts = dailyWorkouts,
-                                            onEditClick = { workout ->
-                                                selectedEntry.value = workout
-                                                showBottomSheet.value =
-                                                    true
-                                            },
-                                            onDeleteClick = { workout ->
-                                                workout.uid?.let { viewModel.deleteWorkoutEntry(it) }
-                                            }
-                                        )
+                            ViewMode.MONTH -> {
+                                CalendarScreen(
+                                    groupedEntries = filteredGrouped,
+                                    onEditClick = { workout ->
+                                        selectedEntry.value = workout
+                                        showBottomSheet.value = true
+                                    },
+                                    onDeleteClick = { workout ->
+                                        workout.uid?.let { viewModel.deleteWorkoutEntry(it) }
                                     }
-                                }
+                                )
+                            }
+
+                            ViewMode.TODAY -> {
+                                TodayViewScreen(
+                                    groupedEntries = filteredGrouped,
+                                    onEditClick = { workout ->
+                                        selectedEntry.value = workout
+                                        showBottomSheet.value = true
+                                    },
+                                    onDeleteClick = { workout ->
+                                        workout.uid?.let { viewModel.deleteWorkoutEntry(it) }
+                                    }
+                                )
                             }
                         }
                     }
@@ -204,13 +243,13 @@ fun ExercisesScreen(
         )
     }
 
-    // ✅ CAMBIO: Reemplazar Dialog con AddExerciseBottomSheet
+    // Bottom Sheet para editar ejercicios
     AddExerciseBottomSheet(
         workoutToEdit = selectedEntry.value,
         isVisible = showBottomSheet.value,
         onDismiss = {
             showBottomSheet.value = false
-            selectedEntry.value = null // Limpiar selección al cerrar
+            selectedEntry.value = null
         },
         onSave = { updatedData ->
             selectedEntry.value?.uid?.let { id ->
