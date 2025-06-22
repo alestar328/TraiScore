@@ -11,9 +11,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.develop.traiscore.R
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.presentation.components.QuickStats
 import com.develop.traiscore.presentation.components.WorkoutCardList
@@ -74,7 +76,7 @@ fun TodayViewScreen(
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.DateRange,
+                    painter = painterResource(id = R.drawable.today_icon),
                     contentDescription = "Hoy",
                     tint = MaterialTheme.tsColors.ledCyan,
                     modifier = Modifier.size(32.dp)

@@ -15,9 +15,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.develop.traiscore.R
 import com.develop.traiscore.presentation.theme.tsColors
 
 enum class ViewMode {
@@ -40,6 +42,7 @@ fun ViewModeSelector(
         ) {
             ViewModeItem(
                 title = "Año",
+                icon = R.drawable.year_icon,
                 isSelected = selectedMode == ViewMode.YEAR,
                 onClick = { onModeSelected(ViewMode.YEAR) },
                 modifier = Modifier.weight(1f)
@@ -47,6 +50,7 @@ fun ViewModeSelector(
 
             ViewModeItem(
                 title = "Mes",
+                icon = R.drawable.month_icon,
                 isSelected = selectedMode == ViewMode.MONTH,
                 onClick = { onModeSelected(ViewMode.MONTH) },
                 modifier = Modifier.weight(1f)
@@ -54,6 +58,7 @@ fun ViewModeSelector(
 
             ViewModeItem(
                 title = "Hoy",
+                icon = R.drawable.today_icon,
                 isSelected = selectedMode == ViewMode.TODAY,
                 onClick = { onModeSelected(ViewMode.TODAY) },
                 modifier = Modifier.weight(1f)
@@ -65,6 +70,7 @@ fun ViewModeSelector(
 @Composable
 private fun ViewModeItem(
     title: String,
+    icon: Int? = null,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
@@ -92,12 +98,21 @@ private fun ViewModeItem(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(4.dp)
     ) {
-        Icon(
-            imageVector = Icons.Default.DateRange,
-            contentDescription = title,
-            tint = textColor,
-            modifier = Modifier.size(18.dp)
-        )
+        if (icon != null) {
+            Icon(
+                painter = painterResource(id = icon),
+                contentDescription = title,
+                tint = textColor,
+                modifier = Modifier.size(18.dp)
+            )
+        } else {
+            Icon(
+                imageVector = Icons.Default.DateRange,
+                contentDescription = title,
+                tint = textColor,
+                modifier = Modifier.size(18.dp)
+            )
+        }
 
         Text(
             text = title,
