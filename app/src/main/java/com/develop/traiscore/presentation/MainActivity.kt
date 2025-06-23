@@ -45,6 +45,7 @@ import com.develop.traiscore.exports.ImportRoutineViewModel
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.screens.BodyMeasurementsHistoryScreen
 import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
+import com.develop.traiscore.presentation.screens.CameraSocialScreen
 import com.develop.traiscore.presentation.screens.ClientProfileScreen
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
@@ -320,6 +321,35 @@ fun AppNavigation(navController: NavHostController) {
 
             )
         }
+        composable(
+            route = "social_media_camera?exercise={exercise}&oneRepMax={oneRepMax}&maxReps={maxReps}&totalWeight={totalWeight}&trainingDays={trainingDays}",
+            arguments = listOf(
+                navArgument("exercise") { type = NavType.StringType },
+                navArgument("oneRepMax") { type = NavType.FloatType },
+                navArgument("maxReps") { type = NavType.IntType },
+                navArgument("totalWeight") { type = NavType.FloatType },
+                navArgument("trainingDays") {
+                    type = NavType.IntType
+                    defaultValue = 0 // ✅ VALOR POR DEFECTO
+                }
+            )
+        ) { backStackEntry ->
+            val exercise = backStackEntry.arguments?.getString("exercise") ?: "Ejercicio"
+            val oneRepMax = backStackEntry.arguments?.getFloat("oneRepMax") ?: 0f
+            val maxReps = backStackEntry.arguments?.getInt("maxReps") ?: 0
+            val totalWeight = backStackEntry.arguments?.getFloat("totalWeight")?.toDouble() ?: 0.0
+            val trainingDays = backStackEntry.arguments?.getInt("trainingDays") ?: 0 // ✅ NUEVO
+
+
+            CameraSocialScreen(
+                exerciseName = exercise,
+                oneRepMax = oneRepMax,
+                maxReps = maxReps,
+                totalWeight = totalWeight,
+                trainingDays = trainingDays,
+                navController = navController
+            )
+        }
         composable("screen_mode") {
             ScreenModeUI(
                 onBack = { navController.popBackStack() }
@@ -395,6 +425,7 @@ fun AppNavigation(navController: NavHostController) {
             // Usar StatScreen pero configurado para mostrar datos del cliente
             StatScreen(
                 modifier = Modifier,
+                navController = navController,
                 viewModel = hiltViewModel<StatScreenViewModel>().apply {
                     setTargetUser(clientId) // Configurar para mostrar datos del cliente específico
                 }
@@ -624,7 +655,8 @@ fun AppNavigation(navController: NavHostController) {
             StatScreen(
                 viewModel = statViewModel,
                 bodyStatsViewModel = bodyStatsViewModel,
-                clientId = clientId
+                clientId = clientId,
+                navController = navController // ← AGREGAR ESTO
             )
         }
 

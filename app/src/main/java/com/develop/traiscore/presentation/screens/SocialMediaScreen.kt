@@ -1,0 +1,526 @@
+package com.develop.traiscore.presentation.screens
+
+import android.content.Context
+import android.content.Intent
+import android.graphics.Bitmap
+import android.net.Uri
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Share
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawWithCache
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.rememberGraphicsLayer
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
+import coil3.compose.AsyncImage
+import coil3.request.ImageRequest
+import com.develop.traiscore.presentation.theme.traiBlue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+
+
+@Composable
+fun SocialMediaScreen(
+    photo: Uri,
+    exerciseName: String,
+    topWeight: Float,
+    maxReps: Int,
+    trainingDays: Int,
+    totalWeight: Double,
+    onDismiss: () -> Unit,
+    onShare: (Bitmap) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+
+    // ✅ CREAR GRAPHICS LAYER PARA CAPTURAR EL COMPOSABLE
+    val graphicsLayer = rememberGraphicsLayer()
+    var isCapturing by remember { mutableStateOf(false) }
+
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color.Black)
+            .systemBarsPadding()
+            .navigationBarsPadding()
+            // ✅ AGREGAR drawWithCache para capturar el contenido
+            .drawWithCache {
+                onDrawWithContent {
+                    // Dibujar el contenido normalmente
+                    drawContent()
+                    // También dibujarlo en el graphics layer para captura
+                    graphicsLayer.record {
+                        this@onDrawWithContent.drawContent()
+                    }
+                }
+            }
+    ) {
+        // Contenido a capturar (sin los botones)
+        CapturedContent(
+            photo = photo,
+            exerciseName = exerciseName,
+            topWeight = topWeight,
+            maxReps = maxReps,
+            totalWeight = totalWeight,
+            trainingDays = trainingDays,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Botones (NO se capturan porque están fuera del contenido)
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp, vertical = 32.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            FloatingActionButton(
+                onClick = onDismiss,
+                containerColor = Color.Red.copy(alpha = 0.9f)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Cerrar",
+                    tint = Color.White
+                )
+            }
+
+            FloatingActionButton(
+                onClick = {
+                    if (!isCapturing) {
+                        isCapturing = true
+                        scope.launch {
+                            try {
+                                // ✅ CAPTURAR EL COMPOSABLE COMO BITMAP
+                                val bitmap = graphicsLayer.toImageBitmap().asAndroidBitmap()
+
+                                // ✅ GUARDAR Y COMPARTIR LA IMAGEN CAPTURADA
+                                shareImageWithData(
+                                    context = context,
+                                    bitmap = bitmap,
+                                    exerciseName = exerciseName,
+                                    topWeight = topWeight,
+                                    maxReps = maxReps
+                                )
+                            } catch (e: Exception) {
+                                android.util.Log.e("SocialMediaScreen", "Error capturing: ${e.message}")
+                            } finally {
+                                isCapturing = false
+                            }
+                        }
+                    }
+                },
+                containerColor = if (isCapturing)
+                    Color.Gray.copy(alpha = 0.7f)
+                else
+                    traiBlue.copy(alpha = 0.9f)
+            ) {
+                if (isCapturing) {
+                    androidx.compose.material3.CircularProgressIndicator(
+                        modifier = Modifier.padding(4.dp),
+                        color = Color.White,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Icon(
+                        imageVector = Icons.Default.Share,
+                        contentDescription = "Compartir",
+                        tint = Color.White
+                    )
+                }
+            }
+        }
+    }
+}
+
+// ✅ COMPOSABLE SEPARADO PARA EL CONTENIDO QUE SE CAPTURA
+@Composable
+private fun CapturedContent(
+    photo: Uri,
+    exerciseName: String,
+    totalWeight: Double,
+    topWeight: Float,
+    maxReps: Int,
+    trainingDays: Int,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+
+    Box(modifier = modifier) {
+        // Imagen de fondo
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(photo)
+                .build(),
+            contentDescription = "Foto capturada",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+
+        // ✅ OVERLAY OSCURO QUE CUBRE TODA LA IMAGEN
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    brush = Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.4f),
+                            Color.Black.copy(alpha = 0.2f),
+                            Color.Black.copy(alpha = 0.3f),
+                            Color.Black.copy(alpha = 0.6f)
+                        )
+                    )
+                )
+        )
+
+        // Overlay de datos centrado
+        StatsOverlay(
+            exerciseName = exerciseName,
+            topWeight = topWeight,
+            maxReps = maxReps,
+            totalWeight = totalWeight,
+            trainingDays = trainingDays,
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+
+@Composable
+private fun StatsOverlay(
+    exerciseName: String,
+    topWeight: Float,
+    maxReps: Int,
+    totalWeight: Double,
+    trainingDays: Int,
+    modifier: Modifier = Modifier
+) {
+    Box(modifier = modifier) {
+        // Título principal centrado arriba
+        Text(
+            text = "TRAINING SESSION",
+            style = MaterialTheme.typography.headlineLarge.copy(
+                fontWeight = FontWeight.Bold,
+                fontSize = 32.sp
+            ),
+            color = Color.White,
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .padding(top = 80.dp)
+        )
+
+        // ✅ CENTRAR LOS STATS MÁS ABAJO, LIGERAMENTE POR ENCIMA DE LOS BOTONES
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .padding(horizontal = 24.dp)
+                .padding(bottom = 150.dp), // Ajustado para estar por encima de los botones
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(32.dp) // ✅ ESPACIADO UNIFORME ENTRE ELEMENTOS
+        ) {
+            // Stat principal destacado
+            HighlightStat(
+                text = "${totalWeight.toInt()} kg",
+                label = "Peso total levantado hoy"
+            )
+
+            // ✅ CONVERTIR A ROWS INDIVIDUALES PARA MEJOR CONTROL DEL ESPACIADO
+            // Bloque de estadísticas con mejor fondo
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        Color.Black.copy(alpha = 0.7f),
+                        RoundedCornerShape(16.dp)
+                    )
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp) // ✅ MAYOR ESPACIADO ENTRE ROWS
+            ) {
+                // ✅ ROW 1: Ejercicio principal
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = "Ejercicio principal",
+                            fontSize = 13.sp,
+                            color = Color.White.copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = exerciseName,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White
+                        )
+                    }
+                    Text(
+                        text = "${topWeight.toInt()} kg",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = traiBlue
+                    )
+                }
+
+                // ✅ ROW 2: Repeticiones máximas
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Text(
+                            text = "Repeticiones máximas",
+                            fontSize = 13.sp,
+                            color = Color.White.copy(alpha = 0.7f),
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = exerciseName,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = Color.White
+                        )
+                    }
+                    Text(
+                        text = "$maxReps reps",
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = traiBlue
+                    )
+                }
+
+                // ✅ ROW 3: Sesiones de entrenamiento (centrado)
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "$trainingDays sesiones de entrenamiento este mes",
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HighlightStat(text: String, label: String) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(
+            text = text,
+            fontSize = 56.sp,
+            color = Color.White,
+            fontWeight = FontWeight.ExtraBold
+        )
+        Text(
+            text = label,
+            fontSize = 16.sp,
+            color = Color.White.copy(alpha = 0.8f),
+            style = MaterialTheme.typography.bodyMedium
+        )
+    }
+}
+
+@Composable
+private fun StatBlock(title: String, stat: String, value: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(
+            modifier = Modifier.weight(1f)
+        ) {
+            Text(
+                text = title,
+                fontSize = 13.sp,
+                color = Color.White.copy(alpha = 0.7f),
+                style = MaterialTheme.typography.bodySmall
+            )
+            Text(
+                text = stat,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White
+            )
+        }
+
+        Text(
+            text = value,
+            fontSize = 18.sp,
+            fontWeight = FontWeight.Bold,
+            color = traiBlue
+        )
+    }
+}
+
+
+private suspend fun shareImageWithData(
+    context: Context,
+    bitmap: Bitmap,
+    exerciseName: String,
+    topWeight: Float,
+    maxReps: Int
+) = withContext(Dispatchers.IO) {
+    try {
+        // ✅ GUARDAR BITMAP EN ARCHIVO TEMPORAL
+        val filename = "traiscore_share_${System.currentTimeMillis()}.jpg"
+        val file = File(context.cacheDir, filename)
+
+        FileOutputStream(file).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 95, out)
+        }
+
+        // ✅ CREAR URI PARA COMPARTIR
+        val fileUri = FileProvider.getUriForFile(
+            context,
+            "com.develop.traiscore.fileprovider",
+            file
+        )
+
+        // ✅ CAMBIAR AL HILO PRINCIPAL PARA COMPARTIR
+        withContext(Dispatchers.Main) {
+            shareImageToSocialMedia(context, fileUri, exerciseName, topWeight, maxReps)
+        }
+
+    } catch (e: Exception) {
+        android.util.Log.e("SocialMediaScreen", "Error saving bitmap: ${e.message}")
+    }
+}
+
+// ✅ FUNCIÓN PARA COMPARTIR EN REDES SOCIALES (ACTUALIZADA)
+private fun shareImageToSocialMedia(
+    context: Context,
+    imageUri: Uri,
+    exerciseName: String,
+    topWeight: Float,
+    maxReps: Int
+) {
+    try {
+        // Crear texto para compartir
+        val shareText = buildString {
+            append("💪 ¡Nuevo récord en el gym! 💪\n\n")
+            append("🏋️ Ejercicio: $exerciseName\n")
+            append("⚡ Peso máximo: ${topWeight.toInt()} kg\n")
+            append("🔥 Reps máximas: $maxReps\n\n")
+            append("#TraiScore #Gym #Fitness #Training")
+        }
+
+        // ✅ CREAR INTENT PARA COMPARTIR LA IMAGEN CAPTURADA
+        val shareIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            type = "image/jpeg"
+            putExtra(Intent.EXTRA_STREAM, imageUri)
+            putExtra(Intent.EXTRA_TEXT, shareText)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        // ✅ CREAR SELECTOR ESPECÍFICO PARA REDES SOCIALES
+        val chooserIntent = Intent.createChooser(shareIntent, "Compartir en redes sociales")
+
+        // ✅ AGREGAR INTENTS ESPECÍFICOS PARA APPS POPULARES
+        val targetIntents = mutableListOf<Intent>()
+
+        // Instagram Stories - AHORA CON LA IMAGEN CAPTURADA
+        val instagramIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            type = "image/jpeg"
+            putExtra(Intent.EXTRA_STREAM, imageUri)
+            setPackage("com.instagram.android")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        // TikTok
+        val tiktokIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            type = "image/jpeg"
+            putExtra(Intent.EXTRA_STREAM, imageUri)
+            putExtra(Intent.EXTRA_TEXT, shareText)
+            setPackage("com.ss.android.ugc.trill")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        // Twitter/X
+        val twitterIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            type = "image/jpeg"
+            putExtra(Intent.EXTRA_STREAM, imageUri)
+            putExtra(Intent.EXTRA_TEXT, shareText)
+            setPackage("com.twitter.android")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        // WhatsApp
+        val whatsappIntent = Intent().apply {
+            action = Intent.ACTION_SEND
+            type = "image/jpeg"
+            putExtra(Intent.EXTRA_STREAM, imageUri)
+            putExtra(Intent.EXTRA_TEXT, shareText)
+            setPackage("com.whatsapp")
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        }
+
+        // Verificar qué apps están instaladas y agregar a la lista
+        val packageManager = context.packageManager
+        listOf(instagramIntent, tiktokIntent, twitterIntent, whatsappIntent).forEach { intent ->
+            if (intent.resolveActivity(packageManager) != null) {
+                targetIntents.add(intent)
+            }
+        }
+
+        // Si hay apps específicas instaladas, mostrarlas junto con el selector general
+        if (targetIntents.isNotEmpty()) {
+            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, targetIntents.toTypedArray())
+        }
+
+        context.startActivity(chooserIntent)
+
+    } catch (e: Exception) {
+        android.util.Log.e("SocialMediaScreen", "Error al compartir: ${e.message}")
+    }
+}

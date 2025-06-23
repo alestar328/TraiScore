@@ -11,4 +11,6 @@
 
     <!-- Downloads externos -->
     <external-path name="external" path="." />
+
+    <cache-path name="images" path="." />
 </paths>

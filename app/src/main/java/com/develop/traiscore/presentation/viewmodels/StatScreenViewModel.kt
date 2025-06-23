@@ -75,6 +75,15 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
     private val _isLoadingRadarData = MutableStateFlow(false)
     val isLoadingRadarData: StateFlow<Boolean> = _isLoadingRadarData
 
+    private val _todayTotalWeight = MutableStateFlow(0.0)
+    val todayTotalWeight: StateFlow<Double> = _todayTotalWeight
+
+    private val _currentMonthTrainingDays = MutableStateFlow(0)
+    val currentMonthTrainingDays: StateFlow<Int> = _currentMonthTrainingDays
+
+    fun getCurrentMonthTrainingDays(): Int {
+        return _currentMonthTrainingDays.value
+    }
     init {
         viewModelScope.launch {
             // Inicializar con el usuario actual si no se especifica otro
@@ -85,8 +94,8 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
             // Cargar ejercicios primero
             fetchExerciseOptions()
             loadRadarChartData()
-
-
+            calculateCurrentMonthTrainingDays()
+            calculateTodayTotalWeight()
             // Esperar a que se carguen los ejercicios antes de seleccionar el último
             _exerciseOptions
                 .filter { it.isNotEmpty() }
@@ -107,6 +116,127 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                     launch { calculateTotalWeightLifted(exercise) }
                 }
         }
+    }
+    private fun calculateCurrentMonthTrainingDays() {
+        val userId = getTargetUserId()
+        if (userId == null) {
+            Log.e("StatsVM", "Usuario no identificado, no puedo calcular días de entrenamiento")
+            return
+        }
+
+        // Obtener primer y último día del mes actual
+        val today = java.time.LocalDate.now()
+        val firstDayOfMonth = today.withDayOfMonth(1)
+        val lastDayOfMonth = today.withDayOfMonth(today.lengthOfMonth())
+
+        // Convertir a Date para Firebase
+        val calendar = java.util.Calendar.getInstance()
+
+        // Inicio del mes (00:00:00)
+        calendar.set(firstDayOfMonth.year, firstDayOfMonth.monthValue - 1, firstDayOfMonth.dayOfMonth, 0, 0, 0)
+        calendar.set(java.util.Calendar.MILLISECOND, 0)
+        val startOfMonth = calendar.time
+
+        // Final del mes (23:59:59)
+        calendar.set(lastDayOfMonth.year, lastDayOfMonth.monthValue - 1, lastDayOfMonth.dayOfMonth, 23, 59, 59)
+        calendar.set(java.util.Calendar.MILLISECOND, 999)
+        val endOfMonth = calendar.time
+
+        Log.d("StatsVM", "📅 Calculando días de entrenamiento del mes - Usuario: $userId")
+        Log.d("StatsVM", "🗓️ Rango: $startOfMonth a $endOfMonth")
+
+        db.collection("users")
+            .document(userId)
+            .collection("workoutEntries")
+            .whereGreaterThanOrEqualTo("timestamp", startOfMonth)
+            .whereLessThanOrEqualTo("timestamp", endOfMonth)
+            .get()
+            .addOnSuccessListener { snap ->
+                // ✅ USAR LA MISMA LÓGICA QUE YearViewScreen: contar días únicos
+                val workoutDates = snap.documents.mapNotNull { doc ->
+                    val timestamp = doc.getDate("timestamp")
+                    timestamp?.let { date ->
+                        val calendar = java.util.Calendar.getInstance()
+                        calendar.time = date
+
+                        // Crear LocalDate para comparación (solo año, mes, día - sin hora)
+                        java.time.LocalDate.of(
+                            calendar.get(java.util.Calendar.YEAR),
+                            calendar.get(java.util.Calendar.MONTH) + 1,
+                            calendar.get(java.util.Calendar.DAY_OF_MONTH)
+                        )
+                    }
+                }.toSet() // ✅ toSet() elimina duplicados - días únicos
+
+                val trainingDaysCount = workoutDates.size
+                _currentMonthTrainingDays.value = trainingDaysCount
+
+                Log.d("StatsVM", "✅ Días de entrenamiento del mes calculados: $trainingDaysCount días únicos")
+                Log.d("StatsVM", "📊 Fechas de entrenamiento: $workoutDates")
+            }
+            .addOnFailureListener { e ->
+                Log.e("StatsVM", "Error calculando días de entrenamiento del mes", e)
+                _currentMonthTrainingDays.value = 0
+            }
+    }
+    fun getTodayTotalWeight(): Double {
+        return _todayTotalWeight.value
+    }
+    private fun calculateTodayTotalWeight() {
+        val userId = getTargetUserId()
+        if (userId == null) {
+            Log.e("StatsVM", "Usuario no identificado, no puedo calcular peso total del día")
+            return
+        }
+
+        // Calcular fecha de hoy en el mismo formato que TodayViewScreen
+        val today = java.time.LocalDate.now()
+        val calendar = java.util.Calendar.getInstance()
+        calendar.set(today.year, today.monthValue - 1, today.dayOfMonth)
+
+        // Obtener timestamp de inicio y fin del día
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        calendar.set(java.util.Calendar.MINUTE, 0)
+        calendar.set(java.util.Calendar.SECOND, 0)
+        calendar.set(java.util.Calendar.MILLISECOND, 0)
+        val startOfDay = calendar.time
+
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 23)
+        calendar.set(java.util.Calendar.MINUTE, 59)
+        calendar.set(java.util.Calendar.SECOND, 59)
+        calendar.set(java.util.Calendar.MILLISECOND, 999)
+        val endOfDay = calendar.time
+
+        Log.d("StatsVM", "🗓️ Calculando peso total para hoy - Usuario: $userId")
+        Log.d("StatsVM", "📅 Rango: $startOfDay a $endOfDay")
+
+        db.collection("users")
+            .document(userId)
+            .collection("workoutEntries")
+            .whereGreaterThanOrEqualTo("timestamp", startOfDay)
+            .whereLessThanOrEqualTo("timestamp", endOfDay)
+            .get()
+            .addOnSuccessListener { snap ->
+                val todayTotal = snap.documents.fold(0.0) { acc, doc ->
+                    val weight = doc.getDouble("weight") ?: 0.0
+                    val reps = doc.getLong("reps")?.toInt() ?: 0
+                    val series = doc.getLong("series")?.toInt() ?: 1
+
+                    // ✅ MISMO CÁLCULO QUE TodayViewScreen: peso * reps * series
+                    val exerciseTotal = weight * reps * series
+
+                    Log.d("StatsVM", "📄 ${doc.getString("title")}: ${weight}kg x ${reps}reps x ${series}series = ${exerciseTotal}kg")
+
+                    acc + exerciseTotal
+                }
+
+                _todayTotalWeight.value = todayTotal
+                Log.d("StatsVM", "✅ Peso total del día calculado: $todayTotal kg (${snap.size()} ejercicios)")
+            }
+            .addOnFailureListener { e ->
+                Log.e("StatsVM", "Error calculando peso total del día", e)
+                _todayTotalWeight.value = 0.0
+            }
     }
 
     fun loadRadarChartData() {
@@ -223,6 +353,8 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
         viewModelScope.launch {
             fetchExerciseOptions()
             loadRadarChartData()
+            calculateTodayTotalWeight()
+            calculateCurrentMonthTrainingDays()
             _selectedExercise.value?.let { exercise ->
                 loadAllProgressFor(exercise)
                 calculateTotalWeightLifted(exercise)

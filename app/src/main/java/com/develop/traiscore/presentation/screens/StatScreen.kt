@@ -1,6 +1,11 @@
 package com.develop.traiscore.presentation.screens
 
+import android.Manifest
+import android.content.pm.PackageManager
+import android.net.Uri
 import android.util.Log
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
@@ -25,9 +30,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -38,15 +40,20 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
+import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import com.develop.traiscore.R
 import com.develop.traiscore.domain.model.BodyMeasurementProgressData
 import com.develop.traiscore.domain.model.BodyMeasurementType
@@ -62,13 +69,15 @@ import com.develop.traiscore.presentation.theme.traiOrange
 import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
+import java.io.File
 
 @Composable
 fun StatScreen(
     modifier: Modifier = Modifier,
     viewModel: StatScreenViewModel = hiltViewModel(),
     bodyStatsViewModel: BodyStatsViewModel = hiltViewModel(),
-    clientId: String? = null
+    clientId: String? = null,
+    navController: NavController
 ) {
     val exerOptions by viewModel.exerciseOptions.collectAsState()
     val weightData by viewModel.weightProgress.collectAsState()
@@ -96,6 +105,70 @@ fun StatScreen(
     val radarChartData by viewModel.radarChartData.collectAsState()
     val isLoadingRadarData by viewModel.isLoadingRadarData.collectAsState()
 
+    var photoUri by remember { mutableStateOf<Uri?>(null) }
+    val context = LocalContext.current
+    var showSocialShare by remember { mutableStateOf(false) }
+    var capturedPhotoUri by remember { mutableStateOf<Uri?>(null) }
+// Crear archivo temporal para la foto
+    val photoFile = remember {
+        File(context.cacheDir, "temp_photo_${System.currentTimeMillis()}.jpg")
+    }
+    val todayTotalWeight by viewModel.todayTotalWeight.collectAsState()
+    val currentMonthTrainingDays by viewModel.currentMonthTrainingDays.collectAsState()
+    val scope = rememberCoroutineScope()
+    val cameraLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.TakePicture()
+    ) { success ->
+        if (success) {
+            photoUri?.let { uri ->
+                Log.d("StatScreen", "Foto capturada: $uri")
+                capturedPhotoUri = uri
+                showSocialShare = true // Mostrar el overlay
+            }
+        }
+    }
+// Launcher para solicitar permiso de cámara
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            // Permiso concedido, abrir cámara
+            val uri = FileProvider.getUriForFile(
+                context,
+                "com.develop.traiscore.fileprovider",
+                photoFile
+            )
+            photoUri = uri
+            cameraLauncher.launch(uri)
+        } else {
+            Log.d("StatScreen", "Permiso de cámara denegado")
+        }
+    }
+
+
+
+    // Función para abrir la cámara
+    fun openCamera() {
+        when {
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.CAMERA
+            ) == PackageManager.PERMISSION_GRANTED -> {
+                // Permiso ya concedido, abrir cámara directamente
+                val uri = FileProvider.getUriForFile(
+                    context,
+                    "com.develop.traiscore.fileprovider",
+                    photoFile
+                )
+                photoUri = uri
+                cameraLauncher.launch(uri)
+            }
+            else -> {
+                // Solicitar permiso
+                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
+        }
+    }
     LaunchedEffect(clientId) {
         clientId?.let { id ->
             bodyStatsViewModel.setTargetUser(id)
@@ -140,26 +213,27 @@ fun StatScreen(
             topBar = {
                 TraiScoreTopBar(
                     leftIcon = {
-                        FloatingActionButton(
-                            onClick = {
-                                println("⏱️ Icono de cronometro")
-                            },
-                            modifier = Modifier.size(30.dp),
-                            containerColor = MaterialTheme.tsColors.ledCyan,
-                            contentColor = Color.White,
-                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clickable {
+                                    navController.navigate(
+                                        "social_media_camera?exercise=${selected ?: "Ejercicio"}&oneRepMax=$oneRepMax&maxReps=$maxReps&totalWeight=$todayTotalWeight&trainingDays=$currentMonthTrainingDays"
+                                    )
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.timer_icon),
+                                painter = painterResource(id = R.drawable.ic_camara),
                                 contentDescription = "Temporizador",
-                                tint = Color.Black
+                                tint = MaterialTheme.tsColors.ledCyan,
                             )
                         }
                     },
                     rightIcon = {
                         Box(
                             modifier = Modifier
-                                .size(30.dp) // Igualado al tamaño del FloatingActionButton
+                                .size(30.dp)
                                 .clickable {
                                     showAchievements = true
                                 },
@@ -615,5 +689,9 @@ fun StatScreen(
             onDismiss = { showAchievements = false },
             clientId = clientId // Pasar el clientId para mostrar logros del cliente correcto
         )
+
+
+
+
     }
 }
