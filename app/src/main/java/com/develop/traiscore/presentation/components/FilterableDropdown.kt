@@ -2,6 +2,8 @@ package com.develop.traiscore.presentation.components
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -69,6 +71,7 @@ fun FilterableDropdown(
 
     // **SIMPLIFICADO**: Solo mostrar si está escribiendo Y hay resultados
     val shouldShowDropdown = userIsTyping && filterText.text.isNotEmpty() && filteredItems.isNotEmpty()
+    val hasText = filterText.text.isNotEmpty()
 
     ExposedDropdownMenuBox(
         expanded = shouldShowDropdown, // Usar directamente la condición
@@ -107,7 +110,26 @@ fun FilterableDropdown(
                 }
             },
             trailingIcon = {
-                ExposedDropdownMenuDefaults.TrailingIcon(expanded = shouldShowDropdown)
+                if (hasText) {
+                    // ✅ MOSTRAR ICONO DE CLOSE CUANDO HAY TEXTO
+                    IconButton(
+                        onClick = {
+                            filterText = TextFieldValue("")
+                            onItemSelected("") // ✅ NOTIFICAR QUE SE LIMPIÓ LA SELECCIÓN
+                            expanded = false
+                            userIsTyping = false
+                        }
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Limpiar",
+                            tint = Color.Red
+                        )
+                    }
+                } else {
+                    // ✅ MOSTRAR ARROW DROPDOWN CUANDO NO HAY TEXTO
+                    ExposedDropdownMenuDefaults.TrailingIcon(expanded = shouldShowDropdown)
+                }
             },
             singleLine = true,
             keyboardOptions = KeyboardOptions.Default.copy(
