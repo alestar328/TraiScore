@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -39,12 +40,14 @@ import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.FileProvider
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import com.develop.traiscore.R
 import com.develop.traiscore.presentation.theme.traiBlue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -68,9 +71,8 @@ fun SocialMediaScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    // ✅ CREAR GRAPHICS LAYER PARA CAPTURAR EL COMPOSABLE
-    val graphicsLayer = rememberGraphicsLayer()
     var isCapturing by remember { mutableStateOf(false) }
+    var captureFunction by remember { mutableStateOf<(suspend () -> Bitmap)?>(null) } // ✅ CAMBIAR TIPO
 
     Box(
         modifier = modifier
@@ -78,19 +80,8 @@ fun SocialMediaScreen(
             .background(Color.Black)
             .systemBarsPadding()
             .navigationBarsPadding()
-            // ✅ AGREGAR drawWithCache para capturar el contenido
-            .drawWithCache {
-                onDrawWithContent {
-                    // Dibujar el contenido normalmente
-                    drawContent()
-                    // También dibujarlo en el graphics layer para captura
-                    graphicsLayer.record {
-                        this@onDrawWithContent.drawContent()
-                    }
-                }
-            }
     ) {
-        // Contenido a capturar (sin los botones)
+        // ✅ CONTENIDO A CAPTURAR (CON SU PROPIO drawWithCache)
         CapturedContent(
             photo = photo,
             exerciseName = exerciseName,
@@ -98,10 +89,13 @@ fun SocialMediaScreen(
             maxReps = maxReps,
             totalWeight = totalWeight,
             trainingDays = trainingDays,
+            onCaptureReady = { captureFunc ->
+                captureFunction = captureFunc
+            },
             modifier = Modifier.fillMaxSize()
         )
 
-        // Botones (NO se capturan porque están fuera del contenido)
+        // ✅ BOTONES FUERA DEL ÁREA DE CAPTURA
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -122,12 +116,12 @@ fun SocialMediaScreen(
 
             FloatingActionButton(
                 onClick = {
-                    if (!isCapturing) {
+                    if (!isCapturing && captureFunction != null) {
                         isCapturing = true
                         scope.launch {
                             try {
-                                // ✅ CAPTURAR EL COMPOSABLE COMO BITMAP
-                                val bitmap = graphicsLayer.toImageBitmap().asAndroidBitmap()
+                                // ✅ USAR LA FUNCIÓN DE CAPTURA SUSPENDIDA
+                                val bitmap = captureFunction!!()
 
                                 // ✅ GUARDAR Y COMPARTIR LA IMAGEN CAPTURADA
                                 shareImageWithData(
@@ -167,7 +161,6 @@ fun SocialMediaScreen(
         }
     }
 }
-
 // ✅ COMPOSABLE SEPARADO PARA EL CONTENIDO QUE SE CAPTURA
 @Composable
 private fun CapturedContent(
@@ -177,11 +170,32 @@ private fun CapturedContent(
     topWeight: Float,
     maxReps: Int,
     trainingDays: Int,
+    onCaptureReady: (suspend () -> Bitmap) -> Unit, // ✅ CAMBIAR A SUSPEND FUNCTION
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
+    val graphicsLayer = rememberGraphicsLayer()
 
-    Box(modifier = modifier) {
+    // ✅ NOTIFICAR QUE LA CAPTURA ESTÁ LISTA
+    LaunchedEffect(Unit) {
+        onCaptureReady {
+            graphicsLayer.toImageBitmap().asAndroidBitmap()
+        }
+    }
+
+    Box(
+        modifier = modifier
+            .drawWithCache {
+                onDrawWithContent {
+                    // Dibujar el contenido normalmente
+                    drawContent()
+                    // También dibujarlo en el graphics layer para captura
+                    graphicsLayer.record {
+                        this@onDrawWithContent.drawContent()
+                    }
+                }
+            }
+    ) {
         // Imagen de fondo
         AsyncImage(
             model = ImageRequest.Builder(context)
@@ -207,7 +221,14 @@ private fun CapturedContent(
                     )
                 )
         )
-
+        androidx.compose.foundation.Image(
+            painter = painterResource(id = R.drawable.trailogoup),
+            contentDescription = "TraiScore Logo",
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(20.dp)
+                .height(40.dp)
+        )
         // Overlay de datos centrado
         StatsOverlay(
             exerciseName = exerciseName,
@@ -219,7 +240,6 @@ private fun CapturedContent(
         )
     }
 }
-
 @Composable
 private fun StatsOverlay(
     exerciseName: String,
@@ -249,7 +269,7 @@ private fun StatsOverlay(
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
                 .padding(horizontal = 24.dp)
-                .padding(bottom = 150.dp), // Ajustado para estar por encima de los botones
+                .padding(bottom = 120.dp), // Ajustado para estar por encima de los botones
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(32.dp) // ✅ ESPACIADO UNIFORME ENTRE ELEMENTOS
         ) {

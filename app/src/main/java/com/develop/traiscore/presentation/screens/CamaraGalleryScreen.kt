@@ -9,11 +9,11 @@ import android.provider.MediaStore
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
+import androidx.camera.core.*
+import androidx.camera.lifecycle.ProcessCameraProvider
+import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -27,32 +27,27 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
-import com.develop.traiscore.R
 import com.develop.traiscore.presentation.theme.traiBlue
-import com.develop.traiscore.presentation.theme.traiOrange
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.io.File
-import kotlin.math.abs
+import java.text.SimpleDateFormat
+import java.util.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 data class GalleryPhoto(
     val id: Long,
@@ -72,10 +67,8 @@ fun CameraGalleryScreen(
     navController: NavController
 ) {
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
-    val density = LocalDensity.current
-    val configuration = LocalConfiguration.current
-    val screenHeight = with(density) { configuration.screenHeightDp.dp.toPx() }
 
     // Estados principales
     var photos by remember { mutableStateOf<List<GalleryPhoto>>(emptyList()) }
@@ -85,40 +78,13 @@ fun CameraGalleryScreen(
     var hasCameraPermission by remember { mutableStateOf(false) }
     var isLoadingPhotos by remember { mutableStateOf(true) }
 
-    // Estados de UI
-    var galleryOffset by remember { mutableStateOf(screenHeight * 0.7f) } // Galería 70% oculta inicialmente
-    var isDragging by remember { mutableStateOf(false) }
-    var captureButtonScale by remember { mutableStateOf(1f) }
+    // ✅ ESTADO SIMPLE: GALERÍA ABIERTA O CERRADA
+    var showGallery by remember { mutableStateOf(false) }
 
-    // Animación suave del offset
-    val animatedOffset by animateFloatAsState(
-        targetValue = galleryOffset,
-        animationSpec = tween(durationMillis = 300),
-        label = "galleryOffset"
-    )
-
-    // Cámara
-    var photoUri by remember { mutableStateOf<Uri?>(null) }
-    val photoFile = remember {
-        File(context.cacheDir, "temp_photo_${System.currentTimeMillis()}.jpg")
-    }
-
-    val cameraLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.TakePicture()
-    ) { success ->
-        if (success) {
-            photoUri?.let { uri ->
-                Log.d("CameraGallery", "📷 Foto capturada: $uri")
-                selectedPhoto = GalleryPhoto(
-                    id = System.currentTimeMillis(),
-                    uri = uri,
-                    displayName = "Nueva foto",
-                    dateAdded = System.currentTimeMillis()
-                )
-                showSocialShare = true
-            }
-        }
-    }
+    // 📷 CameraX setup
+    var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
+    var cameraProvider: ProcessCameraProvider? by remember { mutableStateOf(null) }
+    val cameraExecutor: ExecutorService = remember { Executors.newSingleThreadExecutor() }
 
     // Permisos
     val galleryPermissionLauncher = rememberLauncherForActivityResult(
@@ -143,7 +109,6 @@ fun CameraGalleryScreen(
 
     // Inicialización
     LaunchedEffect(Unit) {
-        // Verificar permisos de galería
         val galleryPermission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
             Manifest.permission.READ_MEDIA_IMAGES
         } else {
@@ -169,17 +134,35 @@ fun CameraGalleryScreen(
 
     // Función para tomar foto
     fun capturePhoto() {
-        if (hasCameraPermission) {
-            val uri = FileProvider.getUriForFile(
-                context,
-                "com.develop.traiscore.fileprovider",
-                photoFile
-            )
-            photoUri = uri
-            cameraLauncher.launch(uri)
-        } else {
-            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-        }
+        val imageCapture = imageCapture ?: return
+
+        val name = SimpleDateFormat("yyyy-MM-dd-HH-mm-ss-SSS", Locale.US)
+            .format(System.currentTimeMillis())
+        val outputFileOptions = ImageCapture.OutputFileOptions.Builder(
+            File(context.cacheDir, "TraiScore_$name.jpg")
+        ).build()
+
+        imageCapture.takePicture(
+            outputFileOptions,
+            ContextCompat.getMainExecutor(context),
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onError(exception: ImageCaptureException) {
+                    Log.e("CameraGallery", "❌ Error capturando foto", exception)
+                }
+
+                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                    Log.d("CameraGallery", "📷 Foto guardada exitosamente")
+                    val savedUri = Uri.fromFile(File(context.cacheDir, "TraiScore_$name.jpg"))
+                    selectedPhoto = GalleryPhoto(
+                        id = System.currentTimeMillis(),
+                        uri = savedUri,
+                        displayName = "Nueva foto",
+                        dateAdded = System.currentTimeMillis()
+                    )
+                    showSocialShare = true
+                }
+            }
+        )
     }
 
     // UI Principal
@@ -198,187 +181,220 @@ fun CameraGalleryScreen(
                 Log.d("CameraGallery", "📤 Compartir bitmap")
             }
         )
+    } else if (showGallery) {
+        // ✅ PANTALLA COMPLETA DE GALERÍA
+        FullGalleryScreen(
+            photos = photos,
+            isLoading = isLoadingPhotos,
+            hasPermission = hasGalleryPermission,
+            onPhotoSelected = { photo ->
+                selectedPhoto = photo
+                showGallery = false
+                showSocialShare = true
+            },
+            onRequestPermission = {
+                val permission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                    Manifest.permission.READ_MEDIA_IMAGES
+                } else {
+                    Manifest.permission.READ_EXTERNAL_STORAGE
+                }
+                galleryPermissionLauncher.launch(permission)
+            },
+            onClose = { showGallery = false }
+        )
     } else {
+        // ✅ PANTALLA DE CÁMARA CON BARRA INFERIOR
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black)
         ) {
-            // 📷 Área de cámara
-            CameraViewArea(
-                onClose = { navController.popBackStack() },
-                modifier = Modifier.fillMaxSize()
-            )
-
-            // 📸 Botón de captura
-            Box(
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 120.dp)
-                    .scale(captureButtonScale)
-            ) {
-                FloatingActionButton(
-                    onClick = { capturePhoto() },
-                    modifier = Modifier.size(80.dp),
-                    containerColor = Color.White,
-                    elevation = FloatingActionButtonDefaults.elevation(8.dp)
+            // 📷 Vista de cámara REAL
+            if (hasCameraPermission) {
+                RealCameraView(
+                    onCameraSetup = { capture, provider ->
+                        imageCapture = capture
+                        cameraProvider = provider
+                    },
+                    modifier = Modifier.fillMaxSize()
+                )
+            } else {
+                // Mostrar mensaje de permisos
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
                 ) {
-                    Box(
-                        modifier = Modifier
-                            .size(70.dp)
-                            .background(Color.White, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(60.dp)
-                                .background(Color.White, CircleShape)
-                                .clip(CircleShape)
-                                .clickable { capturePhoto() }
+                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        Text(
+                            "Se requiere permiso de cámara",
+                            color = Color.White,
+                            fontSize = 18.sp
                         )
+                        Spacer(modifier = Modifier.height(16.dp))
+                        Button(
+                            onClick = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) }
+                        ) {
+                            Text("Permitir Cámara")
+                        }
                     }
                 }
             }
 
-            // 🖼️ Panel de galería deslizable
-            Box(
+            // ❌ Botón cerrar (top-left)
+            IconButton(
+                onClick = { navController.popBackStack() },
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(screenHeight.dp)
-                    .graphicsLayer {
-                        translationY = animatedOffset
-                    }
-                    .pointerInput(Unit) {
-                        detectDragGestures(
-                            onDragStart = {
-                                isDragging = true
-                            },
-                            onDragEnd = {
-                                isDragging = false
-                                // Snap a posiciones específicas
-                                val snapPosition = when {
-                                    galleryOffset < screenHeight * 0.3f -> 0f // Galería completamente visible
-                                    galleryOffset < screenHeight * 0.6f -> screenHeight * 0.5f // Galería media
-                                    else -> screenHeight * 0.7f // Galería mínima
-                                }
-                                galleryOffset = snapPosition
-                            }
-                        ) { change, dragAmount ->
-                            val newOffset = galleryOffset + dragAmount.y
-                            galleryOffset = newOffset.coerceIn(0f, screenHeight * 0.8f)
-                        }
-                    }
+                    .align(Alignment.TopStart)
+                    .padding(16.dp)
             ) {
-                GalleryPanel(
-                    photos = photos,
-                    selectedPhoto = selectedPhoto,
-                    isLoading = isLoadingPhotos,
-                    hasPermission = hasGalleryPermission,
-                    onPhotoSelected = { photo ->
-                        selectedPhoto = photo
-                        showSocialShare = true
-                    },
-                    onRequestPermission = {
-                        val permission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                            Manifest.permission.READ_MEDIA_IMAGES
-                        } else {
-                            Manifest.permission.READ_EXTERNAL_STORAGE
-                        }
-                        galleryPermissionLauncher.launch(permission)
-                    },
-                    modifier = Modifier.fillMaxSize()
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Cerrar",
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
                 )
             }
 
-            // 📊 Indicador de galería (handle)
-            GalleryHandle(
+            // 📸 Botón de captura (bottom-center)
+            FloatingActionButton(
+                onClick = { capturePhoto() },
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .offset(y = (animatedOffset - screenHeight).dp)
-                    .padding(top = 8.dp)
+                    .padding(bottom = 150.dp) // Espacio para la barra inferior
+                    .size(80.dp),
+                containerColor = Color.White,
+                elevation = FloatingActionButtonDefaults.elevation(8.dp)
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(60.dp)
+                        .background(Color.White, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .size(50.dp)
+                            .background(Color.White, CircleShape)
+                            .clip(CircleShape)
+                    )
+                }
+            }
+
+            // ✅ BARRA INFERIOR ESTILO INSTAGRAM
+            InstagramGalleryBar(
+                onClick = { showGallery = true },
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .fillMaxWidth()
+                    .navigationBarsPadding()
             )
+        }
+    }
+
+    // Cleanup
+    DisposableEffect(Unit) {
+        onDispose {
+            cameraExecutor.shutdown()
+            cameraProvider?.unbindAll()
         }
     }
 }
 
+// ✅ NUEVO COMPOSABLE: BARRA INFERIOR ESTILO INSTAGRAM
 @Composable
-private fun CameraViewArea(
-    onClose: () -> Unit,
+private fun InstagramGalleryBar(
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier.background(Color.Black)
+    Card(
+        modifier = modifier
+            .height(80.dp)
+            .clickable { onClick() },
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Black.copy(alpha = 0.8f)
+        ),
+        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
     ) {
-        // Simulación de vista de cámara (en una implementación real, usarías CameraX)
-        Column(
+        Box(
             modifier = Modifier.fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+            contentAlignment = Alignment.Center
         ) {
-            Icon(
-                painter = painterResource(R.drawable.ic_camara),
-                contentDescription = "Cámara",
-                tint = Color.Gray,
-                modifier = Modifier.size(120.dp)
-            )
-            Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Vista de Cámara",
-                color = Color.Gray,
-                fontSize = 18.sp
-            )
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "Desliza hacia arriba para ver la galería",
-                color = Color.Gray,
-                fontSize = 14.sp
-            )
-        }
-
-        // Botón cerrar
-        IconButton(
-            onClick = onClose,
-            modifier = Modifier
-                .align(Alignment.TopStart)
-                .padding(16.dp)
-        ) {
-            Icon(
-                imageVector = Icons.Default.Close,
-                contentDescription = "Cerrar",
-                tint = Color.White,
-                modifier = Modifier.size(28.dp)
-            )
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.List,
+                    contentDescription = "Galería",
+                    tint = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Galería",
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Icon(
+                    imageVector = Icons.Default.KeyboardArrowUp,
+                    contentDescription = "Abrir",
+                    tint = Color.White.copy(alpha = 0.7f),
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }
 
+// ✅ NUEVO COMPOSABLE: PANTALLA COMPLETA DE GALERÍA
 @Composable
-private fun GalleryPanel(
+private fun FullGalleryScreen(
     photos: List<GalleryPhoto>,
-    selectedPhoto: GalleryPhoto?,
     isLoading: Boolean,
     hasPermission: Boolean,
     onPhotoSelected: (GalleryPhoto) -> Unit,
     onRequestPermission: () -> Unit,
-    modifier: Modifier = Modifier
+    onClose: () -> Unit
 ) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(
-            containerColor = Color.Black.copy(alpha = 0.9f)
-        ),
-        shape = RoundedCornerShape(topStart = 20.dp, topEnd = 20.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black)
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
         ) {
-            // Handle visual
-            GalleryHandle(
+            // Header con botón cerrar
+            Row(
                 modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .padding(vertical = 8.dp)
-            )
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                IconButton(onClick = onClose) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Cerrar",
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
 
+                Text(
+                    text = "Seleccionar foto",
+                    color = Color.White,
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold
+                )
+
+                // Spacer para balance
+                Spacer(modifier = Modifier.width(48.dp))
+            }
+
+            // Contenido de la galería
             when {
                 isLoading -> {
                     Box(
@@ -425,29 +441,23 @@ private fun GalleryPanel(
                 }
 
                 photos.isEmpty() -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(32.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = "📷",
-                            fontSize = 48.sp
-                        )
                         Text(
                             text = "No hay fotos",
                             fontSize = 18.sp,
-                            color = Color.White
+                            color = Color.Gray
                         )
                     }
                 }
 
                 else -> {
+                    // Grid de fotos
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(3),
-                        contentPadding = PaddingValues(8.dp),
+                        contentPadding = PaddingValues(4.dp),
                         horizontalArrangement = Arrangement.spacedBy(2.dp),
                         verticalArrangement = Arrangement.spacedBy(2.dp),
                         modifier = Modifier.fillMaxSize()
@@ -455,7 +465,7 @@ private fun GalleryPanel(
                         items(photos) { photo ->
                             PhotoGridItem(
                                 photo = photo,
-                                isSelected = selectedPhoto?.id == photo.id,
+                                isSelected = false,
                                 onClick = { onPhotoSelected(photo) },
                                 modifier = Modifier
                                     .aspectRatio(1f)
@@ -469,61 +479,7 @@ private fun GalleryPanel(
     }
 }
 
-@Composable
-private fun GalleryHandle(
-    modifier: Modifier = Modifier
-) {
-    Box(
-        modifier = modifier
-            .width(40.dp)
-            .height(4.dp)
-            .background(
-                Color.White.copy(alpha = 0.5f),
-                RoundedCornerShape(2.dp)
-            )
-    )
-}
-
-@Composable
-private fun PhotoGridItem(
-    photo: GalleryPhoto,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
-
-    Box(modifier = modifier) {
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(photo.uri)
-                .build(),
-            contentDescription = "Foto de galería",
-            modifier = Modifier
-                .fillMaxSize()
-                .clickable { onClick() },
-            contentScale = ContentScale.Crop
-        )
-
-        if (isSelected) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(traiBlue.copy(alpha = 0.5f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Check,
-                    contentDescription = "Seleccionada",
-                    tint = Color.White,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
-        }
-    }
-}
-
-// Función para cargar fotos (misma que antes)
+// ✅ FUNCIÓN MEJORADA PARA CARGAR TODAS LAS FOTOS
 private suspend fun loadPhotosFromGallery(context: Context): List<GalleryPhoto> {
     return withContext(Dispatchers.IO) {
         val photos = mutableListOf<GalleryPhoto>()
@@ -570,10 +526,90 @@ private suspend fun loadPhotosFromGallery(context: Context): List<GalleryPhoto> 
             }
 
             Log.d("CameraGallery", "📸 Cargadas ${photos.size} fotos")
-            photos.take(100) // Limitar a 100 fotos más recientes
+            photos // ✅ TODAS LAS FOTOS, SIN LÍMITE
         } catch (e: Exception) {
             Log.e("CameraGallery", "❌ Error cargando fotos", e)
             emptyList()
+        }
+    }
+}
+
+@Composable
+private fun RealCameraView(
+    onCameraSetup: (ImageCapture, ProcessCameraProvider) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+    val preview = remember { Preview.Builder().build() }
+    val imageCapture = remember { ImageCapture.Builder().build() }
+
+    AndroidView(
+        factory = { ctx ->
+            val previewView = PreviewView(ctx)
+            val cameraProviderFuture = ProcessCameraProvider.getInstance(ctx)
+
+            cameraProviderFuture.addListener({
+                val cameraProvider = cameraProviderFuture.get()
+
+                preview.setSurfaceProvider(previewView.surfaceProvider)
+
+                try {
+                    cameraProvider.unbindAll()
+                    cameraProvider.bindToLifecycle(
+                        lifecycleOwner,
+                        CameraSelector.DEFAULT_BACK_CAMERA,
+                        preview,
+                        imageCapture
+                    )
+                    onCameraSetup(imageCapture, cameraProvider)
+                } catch (exc: Exception) {
+                    Log.e("CameraGallery", "Error iniciando cámara", exc)
+                }
+            }, ContextCompat.getMainExecutor(ctx))
+
+            previewView
+        },
+        modifier = modifier
+    )
+}
+
+// ✅ COMPOSABLE: PhotoGridItem
+@Composable
+private fun PhotoGridItem(
+    photo: GalleryPhoto,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+
+    Box(modifier = modifier) {
+        AsyncImage(
+            model = ImageRequest.Builder(context)
+                .data(photo.uri)
+                .build(),
+            contentDescription = "Foto de galería",
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable { onClick() },
+            contentScale = ContentScale.Crop
+        )
+
+        if (isSelected) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(traiBlue.copy(alpha = 0.6f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = "Seleccionada",
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
         }
     }
 }

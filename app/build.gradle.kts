@@ -65,6 +65,13 @@ android {
 
 dependencies {
     val activity_version = "1.10.1"
+    val camerax_version = "1.5.0-beta01"
+    implementation("androidx.camera:camera-core:${camerax_version}")
+    implementation("androidx.camera:camera-camera2:${camerax_version}")
+    implementation("androidx.camera:camera-lifecycle:${camerax_version}")
+    implementation("androidx.camera:camera-view:${camerax_version}")
+
+    implementation("com.google.guava:guava:33.4.8-android")
 
     implementation("androidx.activity:activity:$activity_version")
     implementation("io.coil-kt.coil3:coil-compose:3.2.0")
