@@ -34,10 +34,19 @@ fun ProfilePhotoComponent(
 ) {
     val context = LocalContext.current
 
+    LaunchedEffect(currentPhotoUrl, isUploading) {
+        android.util.Log.d("ProfilePhoto", "🔄 ===== COMPONENT UPDATE =====")
+        android.util.Log.d("ProfilePhoto", "📸 currentPhotoUrl: '$currentPhotoUrl'")
+        android.util.Log.d("ProfilePhoto", "📸 currentPhotoUrl.isNullOrEmpty(): ${currentPhotoUrl.isNullOrEmpty()}")
+        android.util.Log.d("ProfilePhoto", "📸 currentPhotoUrl?.isNotEmpty(): ${currentPhotoUrl?.isNotEmpty()}")
+        android.util.Log.d("ProfilePhoto", "🔄 isUploading: $isUploading")
+        android.util.Log.d("ProfilePhoto", "================================")
+    }
     // Launcher para seleccionar imagen de la galería
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
+        android.util.Log.d("ProfilePhoto", "🖼️ Imagen seleccionada desde galería: $uri")
         uri?.let { onPhotoSelected(it) }
     }
 
@@ -47,17 +56,37 @@ fun ProfilePhotoComponent(
             .clip(RoundedCornerShape(48.dp))
             .clickable {
                 if (!isUploading) {
+                    android.util.Log.d("ProfilePhoto", "📷 Usuario tocó el componente, abriendo galería...")
                     galleryLauncher.launch("image/*")
+                } else {
+                    android.util.Log.d("ProfilePhoto", "⏳ Usuario tocó el componente pero está subiendo...")
                 }
             },
         contentAlignment = Alignment.Center
     ) {
-        // Imagen de perfil o placeholder
-        if (currentPhotoUrl?.isNotEmpty() == true) {
+        val shouldShowAsyncImage = currentPhotoUrl?.isNotEmpty() == true
+        android.util.Log.d("ProfilePhoto", "🤔 shouldShowAsyncImage: $shouldShowAsyncImage")
+
+        if (shouldShowAsyncImage) {
+            android.util.Log.d("ProfilePhoto", "✅ Mostrando AsyncImage con URL: $currentPhotoUrl")
+
             AsyncImage(
                 model = ImageRequest.Builder(context)
                     .data(currentPhotoUrl)
                     .crossfade(true)
+                    .listener(
+                        onStart = {
+                            android.util.Log.d("ProfilePhoto", "⏳ AsyncImage: Iniciando carga de imagen...")
+                        },
+                        onSuccess = { _, result ->
+                            android.util.Log.d("ProfilePhoto", "✅ AsyncImage: Imagen cargada exitosamente")
+                            android.util.Log.d("ProfilePhoto", "📊 AsyncImage: Resultado: $result")
+                        },
+                        onError = { _, error ->
+                            android.util.Log.e("ProfilePhoto", "❌ AsyncImage: Error cargando imagen", error.throwable)
+                            android.util.Log.e("ProfilePhoto", "🔗 AsyncImage: URL que falló: $currentPhotoUrl")
+                        }
+                    )
                     .build(),
                 contentDescription = "Foto de perfil",
                 modifier = Modifier.fillMaxSize(),
@@ -66,6 +95,8 @@ fun ProfilePhotoComponent(
                 error = painterResource(R.drawable.user_png)
             )
         } else {
+            android.util.Log.d("ProfilePhoto", "🆕 Mostrando placeholder (sin foto válida)")
+
             Image(
                 painter = painterResource(R.drawable.user_png),
                 contentDescription = "Foto de perfil por defecto",
@@ -74,8 +105,10 @@ fun ProfilePhotoComponent(
             )
         }
 
-        // Overlay de carga o icono de cámara
+        // Overlay de carga
         if (isUploading) {
+            android.util.Log.d("ProfilePhoto", "⏳ Mostrando overlay de carga...")
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()

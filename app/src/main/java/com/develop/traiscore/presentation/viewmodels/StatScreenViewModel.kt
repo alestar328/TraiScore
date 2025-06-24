@@ -29,6 +29,13 @@ import java.util.Locale
 import javax.inject.Inject
 import kotlin.math.roundToInt
 
+data class SocialShareData(
+    val topExercise: String,
+    val topWeight: Float,
+    val maxReps: Int,
+    val totalWeight: Double,
+    val trainingDays: Int
+)
 
 @HiltViewModel
 class StatScreenViewModel @Inject constructor() : ViewModel() {
@@ -75,11 +82,12 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
     private val _isLoadingRadarData = MutableStateFlow(false)
     val isLoadingRadarData: StateFlow<Boolean> = _isLoadingRadarData
 
-    private val _todayTotalWeight = MutableStateFlow(0.0)
-    val todayTotalWeight: StateFlow<Double> = _todayTotalWeight
+
 
     private val _currentMonthTrainingDays = MutableStateFlow(0)
     val currentMonthTrainingDays: StateFlow<Int> = _currentMonthTrainingDays
+
+
 
     fun getCurrentMonthTrainingDays(): Int {
         return _currentMonthTrainingDays.value
@@ -95,7 +103,6 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
             fetchExerciseOptions()
             loadRadarChartData()
             calculateCurrentMonthTrainingDays()
-            calculateTodayTotalWeight()
             // Esperar a que se carguen los ejercicios antes de seleccionar el último
             _exerciseOptions
                 .filter { it.isNotEmpty() }
@@ -116,6 +123,105 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                     launch { calculateTotalWeightLifted(exercise) }
                 }
         }
+    }
+    fun calculateSocialShareData(callback: (SocialShareData?) -> Unit) {
+        val userId = getTargetUserId()
+        if (userId == null) {
+            Log.e("StatsVM", "Usuario no identificado")
+            callback(null)
+            return
+        }
+
+        val today = java.time.LocalDate.now()
+        val calendar = java.util.Calendar.getInstance()
+        calendar.set(today.year, today.monthValue - 1, today.dayOfMonth)
+
+        // Inicio del día
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        calendar.set(java.util.Calendar.MINUTE, 0)
+        calendar.set(java.util.Calendar.SECOND, 0)
+        calendar.set(java.util.Calendar.MILLISECOND, 0)
+        val startOfDay = calendar.time
+
+        // Final del día
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 23)
+        calendar.set(java.util.Calendar.MINUTE, 59)
+        calendar.set(java.util.Calendar.SECOND, 59)
+        calendar.set(java.util.Calendar.MILLISECOND, 999)
+        val endOfDay = calendar.time
+
+        Log.d("StatsVM", "🎯 Calculando datos sociales para: $userId")
+
+        // UNA SOLA CONSULTA para datos del día
+        db.collection("users")
+            .document(userId)
+            .collection("workoutEntries")
+            .whereGreaterThanOrEqualTo("timestamp", startOfDay)
+            .whereLessThanOrEqualTo("timestamp", endOfDay)
+            .get()
+            .addOnSuccessListener { todaySnapshot ->
+                Log.d("StatsVM", "📊 Entrenamientos de hoy: ${todaySnapshot.size()}")
+
+                if (todaySnapshot.documents.isEmpty()) {
+                    Log.d("StatsVM", "❌ No hay entrenamientos hoy")
+                    callback(
+                        SocialShareData(
+                            topExercise = "Sin entrenamientos",
+                            topWeight = 0f,
+                            maxReps = 0,
+                            totalWeight = 0.0,
+                            trainingDays = _currentMonthTrainingDays.value
+                        )
+                    )
+                    return@addOnSuccessListener
+                }
+
+                // Procesar datos del día
+                var topExercise = "Ejercicio"
+                var topWeight = 0f
+                var maxReps = 0
+                var totalWeight = 0.0
+
+                todaySnapshot.documents.forEach { doc ->
+                    val weight = doc.getDouble("weight")?.toFloat() ?: 0f
+                    val reps = doc.getLong("reps")?.toInt() ?: 0
+                    val exerciseName = doc.getString("title") ?: "Ejercicio"
+
+                    // Ejercicio con mayor peso
+                    if (weight > topWeight) {
+                        topWeight = weight
+                        topExercise = exerciseName
+                    }
+
+                    // Máximo de repeticiones
+                    if (reps > maxReps) {
+                        maxReps = reps
+                    }
+
+                    // Peso total (igual que TodayViewScreen)
+                    totalWeight += weight
+                }
+
+                Log.d("StatsVM", "✅ Datos calculados:")
+                Log.d("StatsVM", "   Top exercise: $topExercise ($topWeight kg)")
+                Log.d("StatsVM", "   Max reps: $maxReps")
+                Log.d("StatsVM", "   Total weight: $totalWeight kg")
+                Log.d("StatsVM", "   Training days this month: ${_currentMonthTrainingDays.value}")
+
+                callback(
+                    SocialShareData(
+                        topExercise = topExercise,
+                        topWeight = topWeight,
+                        maxReps = maxReps,
+                        totalWeight = totalWeight,
+                        trainingDays = _currentMonthTrainingDays.value
+                    )
+                )
+            }
+            .addOnFailureListener { e ->
+                Log.e("StatsVM", "Error calculando datos sociales", e)
+                callback(null)
+            }
     }
     private fun calculateCurrentMonthTrainingDays() {
         val userId = getTargetUserId()
@@ -179,65 +285,7 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                 _currentMonthTrainingDays.value = 0
             }
     }
-    fun getTodayTotalWeight(): Double {
-        return _todayTotalWeight.value
-    }
-    private fun calculateTodayTotalWeight() {
-        val userId = getTargetUserId()
-        if (userId == null) {
-            Log.e("StatsVM", "Usuario no identificado, no puedo calcular peso total del día")
-            return
-        }
 
-        // Calcular fecha de hoy en el mismo formato que TodayViewScreen
-        val today = java.time.LocalDate.now()
-        val calendar = java.util.Calendar.getInstance()
-        calendar.set(today.year, today.monthValue - 1, today.dayOfMonth)
-
-        // Obtener timestamp de inicio y fin del día
-        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
-        calendar.set(java.util.Calendar.MINUTE, 0)
-        calendar.set(java.util.Calendar.SECOND, 0)
-        calendar.set(java.util.Calendar.MILLISECOND, 0)
-        val startOfDay = calendar.time
-
-        calendar.set(java.util.Calendar.HOUR_OF_DAY, 23)
-        calendar.set(java.util.Calendar.MINUTE, 59)
-        calendar.set(java.util.Calendar.SECOND, 59)
-        calendar.set(java.util.Calendar.MILLISECOND, 999)
-        val endOfDay = calendar.time
-
-        Log.d("StatsVM", "🗓️ Calculando peso total para hoy - Usuario: $userId")
-        Log.d("StatsVM", "📅 Rango: $startOfDay a $endOfDay")
-
-        db.collection("users")
-            .document(userId)
-            .collection("workoutEntries")
-            .whereGreaterThanOrEqualTo("timestamp", startOfDay)
-            .whereLessThanOrEqualTo("timestamp", endOfDay)
-            .get()
-            .addOnSuccessListener { snap ->
-                val todayTotal = snap.documents.fold(0.0) { acc, doc ->
-                    val weight = doc.getDouble("weight") ?: 0.0
-                    val reps = doc.getLong("reps")?.toInt() ?: 0
-                    val series = doc.getLong("series")?.toInt() ?: 1
-
-                    // ✅ MISMO CÁLCULO QUE TodayViewScreen: peso * reps * series
-                    val exerciseTotal = weight * reps * series
-
-                    Log.d("StatsVM", "📄 ${doc.getString("title")}: ${weight}kg x ${reps}reps x ${series}series = ${exerciseTotal}kg")
-
-                    acc + exerciseTotal
-                }
-
-                _todayTotalWeight.value = todayTotal
-                Log.d("StatsVM", "✅ Peso total del día calculado: $todayTotal kg (${snap.size()} ejercicios)")
-            }
-            .addOnFailureListener { e ->
-                Log.e("StatsVM", "Error calculando peso total del día", e)
-                _todayTotalWeight.value = 0.0
-            }
-    }
 
     fun loadRadarChartData() {
         val userId = getTargetUserId()
@@ -353,7 +401,6 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
         viewModelScope.launch {
             fetchExerciseOptions()
             loadRadarChartData()
-            calculateTodayTotalWeight()
             calculateCurrentMonthTrainingDays()
             _selectedExercise.value?.let { exercise ->
                 loadAllProgressFor(exercise)

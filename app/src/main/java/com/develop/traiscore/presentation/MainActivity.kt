@@ -45,7 +45,7 @@ import com.develop.traiscore.exports.ImportRoutineViewModel
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.screens.BodyMeasurementsHistoryScreen
 import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
-import com.develop.traiscore.presentation.screens.CameraSocialScreen
+import com.develop.traiscore.presentation.screens.CameraGalleryScreen
 import com.develop.traiscore.presentation.screens.ClientProfileScreen
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
@@ -322,31 +322,14 @@ fun AppNavigation(navController: NavHostController) {
             )
         }
         composable(
-            route = "social_media_camera?exercise={exercise}&oneRepMax={oneRepMax}&maxReps={maxReps}&totalWeight={totalWeight}&trainingDays={trainingDays}",
-            arguments = listOf(
-                navArgument("exercise") { type = NavType.StringType },
-                navArgument("oneRepMax") { type = NavType.FloatType },
-                navArgument("maxReps") { type = NavType.IntType },
-                navArgument("totalWeight") { type = NavType.FloatType },
-                navArgument("trainingDays") {
-                    type = NavType.IntType
-                    defaultValue = 0 // ✅ VALOR POR DEFECTO
-                }
-            )
+            "social_media_camera?exercise={exercise}&oneRepMax={oneRepMax}&maxReps={maxReps}&totalWeight={totalWeight}&trainingDays={trainingDays}"
         ) { backStackEntry ->
-            val exercise = backStackEntry.arguments?.getString("exercise") ?: "Ejercicio"
-            val oneRepMax = backStackEntry.arguments?.getFloat("oneRepMax") ?: 0f
-            val maxReps = backStackEntry.arguments?.getInt("maxReps") ?: 0
-            val totalWeight = backStackEntry.arguments?.getFloat("totalWeight")?.toDouble() ?: 0.0
-            val trainingDays = backStackEntry.arguments?.getInt("trainingDays") ?: 0 // ✅ NUEVO
-
-
-            CameraSocialScreen(
-                exerciseName = exercise,
-                oneRepMax = oneRepMax,
-                maxReps = maxReps,
-                totalWeight = totalWeight,
-                trainingDays = trainingDays,
+            CameraGalleryScreen( // ← Nuevo screen integrado
+                exerciseName = backStackEntry.arguments?.getString("exercise") ?: "",
+                oneRepMax = backStackEntry.arguments?.getString("oneRepMax")?.toFloatOrNull() ?: 0f,
+                maxReps = backStackEntry.arguments?.getString("maxReps")?.toIntOrNull() ?: 0,
+                totalWeight = backStackEntry.arguments?.getString("totalWeight")?.toDoubleOrNull() ?: 0.0,
+                trainingDays = backStackEntry.arguments?.getString("trainingDays")?.toIntOrNull() ?: 0,
                 navController = navController
             )
         }

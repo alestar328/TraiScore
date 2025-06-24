@@ -52,11 +52,13 @@ data class TrainerInfo(
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
+    clientId: String? = null,
     onMeasurementsClick: () -> Unit,
     profileViewModel: ProfileViewModel = hiltViewModel() // ← Agregar esta línea
 
 ) {
     val profileUiState by profileViewModel.uiState.collectAsStateWithLifecycle()
+    var showAchievements by remember { mutableStateOf(false) }
 
     val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
@@ -217,21 +219,23 @@ fun ProfileScreen(
             topBar = {
                 TraiScoreTopBar(
                     leftIcon = {
-                        FloatingActionButton(
-                            onClick = {
-                                println("⏱️ Icono de cronometro")
-                            },
-                            modifier = Modifier.size(30.dp),
-                            containerColor = MaterialTheme.tsColors.ledCyan,
-                            contentColor = Color.White,
-                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clickable {
+                                    showAchievements = true
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.timer_icon),
-                                contentDescription = "Temporizador",
-                                tint = Color.Black
+                                painter = painterResource(id = R.drawable.trophy_icon),
+                                contentDescription = "Logros",
+                                tint = MaterialTheme.tsColors.ledCyan,
+                                modifier = Modifier.size(22.dp)
                             )
                         }
+
+
                     },
                     rightIcon = {
                         Box(
@@ -366,6 +370,11 @@ fun ProfileScreen(
                 )
             }
         }
+        AchivementsUI(
+            isVisible = showAchievements,
+            onDismiss = { showAchievements = false },
+            clientId = clientId // Pasar el clientId para mostrar logros del cliente correcto
+        )
     }
 }
 
@@ -521,6 +530,8 @@ private fun TrainerSection(
                 }
             }
         }
+
+
     }
 }
 

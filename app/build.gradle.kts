@@ -20,8 +20,8 @@ android {
         applicationId = "com.develop.traiscore"
         minSdk = 30
         targetSdk = 34
-        versionCode = 12
-        versionName = "1.0.11"
+        versionCode = 13
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -64,7 +64,11 @@ android {
 }
 
 dependencies {
+    val activity_version = "1.10.1"
 
+    implementation("androidx.activity:activity:$activity_version")
+    implementation("io.coil-kt.coil3:coil-compose:3.2.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.2.0")
 
     implementation ("androidx.datastore:datastore-preferences:1.1.7")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")

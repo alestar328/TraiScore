@@ -30,6 +30,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -57,6 +59,7 @@ import androidx.navigation.NavController
 import com.develop.traiscore.R
 import com.develop.traiscore.domain.model.BodyMeasurementProgressData
 import com.develop.traiscore.domain.model.BodyMeasurementType
+import com.develop.traiscore.presentation.components.ChronoScreen
 import com.develop.traiscore.presentation.components.CircularProgressView
 import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.LineChartView
@@ -85,8 +88,8 @@ fun StatScreen(
     val circularData by viewModel.circularData.collectAsState()
     val selected by viewModel.selectedExercise.collectAsState()
     var selectedTab by remember { mutableStateOf("Mis records") }
+    var showChronoScreen by remember { mutableStateOf(false) }
 
-    val totalKg by viewModel.totalWeightSum.collectAsState()
 
     val (oneRepMax, maxReps, averageRIR) = circularData
     val weightByReps = remember(weightData) {
@@ -100,7 +103,6 @@ fun StatScreen(
     var bodyChartData by remember { mutableStateOf<List<Pair<String, Float>>>(emptyList()) }
     var isLoadingBodyData by remember { mutableStateOf(false) }
 
-    var showAchievements by remember { mutableStateOf(false) }
 
     val radarChartData by viewModel.radarChartData.collectAsState()
     val isLoadingRadarData by viewModel.isLoadingRadarData.collectAsState()
@@ -109,13 +111,9 @@ fun StatScreen(
     val context = LocalContext.current
     var showSocialShare by remember { mutableStateOf(false) }
     var capturedPhotoUri by remember { mutableStateOf<Uri?>(null) }
-// Crear archivo temporal para la foto
     val photoFile = remember {
         File(context.cacheDir, "temp_photo_${System.currentTimeMillis()}.jpg")
     }
-    val todayTotalWeight by viewModel.todayTotalWeight.collectAsState()
-    val currentMonthTrainingDays by viewModel.currentMonthTrainingDays.collectAsState()
-    val scope = rememberCoroutineScope()
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture()
     ) { success ->
@@ -127,45 +125,27 @@ fun StatScreen(
             }
         }
     }
-// Launcher para solicitar permiso de cámara
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        contract = ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            // Permiso concedido, abrir cámara
-            val uri = FileProvider.getUriForFile(
-                context,
-                "com.develop.traiscore.fileprovider",
-                photoFile
-            )
-            photoUri = uri
-            cameraLauncher.launch(uri)
-        } else {
-            Log.d("StatScreen", "Permiso de cámara denegado")
-        }
-    }
 
 
 
-    // Función para abrir la cámara
-    fun openCamera() {
-        when {
-            ContextCompat.checkSelfPermission(
-                context,
-                Manifest.permission.CAMERA
-            ) == PackageManager.PERMISSION_GRANTED -> {
-                // Permiso ya concedido, abrir cámara directamente
-                val uri = FileProvider.getUriForFile(
-                    context,
-                    "com.develop.traiscore.fileprovider",
-                    photoFile
+    fun calculateTodayDataAndNavigate(
+        context: android.content.Context,
+        navController: NavController,
+        viewModel: StatScreenViewModel,
+        oneRepMax: Float,
+        maxReps: Int
+    ) {
+        viewModel.calculateSocialShareData { socialData ->
+            if (socialData != null) {
+                // Usar la nueva ruta integrada
+                navController.navigate(
+                    "social_media_camera?" +
+                            "exercise=${socialData.topExercise}&" +
+                            "oneRepMax=${socialData.topWeight}&" +
+                            "maxReps=${socialData.maxReps}&" +
+                            "totalWeight=${socialData.totalWeight}&" +
+                            "trainingDays=${socialData.trainingDays}"
                 )
-                photoUri = uri
-                cameraLauncher.launch(uri)
-            }
-            else -> {
-                // Solicitar permiso
-                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
             }
         }
     }
@@ -217,33 +197,39 @@ fun StatScreen(
                             modifier = Modifier
                                 .size(30.dp)
                                 .clickable {
-                                    navController.navigate(
-                                        "social_media_camera?exercise=${selected ?: "Ejercicio"}&oneRepMax=$oneRepMax&maxReps=$maxReps&totalWeight=$todayTotalWeight&trainingDays=$currentMonthTrainingDays"
+                                    calculateTodayDataAndNavigate(
+                                        context = context,
+                                        navController = navController,
+                                        viewModel = viewModel,
+                                        oneRepMax = oneRepMax,
+                                        maxReps = maxReps
                                     )
                                 },
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_camara),
-                                contentDescription = "Temporizador",
+                                contentDescription = "Compartir sesión",
                                 tint = MaterialTheme.tsColors.ledCyan,
                             )
                         }
                     },
                     rightIcon = {
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clickable {
-                                    showAchievements = true
-                                },
-                            contentAlignment = Alignment.Center
+                        FloatingActionButton(
+                            onClick = {
+                                println("⏱️ Icono de cronometro")
+                                showChronoScreen = true
+
+                            },
+                            modifier = Modifier.size(30.dp),
+                            containerColor = MaterialTheme.tsColors.ledCyan,
+                            contentColor = Color.White,
+                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
                         ) {
                             Icon(
-                                painter = painterResource(id = R.drawable.trophy_icon),
-                                contentDescription = "Logros",
-                                tint = MaterialTheme.tsColors.ledCyan,
-                                modifier = Modifier.size(22.dp)
+                                painter = painterResource(id = R.drawable.timer_icon),
+                                contentDescription = "Temporizador",
+                                tint = Color.Black
                             )
                         }
 
@@ -684,12 +670,13 @@ fun StatScreen(
 
             }
         )
-        AchivementsUI(
-            isVisible = showAchievements,
-            onDismiss = { showAchievements = false },
-            clientId = clientId // Pasar el clientId para mostrar logros del cliente correcto
+        ChronoScreen(
+            isVisible = showChronoScreen,
+            onDismiss = {
+                Log.d("StatScreen", "⏱️ Cerrando cronómetro")
+                showChronoScreen = false
+            }
         )
-
 
 
 

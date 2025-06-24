@@ -189,7 +189,7 @@ private fun CapturedContent(
                 .build(),
             contentDescription = "Foto capturada",
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Crop
+            contentScale = ContentScale.FillHeight
         )
 
         // ✅ OVERLAY OSCURO QUE CUBRE TODA LA IMAGEN

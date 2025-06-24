@@ -29,15 +29,19 @@ class ProfileViewModel @Inject constructor(
     fun uploadProfilePhoto(imageUri: Uri) {
         viewModelScope.launch {
             try {
+                android.util.Log.d("ProfileVM", "🚀 Iniciando subida de foto: $imageUri")
                 _uiState.value = _uiState.value.copy(isUploadingPhoto = true, error = null)
 
                 val photoUrl = profileRepository.uploadProfilePhoto(imageUri)
+
+                android.util.Log.d("ProfileVM", "✅ Foto subida exitosamente: $photoUrl")
 
                 _uiState.value = _uiState.value.copy(
                     isUploadingPhoto = false,
                     photoUrl = photoUrl
                 )
             } catch (e: Exception) {
+                android.util.Log.e("ProfileVM", "❌ Error subiendo foto", e)
                 _uiState.value = _uiState.value.copy(
                     isUploadingPhoto = false,
                     error = e.message ?: "Error desconocido al subir la foto"
@@ -45,7 +49,6 @@ class ProfileViewModel @Inject constructor(
             }
         }
     }
-
     fun clearError() {
         _uiState.value = _uiState.value.copy(error = null)
     }
@@ -53,10 +56,16 @@ class ProfileViewModel @Inject constructor(
     fun loadCurrentUserPhoto() {
         viewModelScope.launch {
             try {
+                android.util.Log.d("ProfileVM", "📸 Cargando foto actual del usuario...")
+
                 val photoUrl = profileRepository.getCurrentUserPhotoUrl()
+
+                android.util.Log.d("ProfileVM", "📸 Foto cargada: $photoUrl")
+
                 _uiState.value = _uiState.value.copy(photoUrl = photoUrl)
             } catch (e: Exception) {
-                // Silenciosamente manejar el error de carga inicial
+                android.util.Log.e("ProfileVM", "❌ Error cargando foto actual", e)
+                _uiState.value = _uiState.value.copy(error = "Error cargando foto: ${e.message}")
             }
         }
     }
