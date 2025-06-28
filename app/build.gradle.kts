@@ -38,6 +38,19 @@ android {
             )
         }
     }
+    flavorDimensions += "role"
+    productFlavors {
+        create("athlete") {
+            dimension = "role"
+            applicationId = "com.develop.traiscore.athlete"
+            versionNameSuffix = "-athlete"
+        }
+        create("trainer") {
+            dimension = "role"
+            applicationId = "com.develop.traiscore.trainer"
+            versionNameSuffix = "-trainer"
+        }
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
