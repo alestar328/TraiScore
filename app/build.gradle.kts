@@ -38,7 +38,7 @@ android {
             )
         }
     }
-    flavorDimensions += "role"
+   /* flavorDimensions += "role"
     productFlavors {
         create("athlete") {
             dimension = "role"
@@ -50,7 +50,7 @@ android {
             applicationId = "com.develop.traiscore.trainer"
             versionNameSuffix = "-trainer"
         }
-    }
+    }*/
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8

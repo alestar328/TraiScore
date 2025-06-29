@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -38,6 +39,8 @@ fun FilterableDropdown(
     var expanded by remember { mutableStateOf(false) }
     var filterText by remember { mutableStateOf(TextFieldValue("")) }
     var userIsTyping by remember { mutableStateOf(false) } // **SIMPLIFICADO**: Solo controlar si está escribiendo
+    val focusManager = LocalFocusManager.current
+    var shouldCloseFocus by remember { mutableStateOf(false) }
 
     LaunchedEffect(selectedValue) {
         filterText = if (selectedValue.isNotBlank())
@@ -90,7 +93,6 @@ fun FilterableDropdown(
             onValueChange = { newValue ->
                 filterText = newValue
                 userIsTyping = true // **CLAVE**: Siempre marcar que está escribiendo
-                expanded = true // **CLAVE**: Siempre expandir cuando escribe
             },
             textStyle = if (textSize != null) {
                 LocalTextStyle.current.copy(fontSize = textSize)
@@ -184,6 +186,7 @@ fun FilterableDropdown(
                         filterText = TextFieldValue(item)
                         onItemSelected(item)
                         expanded = false
+                        focusManager.clearFocus()
                     }
                 )
             }

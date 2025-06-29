@@ -31,6 +31,7 @@ import kotlin.math.roundToInt
 
 data class SocialShareData(
     val topExercise: String,
+    val maxRepsExercise : String,
     val topWeight: Float,
     val maxReps: Int,
     val totalWeight: Double,
@@ -131,7 +132,6 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
             callback(null)
             return
         }
-
         val today = java.time.LocalDate.now()
         val calendar = java.util.Calendar.getInstance()
         calendar.set(today.year, today.monthValue - 1, today.dayOfMonth)
@@ -167,6 +167,7 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                     callback(
                         SocialShareData(
                             topExercise = "Sin entrenamientos",
+                            maxRepsExercise = "Sin registros",
                             topWeight = 0f,
                             maxReps = 0,
                             totalWeight = 0.0,
@@ -181,6 +182,8 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                 var topWeight = 0f
                 var maxReps = 0
                 var totalWeight = 0.0
+                var maxRepsExercise = "Ejercicio"
+
 
                 todaySnapshot.documents.forEach { doc ->
                     val weight = doc.getDouble("weight")?.toFloat() ?: 0f
@@ -196,6 +199,7 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                     // Máximo de repeticiones
                     if (reps > maxReps) {
                         maxReps = reps
+                        maxRepsExercise = exerciseName
                     }
 
                     // Peso total (igual que TodayViewScreen)
@@ -212,6 +216,7 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                     SocialShareData(
                         topExercise = topExercise,
                         topWeight = topWeight,
+                        maxRepsExercise = maxRepsExercise,
                         maxReps = maxReps,
                         totalWeight = totalWeight,
                         trainingDays = _currentMonthTrainingDays.value

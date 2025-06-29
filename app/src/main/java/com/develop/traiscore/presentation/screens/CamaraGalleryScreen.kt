@@ -60,6 +60,7 @@ data class GalleryPhoto(
 @Composable
 fun CameraGalleryScreen(
     exerciseName: String,
+    exerciseNameMaxReps: String,
     oneRepMax: Float,
     maxReps: Int,
     totalWeight: Double,
@@ -170,6 +171,7 @@ fun CameraGalleryScreen(
         SocialMediaScreen(
             photo = selectedPhoto!!.uri,
             exerciseName = exerciseName,
+            exerciseNameMaxReps = exerciseNameMaxReps,
             topWeight = oneRepMax,
             totalWeight = totalWeight,
             maxReps = maxReps,

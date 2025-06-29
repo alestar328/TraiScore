@@ -60,6 +60,7 @@ import java.io.FileOutputStream
 fun SocialMediaScreen(
     photo: Uri,
     exerciseName: String,
+    exerciseNameMaxReps: String,
     topWeight: Float,
     maxReps: Int,
     trainingDays: Int,
@@ -85,6 +86,7 @@ fun SocialMediaScreen(
         CapturedContent(
             photo = photo,
             exerciseName = exerciseName,
+            exerciseNameMaxReps = exerciseNameMaxReps,
             topWeight = topWeight,
             maxReps = maxReps,
             totalWeight = totalWeight,
@@ -128,6 +130,7 @@ fun SocialMediaScreen(
                                     context = context,
                                     bitmap = bitmap,
                                     exerciseName = exerciseName,
+                                    exerciseNameMaxReps = exerciseNameMaxReps,
                                     topWeight = topWeight,
                                     maxReps = maxReps
                                 )
@@ -166,6 +169,7 @@ fun SocialMediaScreen(
 private fun CapturedContent(
     photo: Uri,
     exerciseName: String,
+    exerciseNameMaxReps: String,
     totalWeight: Double,
     topWeight: Float,
     maxReps: Int,
@@ -232,6 +236,7 @@ private fun CapturedContent(
         // Overlay de datos centrado
         StatsOverlay(
             exerciseName = exerciseName,
+            exerciseNameMaxReps = exerciseNameMaxReps,
             topWeight = topWeight,
             maxReps = maxReps,
             totalWeight = totalWeight,
@@ -243,6 +248,7 @@ private fun CapturedContent(
 @Composable
 private fun StatsOverlay(
     exerciseName: String,
+    exerciseNameMaxReps: String,
     topWeight: Float,
     maxReps: Int,
     totalWeight: Double,
@@ -250,7 +256,6 @@ private fun StatsOverlay(
     modifier: Modifier = Modifier
 ) {
     Box(modifier = modifier) {
-        // Título principal centrado arriba
         Text(
             text = "TRAINING SESSION",
             style = MaterialTheme.typography.headlineLarge.copy(
@@ -337,7 +342,7 @@ private fun StatsOverlay(
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
-                            text = exerciseName,
+                            text = exerciseNameMaxReps,
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
                             color = Color.White
@@ -424,6 +429,7 @@ private suspend fun shareImageWithData(
     context: Context,
     bitmap: Bitmap,
     exerciseName: String,
+    exerciseNameMaxReps: String,
     topWeight: Float,
     maxReps: Int
 ) = withContext(Dispatchers.IO) {
@@ -445,7 +451,7 @@ private suspend fun shareImageWithData(
 
         // ✅ CAMBIAR AL HILO PRINCIPAL PARA COMPARTIR
         withContext(Dispatchers.Main) {
-            shareImageToSocialMedia(context, fileUri, exerciseName, topWeight, maxReps)
+            shareImageToSocialMedia(context, fileUri, exerciseName, exerciseNameMaxReps,topWeight, maxReps)
         }
 
     } catch (e: Exception) {
@@ -458,6 +464,7 @@ private fun shareImageToSocialMedia(
     context: Context,
     imageUri: Uri,
     exerciseName: String,
+    exerciseNameMaxReps: String,
     topWeight: Float,
     maxReps: Int
 ) {
@@ -465,9 +472,8 @@ private fun shareImageToSocialMedia(
         // Crear texto para compartir
         val shareText = buildString {
             append("💪 ¡Nuevo récord en el gym! 💪\n\n")
-            append("🏋️ Ejercicio: $exerciseName\n")
-            append("⚡ Peso máximo: ${topWeight.toInt()} kg\n")
-            append("🔥 Reps máximas: $maxReps\n\n")
+            append("🏋️ Mayor peso: $exerciseName (${topWeight.toInt()} kg)\n")
+            append("🔥 Más reps: $exerciseNameMaxReps ($maxReps reps)\n\n")
             append("#TraiScore #Gym #Fitness #Training")
         }
 

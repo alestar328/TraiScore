@@ -142,6 +142,7 @@ fun StatScreen(
                     "social_media_camera?" +
                             "exercise=${socialData.topExercise}&" +
                             "oneRepMax=${socialData.topWeight}&" +
+                            "exerciseMaxReps=${socialData.maxRepsExercise}&" +
                             "maxReps=${socialData.maxReps}&" +
                             "totalWeight=${socialData.totalWeight}&" +
                             "trainingDays=${socialData.trainingDays}"

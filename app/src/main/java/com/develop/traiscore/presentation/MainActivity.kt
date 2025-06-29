@@ -322,10 +322,11 @@ fun AppNavigation(navController: NavHostController) {
             )
         }
         composable(
-            "social_media_camera?exercise={exercise}&oneRepMax={oneRepMax}&maxReps={maxReps}&totalWeight={totalWeight}&trainingDays={trainingDays}"
+            "social_media_camera?exercise={exercise}&exerciseMaxReps={exerciseMaxReps}&oneRepMax={oneRepMax}&maxReps={maxReps}&totalWeight={totalWeight}&trainingDays={trainingDays}"
         ) { backStackEntry ->
-            CameraGalleryScreen( // ← Nuevo screen integrado
+            CameraGalleryScreen(
                 exerciseName = backStackEntry.arguments?.getString("exercise") ?: "",
+                exerciseNameMaxReps = backStackEntry.arguments?.getString("exerciseMaxReps") ?: "", // NUEVO
                 oneRepMax = backStackEntry.arguments?.getString("oneRepMax")?.toFloatOrNull() ?: 0f,
                 maxReps = backStackEntry.arguments?.getString("maxReps")?.toIntOrNull() ?: 0,
                 totalWeight = backStackEntry.arguments?.getString("totalWeight")?.toDoubleOrNull() ?: 0.0,

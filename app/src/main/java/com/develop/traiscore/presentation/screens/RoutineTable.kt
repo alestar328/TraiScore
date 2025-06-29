@@ -21,6 +21,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -100,104 +101,123 @@ modifier = modifier
         exercises.forEachIndexed { index, exercise ->
             var rowHasFocus by remember { mutableStateOf(false) }
 
-            if (enableSwipe) {
-                val dismissState = rememberDismissState(
-                    confirmStateChange = { dismissValue ->
-                        when (dismissValue) {
+            key("exercise_${index}_${exercise.name}_${exercises.size}") {
+                if (enableSwipe) {
+                    val dismissState = rememberDismissState(
+                        confirmStateChange = { dismissValue ->
+                            when (dismissValue) {
+                                DismissValue.DismissedToStart -> {
+                                    // Swipe hacia la izquierda → Eliminar
+                                    onDeleteExercise(index)
+                                    true // ✅ Permitir dismiss para eliminar
+                                }
+
+                                DismissValue.DismissedToEnd -> {
+                                    // Swipe hacia la derecha → Duplicar
+                                    onDuplicateExercise(index)
+                                    false // ✅ Mantener false para duplicar
+                                }
+
+                                else -> false
+                            }
+                        }
+                    )
+                    LaunchedEffect(dismissState.currentValue) {
+                        when (dismissState.currentValue) {
                             DismissValue.DismissedToStart -> {
-                                // Swipe hacia la izquierda → Eliminar
-                                onDeleteExercise(index)
-                                true
+                                // Para eliminar: resetear inmediatamente ya que la fila desaparecerá
+                                dismissState.reset()
                             }
                             DismissValue.DismissedToEnd -> {
-                                // Swipe hacia la derecha → Duplicar
-                                onDuplicateExercise(index)
-                                false // No eliminar la fila, solo duplicar
+                                // Para duplicar: esperar un poco y resetear
+                                kotlinx.coroutines.delay(300)
+                                dismissState.reset()
                             }
-                            else -> false
+                            else -> { /* Default, no hacer nada */ }
                         }
                     }
-                )
+                    SwipeToDismiss(
+                        state = dismissState,
+                        directions = setOf(
+                            DismissDirection.EndToStart,    // ← Swipe izquierda (eliminar)
+                            DismissDirection.StartToEnd     // → Swipe derecha (duplicar)
+                        ),
+                        background = {
+                            when (dismissState.dismissDirection) {
+                                DismissDirection.EndToStart -> {
+                                    // Fondo rojo para eliminar (swipe hacia la izquierda)
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color.Red)
+                                            .padding(end = 20.dp),
+                                        contentAlignment = Alignment.CenterEnd
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Eliminar",
+                                            tint = Color.White
+                                        )
+                                    }
+                                }
 
-                SwipeToDismiss(
-                    state = dismissState,
-                    directions = setOf(
-                        DismissDirection.EndToStart,    // ← Swipe izquierda (eliminar)
-                        DismissDirection.StartToEnd     // → Swipe derecha (duplicar)
-                    ),
-                    background = {
-                        when (dismissState.dismissDirection) {
-                            DismissDirection.EndToStart -> {
-                                // Fondo rojo para eliminar (swipe hacia la izquierda)
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Red)
-                                        .padding(end = 20.dp),
-                                    contentAlignment = Alignment.CenterEnd
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Delete,
-                                        contentDescription = "Eliminar",
-                                        tint = Color.White
-                                    )
+                                DismissDirection.StartToEnd -> {
+                                    // Fondo verde para duplicar (swipe hacia la derecha)
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color.Green)
+                                            .padding(start = 20.dp),
+                                        contentAlignment = Alignment.CenterStart
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = "Duplicar",
+                                            tint = Color.White
+                                        )
+                                    }
                                 }
+
+                                else -> {}
                             }
-                            DismissDirection.StartToEnd -> {
-                                // Fondo verde para duplicar (swipe hacia la derecha)
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxSize()
-                                        .background(Color.Green)
-                                        .padding(start = 20.dp),
-                                    contentAlignment = Alignment.CenterStart
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Default.Add,
-                                        contentDescription = "Duplicar",
-                                        tint = Color.White
-                                    )
-                                }
-                            }
-                            else -> {}
+                        },
+                        dismissContent = {
+                            TableRow(
+                                exercise = exercise,
+                                exerciseIndex = index,
+                                onRepsChanged = onRepsChanged,
+                                onSeriesChanged = onSeriesChanged,
+                                onWeightChanged = onWeightChanged,
+                                onRirChanged = onRirChanged,
+                                textColor = bodyTextColor,
+                                fontSize = fontSize,
+                                fontWeight = fontWeight,
+                                inputBorderColor = inputBorderColor,
+                                inputFocusedBorderColor = inputFocusedBorderColor,
+                                inputCursorColor = inputCursorColor,
+                                onFocusChange = { rowHasFocus = it },
+                                validateInput = validateInput
+                            )
                         }
-                    },
-                    dismissContent = {
-                        TableRow(
-                            exercise = exercise,
-                            exerciseIndex = index,
-                            onRepsChanged = onRepsChanged,
-                            onSeriesChanged = onSeriesChanged,
-                            onWeightChanged = onWeightChanged,
-                            onRirChanged = onRirChanged,
-                            textColor = bodyTextColor,
-                            fontSize = fontSize,
-                            fontWeight = fontWeight,
-                            inputBorderColor = inputBorderColor,
-                            inputFocusedBorderColor = inputFocusedBorderColor,
-                            inputCursorColor = inputCursorColor,
-                            onFocusChange = { rowHasFocus = it },
-                            validateInput = validateInput
-                        )
-                    }
-                )
-            } else {
-                TableRow(
-                    exercise = exercise,
-                    exerciseIndex = index,
-                    onRepsChanged = onRepsChanged,
-                    onSeriesChanged = onSeriesChanged,
-                    onWeightChanged = onWeightChanged,
-                    onRirChanged = onRirChanged,
-                    textColor = bodyTextColor,
-                    fontSize = fontSize,
-                    fontWeight = fontWeight,
-                    inputBorderColor = inputBorderColor,
-                    inputFocusedBorderColor = inputFocusedBorderColor,
-                    inputCursorColor = inputCursorColor,
-                    onFocusChange = { rowHasFocus = it },
-                    validateInput = validateInput
-                )
+                    )
+                } else {
+                    TableRow(
+                        exercise = exercise,
+                        exerciseIndex = index,
+                        onRepsChanged = onRepsChanged,
+                        onSeriesChanged = onSeriesChanged,
+                        onWeightChanged = onWeightChanged,
+                        onRirChanged = onRirChanged,
+                        textColor = bodyTextColor,
+                        fontSize = fontSize,
+                        fontWeight = fontWeight,
+                        inputBorderColor = inputBorderColor,
+                        inputFocusedBorderColor = inputFocusedBorderColor,
+                        inputCursorColor = inputCursorColor,
+                        onFocusChange = { rowHasFocus = it },
+                        validateInput = validateInput
+                    )
+                }
             }
 
             // Divider entre filas cuando hay foco
