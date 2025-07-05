@@ -1,7 +1,9 @@
 package com.develop.traiscore.data.firebaseData
 
+import androidx.navigation.NavController
 import com.develop.traiscore.data.local.dao.ExerciseDao
 import com.develop.traiscore.data.local.entity.ExerciseEntity
+import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
 import com.google.android.gms.tasks.Task
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
@@ -40,7 +42,28 @@ fun updateRoutineInFirebase(documentId: String, routineDoc: RoutineDocument): Ta
         .document(documentId)
         .set(routineMap)
 }
-
+fun calculateTodayDataAndNavigate(
+    context: android.content.Context,
+    navController: NavController,
+    viewModel: StatScreenViewModel,
+    oneRepMax: Float,
+    maxReps: Int
+) {
+    viewModel.calculateSocialShareData { socialData ->
+        if (socialData != null) {
+            // Usar la nueva ruta integrada
+            navController.navigate(
+                "social_media_camera?" +
+                        "exercise=${socialData.topExercise}&" +
+                        "oneRepMax=${socialData.topWeight}&" +
+                        "exerciseMaxReps=${socialData.maxRepsExercise}&" +
+                        "maxReps=${socialData.maxReps}&" +
+                        "totalWeight=${socialData.totalWeight}&" +
+                        "trainingDays=${socialData.trainingDays}"
+            )
+        }
+    }
+}
 suspend fun saveExerciseToFirebase(
     name: String,
     category: String,

@@ -258,7 +258,7 @@ fun ContentScreen(
 
     // Para CLIENT (código existente)
     when (selectedIndex) {
-        0 -> ExercisesScreen()
+        0 -> ExercisesScreen(navController = navController)
         1 -> StatScreen(navController = navController)
         2 -> Text("Pantalla Add (opcional)")
         3 -> {

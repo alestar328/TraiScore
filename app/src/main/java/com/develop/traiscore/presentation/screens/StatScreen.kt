@@ -57,6 +57,7 @@ import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.develop.traiscore.R
+import com.develop.traiscore.data.firebaseData.calculateTodayDataAndNavigate
 import com.develop.traiscore.domain.model.BodyMeasurementProgressData
 import com.develop.traiscore.domain.model.BodyMeasurementType
 import com.develop.traiscore.presentation.components.ChronoScreen
@@ -128,28 +129,7 @@ fun StatScreen(
 
 
 
-    fun calculateTodayDataAndNavigate(
-        context: android.content.Context,
-        navController: NavController,
-        viewModel: StatScreenViewModel,
-        oneRepMax: Float,
-        maxReps: Int
-    ) {
-        viewModel.calculateSocialShareData { socialData ->
-            if (socialData != null) {
-                // Usar la nueva ruta integrada
-                navController.navigate(
-                    "social_media_camera?" +
-                            "exercise=${socialData.topExercise}&" +
-                            "oneRepMax=${socialData.topWeight}&" +
-                            "exerciseMaxReps=${socialData.maxRepsExercise}&" +
-                            "maxReps=${socialData.maxReps}&" +
-                            "totalWeight=${socialData.totalWeight}&" +
-                            "trainingDays=${socialData.trainingDays}"
-                )
-            }
-        }
-    }
+
     LaunchedEffect(clientId) {
         clientId?.let { id ->
             bodyStatsViewModel.setTargetUser(id)

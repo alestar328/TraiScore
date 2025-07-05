@@ -41,6 +41,7 @@ import java.util.Locale
 @Composable
 fun CalendarScreen(
     groupedEntries: Map<String, List<WorkoutEntry>>,
+    selectedMonth: YearMonth?,
     onEditClick: (WorkoutEntry) -> Unit,
     onDeleteClick: (WorkoutEntry) -> Unit,
     modifier: Modifier = Modifier
@@ -48,7 +49,6 @@ fun CalendarScreen(
     val selectedDate = remember { mutableStateOf("") }
     val selectedDayWorkouts = remember(selectedDate.value, groupedEntries) {
         if (selectedDate.value.isNotEmpty()) {
-            // Convertir LocalDate seleccionado a formato de fecha de groupedEntries
             val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
             try {
                 val selectedLocalDate = LocalDate.parse(selectedDate.value)
@@ -99,9 +99,9 @@ fun CalendarScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Horizontal scroll de días
         HorizontalDaysScroll(
             selectedDate =selectedDate,
+            selectedMonth = selectedMonth,
             groupedEntries = groupedEntries,
             onDateSelected = { date ->
                 selectedDate.value = date
@@ -189,12 +189,13 @@ fun CalendarScreen(
 @Composable
 fun HorizontalDaysScroll(
     selectedDate: MutableState<String>,
+    selectedMonth: YearMonth?,
     groupedEntries: Map<String, List<WorkoutEntry>>, // **NUEVO**: Parámetro agregado
     onDateSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val currentDate = remember { LocalDate.now() }
-    val currentMonth = remember { YearMonth.now() }
+    val currentMonth = remember(selectedMonth) { selectedMonth ?: YearMonth.now() }
 
     val workoutDates = remember(groupedEntries) {
         val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
@@ -217,7 +218,7 @@ fun HorizontalDaysScroll(
     }
 
     // Generar todos los días del mes actual
-    val daysInMonth = remember(currentMonth, workoutDates) { // **CAMBIO**: Agregar workoutDates
+    val daysInMonth = remember(currentMonth, workoutDates) {
         (1..currentMonth.lengthOfMonth()).map { day ->
             val date = currentMonth.atDay(day)
             DayInfo(
@@ -225,35 +226,47 @@ fun HorizontalDaysScroll(
                 dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
                 date = date,
                 isToday = date == currentDate,
-                hasWorkouts = workoutDates.contains(date) // **NUEVO**: Verificar entrenamientos
+                hasWorkouts = workoutDates.contains(date)
             )
         }
     }
 
-    // Inicializar con el día actual seleccionado
-    LaunchedEffect(Unit) {
-        if (selectedDate.value.isEmpty()) {
-            selectedDate.value = currentDate.toString()
+    LaunchedEffect(currentMonth) {
+        if (selectedDate.value.isEmpty() || selectedMonth != null) {
+            // Si hay un mes seleccionado, usar el primer día de ese mes
+            // Si no, usar el día actual
+            val initialDate = if (selectedMonth != null) {
+                selectedMonth.atDay(1)
+            } else {
+                currentDate
+            }
+            selectedDate.value = initialDate.toString()
         }
     }
 
     val listState = rememberLazyListState()
 
     // Centrar en el día actual al inicio
-    LaunchedEffect(daysInMonth) {
-        val todayIndex = daysInMonth.indexOfFirst { it.isToday }
-        if (todayIndex != -1) {
-            listState.animateScrollToItem(
-                index = maxOf(0, todayIndex - 3), // Centrar aproximadamente
-                scrollOffset = 0
-            )
+    LaunchedEffect(daysInMonth, currentMonth) {
+        if (currentMonth == YearMonth.now()) {
+            // Solo centrar en hoy si estamos viendo el mes actual
+            val todayIndex = daysInMonth.indexOfFirst { it.isToday }
+            if (todayIndex != -1) {
+                listState.animateScrollToItem(
+                    index = maxOf(0, todayIndex - 3),
+                    scrollOffset = 0
+                )
+            }
+        } else {
+            // Para meses diferentes, empezar desde el principio
+            listState.animateScrollToItem(0)
         }
     }
 
     LazyRow(
         state = listState,
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(0.dp), // Sin espaciado para franja uniforme
+        horizontalArrangement = Arrangement.spacedBy(0.dp),
         contentPadding = PaddingValues(horizontal = 0.dp)
     ) {
         items(daysInMonth) { dayInfo ->

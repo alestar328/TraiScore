@@ -27,14 +27,21 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.*
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
+import com.develop.traiscore.R
+import com.develop.traiscore.data.firebaseData.calculateTodayDataAndNavigate
 import com.develop.traiscore.data.local.entity.ExerciseEntity
 import com.develop.traiscore.domain.model.WorkoutModel
 import com.develop.traiscore.data.local.entity.WorkoutEntry
@@ -43,6 +50,7 @@ import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.components.WorkoutCard
 import com.develop.traiscore.presentation.theme.tsColors
+import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.util.Date
 
@@ -53,7 +61,9 @@ import java.time.YearMonth
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable
 fun ExercisesScreen(
-    viewModel: WorkoutEntryViewModel = hiltViewModel()
+    viewModel: WorkoutEntryViewModel = hiltViewModel(),
+    statViewModel: StatScreenViewModel = hiltViewModel(), // ✅ AGREGAR esta línea
+    navController: NavController
 ) {
     val entries = viewModel.entries.value
     val showBottomSheet = remember { mutableStateOf(false) }
@@ -61,12 +71,13 @@ fun ExercisesScreen(
     val groupedEntries = viewModel.groupWorkoutsByDate(entries)
     val showSearchBar = remember { mutableStateOf(false) }
     val selectedSearch = remember { mutableStateOf("") }
-
+    val context = LocalContext.current
     // Estados para el nuevo sistema de vistas
     val showViewModeSelector = remember { mutableStateOf(false) }
     val currentViewMode = remember { mutableStateOf(ViewMode.TODAY) }
     val selectedMonth = remember { mutableStateOf<YearMonth?>(null) }
-
+    val circularData by statViewModel.circularData.collectAsState()
+    val (oneRepMax, maxReps, _) = circularData
     val filteredGrouped = if (selectedSearch.value.isNotBlank()) {
         viewModel.groupWorkoutsByDateFiltered(entries, selectedSearch.value)
     } else {
@@ -102,26 +113,24 @@ fun ExercisesScreen(
                         }
                     },
                     rightIcon = {
-                        FloatingActionButton(
-                            onClick = {
-                                // ✅ CAMBIO: Toggle de búsqueda pero cierra selector si está abierto
-                                if (showViewModeSelector.value) {
-                                    showViewModeSelector.value = false
-                                }
-                                showSearchBar.value = !showSearchBar.value
-                                if (!showSearchBar.value) {
-                                    selectedSearch.value = ""
-                                }
-                            },
-                            modifier = Modifier.size(30.dp),
-                            containerColor = MaterialTheme.tsColors.ledCyan,
-                            contentColor = Color.White,
-                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clickable {
+                                    calculateTodayDataAndNavigate(
+                                        context = context,
+                                        navController = navController,
+                                        viewModel = statViewModel,
+                                        oneRepMax = oneRepMax,
+                                        maxReps = maxReps
+                                    )
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Search,
-                                contentDescription = "Search",
-                                tint = Color.Black
+                                painter = painterResource(id = R.drawable.ic_camara),
+                                contentDescription = "Compartir sesión",
+                                tint = MaterialTheme.tsColors.ledCyan,
                             )
                         }
                     }
@@ -214,6 +223,7 @@ fun ExercisesScreen(
                             ViewMode.MONTH -> {
                                 CalendarScreen(
                                     groupedEntries = filteredGrouped,
+                                    selectedMonth = selectedMonth.value,
                                     onEditClick = { workout ->
                                         selectedEntry.value = workout
                                         showBottomSheet.value = true
