@@ -6,7 +6,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -18,11 +17,8 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.data.local.entity.UserEntity
 import com.develop.traiscore.presentation.components.ClientCard
-import com.develop.traiscore.presentation.components.trainers.TopBarTrainers
-import com.develop.traiscore.presentation.components.trainers.TopBarTrainersClients
+import com.develop.traiscore.presentation.navigation.TopBarTrainersClients
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
-import com.develop.traiscore.presentation.theme.navbarDay
-import com.develop.traiscore.presentation.theme.traiBackgroundDay
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.MyClientsViewModel
 

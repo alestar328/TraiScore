@@ -1,4 +1,4 @@
-package com.develop.traiscore.presentation.components.trainers
+package com.develop.traiscore.presentation.navigation
 
 
 import androidx.compose.foundation.Image
@@ -16,10 +16,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.R
-import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.viewmodels.ThemeViewModel
 
 enum class TopBarType {

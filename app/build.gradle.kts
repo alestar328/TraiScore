@@ -38,19 +38,24 @@ android {
             )
         }
     }
-   /* flavorDimensions += "role"
+    flavorDimensions += "role"
     productFlavors {
-        create("athlete") {
-            dimension = "role"
-            applicationId = "com.develop.traiscore.athlete"
-            versionNameSuffix = "-athlete"
-        }
         create("trainer") {
             dimension = "role"
             applicationId = "com.develop.traiscore.trainer"
             versionNameSuffix = "-trainer"
+
+            // Configuraciones específicas del trainer
+            resValue("string", "app_name", "TraiScore Trainer")
+            buildConfigField("String", "USER_ROLE", "\"TRAINER\"")
+            buildConfigField("boolean", "IS_TRAINER_APP", "true")
+
+            // Manifest placeholders
+            manifestPlaceholders["appLabel"] = "TraiScore Pro"
+            manifestPlaceholders["appIcon"] = "@mipmap/ic_launcher_trainer"
         }
-    }*/
+
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
@@ -60,6 +65,7 @@ android {
     }
     buildFeatures {
         compose = true
+        buildConfig = true
     }
     composeOptions {
         kotlinCompilerExtensionVersion = "1.5.15"
