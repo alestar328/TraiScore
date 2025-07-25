@@ -38,19 +38,19 @@ android {
             )
         }
     }
-   /* flavorDimensions += "role"
+    flavorDimensions += "version"
     productFlavors {
         create("athlete") {
-            dimension = "role"
-            applicationId = "com.develop.traiscore.athlete"
+            dimension = "version"
+            applicationIdSuffix  = ".athlete"
             versionNameSuffix = "-athlete"
         }
         create("trainer") {
-            dimension = "role"
-            applicationId = "com.develop.traiscore.trainer"
+            dimension = "version"
+            applicationIdSuffix = ".trainer"
             versionNameSuffix = "-trainer"
         }
-    }*/
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
