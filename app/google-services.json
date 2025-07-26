@@ -51,6 +51,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "484079628970-rj163nm7b8e4vco1n60dcrhoq529j5v4.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.develop.traiscore.athlete",
+            "certificate_hash": "9a8929d49c2c125265589f1d073c54c9ffdc495b"
+          }
+        },
+        {
           "client_id": "484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com",
           "client_type": 3
         }

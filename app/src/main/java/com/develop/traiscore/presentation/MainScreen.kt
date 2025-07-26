@@ -42,7 +42,7 @@ import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.google.firebase.auth.FirebaseAuth
-
+import com.develop.traiscore.BuildConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -73,7 +73,7 @@ fun MainScreen(
 
 
 
-    LaunchedEffect(Unit) {
+   /* LaunchedEffect(Unit) {
         UserRoleManager.getCurrentUserRole { role ->
             currentUserRole = role
         }
@@ -83,48 +83,50 @@ fun MainScreen(
             // Limpiar cualquier estado previo del cliente
             routineViewModel.clearTargetClient()
         }
+    }*/
+    LaunchedEffect(Unit) {
+        // ✅ ELIMINADO: Ya no necesitamos getUserRole
+        routineViewModel.clearTargetClient()
     }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         bottomBar = {
-            if (shouldShowNavBar) {
-                when (currentUserRole) {
-                    UserRole.TRAINER -> {
-                        TrainerBottomNavigationBar(
-                            selectedIndex = selectedIndex,
-                            onItemClick = { index ->
+            // ✅ NUEVO: UI basada únicamente en BuildConfig.FLAVOR
+            when (BuildConfig.FLAVOR) {
+                "trainer" -> {
+                    TrainerBottomNavigationBar(
+                        selectedIndex = selectedIndex,
+                        onItemClick = { index ->
+                            selectedIndex = index
+                        }
+                    )
+                }
+                "athlete" -> {
+                    BottomNavigationBar(
+                        navItemList = navItemList,
+                        selectedIndex = selectedIndex,
+                        onItemClick = { index ->
+                            if (index == 2) {
+                                isBottomSheetVisible = true
+                            } else {
                                 selectedIndex = index
                             }
-                        )
-                    }
-
-                    UserRole.CLIENT -> {
-                        BottomNavigationBar(
-                            navItemList = navItemList,
-                            selectedIndex = selectedIndex,
-                            onItemClick = { index ->
-                                if (index == 2) {
-                                    isBottomSheetVisible = true
-                                } else {
-                                    selectedIndex = index
-                                }
+                        }
+                    )
+                }
+                else -> {
+                    // Default para debug o main
+                    BottomNavigationBar(
+                        navItemList = navItemList,
+                        selectedIndex = selectedIndex,
+                        onItemClick = { index ->
+                            if (index == 2) {
+                                isBottomSheetVisible = true
+                            } else {
+                                selectedIndex = index
                             }
-                        )
-                    }
-
-                    null -> {
-                        BottomNavigationBar(
-                            navItemList = navItemList,
-                            selectedIndex = selectedIndex,
-                            onItemClick = { index ->
-                                if (index == 2) {
-                                    isBottomSheetVisible = true
-                                } else {
-                                    selectedIndex = index
-                                }
-                            }
-                        )
-                    }
+                        }
+                    )
                 }
             }
         }
@@ -153,21 +155,22 @@ fun MainScreen(
             onEditMeasurementFromHistory = {
                 routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
             },
-            routineViewModel = routineViewModel,
-            currentUserRole = currentUserRole
+            routineViewModel = routineViewModel
         )
     }
 
-    AddExerciseBottomSheet(
-        isVisible = isBottomSheetVisible,
-        onDismiss = { isBottomSheetVisible = false },
-        onSave = { updated ->
-            println("🔧 Datos actualizados: $updated")
-            isBottomSheetVisible = false
-        }
-    )
+    // ✅ NUEVO: Solo mostrar AddExerciseBottomSheet en la versión athlete
+    if (BuildConfig.FLAVOR == "athlete") {
+        AddExerciseBottomSheet(
+            isVisible = isBottomSheetVisible,
+            onDismiss = { isBottomSheetVisible = false },
+            onSave = { updated ->
+                println("🔧 Datos actualizados: $updated")
+                isBottomSheetVisible = false
+            }
+        )
+    }
 }
-
 sealed class ScreenState {
     object MAIN_ROUTINE_MENU : ScreenState()
     data class FIREBASE_ROUTINE_SCREEN(val documentId: String, val selectedType: String) :
@@ -191,72 +194,133 @@ fun ContentScreen(
     onMeasurementsClick: () -> Unit,
     onMeasurementsHistoryClick: () -> Unit,
     onEditMeasurementFromHistory: () -> Unit,
-    routineViewModel: RoutineViewModel,
-    currentUserRole: UserRole?
+    routineViewModel: RoutineViewModel
+    // ✅ ELIMINADO: currentUserRole: UserRole?
 ) {
-    // Para TRAINER
-    if (currentUserRole == UserRole.TRAINER) {
-        when (selectedIndex) {
-            0 -> MyClients(
-                onClientClick = { client ->
-                    navController.navigate("client_profile/${client.uid}")
-                },
-                onAddClientClick = {
-                    println("Agregar nuevo cliente")
-                },
-                onInvitationsClick = {
-                    navController.navigate(NavigationRoutes.TrainerInvitations.route)
-                }
-            )
-
-            1 -> {
-                when (routineScreenState) {
-                    is ScreenState.MAIN_ROUTINE_MENU ->
-                        RoutineMenuScreen(
-                            onRoutineClick = { docId, type ->
-                                onRoutineSelected(docId, type)
-                            },
-                            onAddClick = {
-                                onCreateRoutine()
-                            },
-                            viewModel = routineViewModel,
-                            clientName = null,
-                            userRole = UserRole.TRAINER
-                        )
-
-                    is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
-                        RoutineScreen(
-                            documentId = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).documentId,
-                            selectedType = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).selectedType,
-                            onBack = onBackToRoutineMenu,
-                            currentUserRole = currentUserRole
-                        )
-                    }
-
-                    is ScreenState.CREATE_ROUTINE_SCREEN -> {
-                        CreateRoutineScreen(
-                            onBack = onBackToRoutineMenu,
-                            navController = navController,
-                            currentUserRole = currentUserRole
-                        )
-                    }
-
-                    else -> Unit
-                }
-            }
-
-            2 -> ProfileScreen(
+    // ✅ NUEVO: UI completamente basada en flavor
+    when (BuildConfig.FLAVOR) {
+        "trainer" -> {
+            TrainerContent(
+                selectedIndex = selectedIndex,
                 navController = navController,
-                onMeasurementsClick = {
-                    navController.navigate(NavigationRoutes.Measurements.route)
-                }
-                // Ya no necesitas el parámetro onEnterInvitationClick
+                routineScreenState = routineScreenState,
+                onRoutineSelected = onRoutineSelected,
+                onBackToRoutineMenu = onBackToRoutineMenu,
+                onCreateRoutine = onCreateRoutine,
+                routineViewModel = routineViewModel
             )
         }
-        return
+        "athlete" -> {
+            AthleteContent(
+                selectedIndex = selectedIndex,
+                navController = navController,
+                exeScreenViewModel = exeScreenViewModel,
+                routineScreenState = routineScreenState,
+                onRoutineSelected = onRoutineSelected,
+                onBackToRoutineMenu = onBackToRoutineMenu,
+                onCreateRoutine = onCreateRoutine,
+                onMeasurementsClick = onMeasurementsClick,
+                onMeasurementsHistoryClick = onMeasurementsHistoryClick,
+                onEditMeasurementFromHistory = onEditMeasurementFromHistory,
+                routineViewModel = routineViewModel
+            )
+        }
+        else -> {
+            // Default para debug - mostrar UI de athlete
+            AthleteContent(
+                selectedIndex = selectedIndex,
+                navController = navController,
+                exeScreenViewModel = exeScreenViewModel,
+                routineScreenState = routineScreenState,
+                onRoutineSelected = onRoutineSelected,
+                onBackToRoutineMenu = onBackToRoutineMenu,
+                onCreateRoutine = onCreateRoutine,
+                onMeasurementsClick = onMeasurementsClick,
+                onMeasurementsHistoryClick = onMeasurementsHistoryClick,
+                onEditMeasurementFromHistory = onEditMeasurementFromHistory,
+                routineViewModel = routineViewModel
+            )
+        }
     }
+}
 
-    // Para CLIENT (código existente)
+@Composable
+private fun TrainerContent(
+    selectedIndex: Int,
+    navController: NavHostController,
+    routineScreenState: ScreenState,
+    onRoutineSelected: (String, String) -> Unit,
+    onBackToRoutineMenu: () -> Unit,
+    onCreateRoutine: () -> Unit,
+    routineViewModel: RoutineViewModel
+) {
+    when (selectedIndex) {
+        0 -> MyClients(
+            onClientClick = { client ->
+                navController.navigate("client_profile/${client.uid}")
+            },
+            onAddClientClick = {
+                println("Agregar nuevo cliente")
+            },
+            onInvitationsClick = {
+                navController.navigate(NavigationRoutes.TrainerInvitations.route)
+            }
+        )
+        1 -> {
+            when (routineScreenState) {
+                is ScreenState.MAIN_ROUTINE_MENU ->
+                    RoutineMenuScreen(
+                        onRoutineClick = { docId, type ->
+                            onRoutineSelected(docId, type)
+                        },
+                        onAddClick = {
+                            onCreateRoutine()
+                        },
+                        viewModel = routineViewModel,
+                        screenTitle = "Mis Rutinas de Entrenador",
+                        clientName = null
+                        // ✅ ELIMINADO: userRole = UserRole.TRAINER
+                    )
+                is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
+                    RoutineScreen(
+                        documentId = routineScreenState.documentId,
+                        selectedType = routineScreenState.selectedType,
+                        onBack = onBackToRoutineMenu
+                    )
+                }
+                is ScreenState.CREATE_ROUTINE_SCREEN -> {
+                    CreateRoutineScreen(
+                        onBack = onBackToRoutineMenu,
+                        navController = navController
+                        // ✅ ELIMINADO: currentUserRole = UserRole.TRAINER
+                    )
+                }
+                else -> Unit
+            }
+        }
+        2 -> ProfileScreen(
+            navController = navController,
+            onMeasurementsClick = {
+                navController.navigate(NavigationRoutes.Measurements.route)
+            }
+        )
+    }
+}
+
+@Composable
+private fun AthleteContent(
+    selectedIndex: Int,
+    navController: NavHostController,
+    exeScreenViewModel: ExercisesScreenViewModel,
+    routineScreenState: ScreenState,
+    onRoutineSelected: (String, String) -> Unit,
+    onBackToRoutineMenu: () -> Unit,
+    onCreateRoutine: () -> Unit,
+    onMeasurementsClick: () -> Unit,
+    onMeasurementsHistoryClick: () -> Unit,
+    onEditMeasurementFromHistory: () -> Unit,
+    routineViewModel: RoutineViewModel
+) {
     when (selectedIndex) {
         0 -> ExercisesScreen(navController = navController)
         1 -> StatScreen(navController = navController)
@@ -272,40 +336,28 @@ fun ContentScreen(
                             onCreateRoutine()
                         },
                         viewModel = routineViewModel,
-                        screenTitle = "Mis Rutinas", // ✅ TÍTULO ESTÁNDAR
-                        clientName = null,
-                        userRole = UserRole.CLIENT
+                        screenTitle = "Mis Rutinas",
+                        clientName = null
+                        // ✅ ELIMINADO: userRole = UserRole.CLIENT
                     )
-
                 is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
-                    currentUserRole?.let { role ->
-                        RoutineScreen(
-                            documentId = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).documentId,
-                            selectedType = (routineScreenState as ScreenState.FIREBASE_ROUTINE_SCREEN).selectedType,
-                            onBack = onBackToRoutineMenu,
-                            currentUserRole = role
-                        )
-                    } ?: run {
-                        Text("Cargando…")
-                    }
+                    RoutineScreen(
+                        documentId = routineScreenState.documentId,
+                        selectedType = routineScreenState.selectedType,
+                        onBack = onBackToRoutineMenu
+                        // ✅ ELIMINADO: currentUserRole = UserRole.CLIENT
+                    )
                 }
-
                 is ScreenState.CREATE_ROUTINE_SCREEN -> {
-                    currentUserRole?.let { role ->
-                        CreateRoutineScreen(
-                            onBack = onBackToRoutineMenu,
-                            navController = navController,
-                            currentUserRole = role
-                        )
-                    } ?: run {
-                        Text("Cargando...")
-                    }
+                    CreateRoutineScreen(
+                        onBack = onBackToRoutineMenu,
+                        navController = navController
+                        // ✅ ELIMINADO: currentUserRole = UserRole.CLIENT
+                    )
                 }
-
                 else -> Unit
             }
         }
-
         4 -> {
             when (routineScreenState) {
                 is ScreenState.BODY_MEASUREMENTS_SCREEN -> BodyMeasurementsScreen(
@@ -317,26 +369,22 @@ fun ContentScreen(
                     onMeasurementsClick = onMeasurementsClick,
                     onMeasurementsHistoryClick = onMeasurementsHistoryClick
                 )
-
                 is ScreenState.MEASUREMENTS_HISTORY_SCREEN -> BodyMeasurementsHistoryScreen(
                     onBack = onBackToRoutineMenu,
                     onEditMeasurement = { historyItem ->
                         onEditMeasurementFromHistory()
                     }
                 )
-
                 else -> ProfileScreen(
                     navController = navController,
                     onMeasurementsClick = {
                         navController.navigate(NavigationRoutes.Measurements.route)
                     }
-                    // Ya no necesitas el parámetro onEnterInvitationClick
                 )
             }
         }
     }
 }
-
 @Preview(
     name = "MainScreenPreview",
     showBackground = true

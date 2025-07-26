@@ -48,6 +48,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
+import com.develop.traiscore.BuildConfig
 import com.develop.traiscore.core.ColumnType
 import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.core.UserRole
@@ -68,13 +69,13 @@ import com.google.firebase.auth.FirebaseAuth
 fun CreateRoutineScreen(
     onBack: () -> Unit,
     navController: NavHostController,
-    currentUserRole: UserRole,
     targetClientId: String? = null,
     clientName: String? = null,
     viewModel: AddExerciseViewModel = hiltViewModel()
 ) {
     val context = LocalContext.current
     val routineVM: RoutineViewModel = hiltViewModel()
+    val isTrainerVersion = BuildConfig.FLAVOR == "trainer"
 
     var exercises by remember {
         mutableStateOf(emptyList<SimpleExercise>())
@@ -114,15 +115,12 @@ fun CreateRoutineScreen(
 
     val screenTitle = when {
         targetClientId != null && clientName != null -> "Nueva Rutina para $clientName"
-        currentUserRole == UserRole.TRAINER -> "Nueva Rutina de Entrenador"
         else -> "Nueva Rutina"
     }
     val effectiveUserId = targetClientId ?: FirebaseAuth.getInstance().currentUser?.uid
 
 
-    LaunchedEffect(currentUserRole) {
-        Log.d("CreateRoutineScreen", "Current user role: $currentUserRole")
-    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -156,7 +154,7 @@ fun CreateRoutineScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
 
-                    if (currentUserRole == UserRole.TRAINER) {
+                    if (isTrainerVersion) {
                         Log.d("CreateRoutineScreen", "Showing TRAINER button")
 
                         FloatingActionButton(
@@ -167,10 +165,7 @@ fun CreateRoutineScreen(
                                 if (selectedCategory == null || exercises.isEmpty() || workoutName.isBlank()) {
                                     // Si no hay datos completos, mostrar debug
                                     Log.d("CreateRoutineScreen", "=== MANUAL DEBUG ===")
-                                    Log.d(
-                                        "CreateRoutineScreen",
-                                        "Current role in composable: $currentUserRole"
-                                    )
+
                                     Log.d(
                                         "CreateRoutineScreen",
                                         "Selected category: $selectedCategory"
@@ -557,7 +552,6 @@ fun CreateRoutineScreen(
 fun CreateRoutineScreenPreview() {
     TraiScoreTheme {
         CreateRoutineScreen(
-            currentUserRole = UserRole.TRAINER,
             onBack = { /* Aquí iría popBackStack() en tu app real */ },
             navController = rememberNavController()
         )

@@ -370,8 +370,7 @@ fun AppNavigation(navController: NavHostController) {
             currentUserRole?.let { role ->
                 CreateRoutineScreen(
                     onBack = { navController.popBackStack() },
-                    navController = navController,
-                    currentUserRole = role
+                    navController = navController
                 )
             } ?: run {
                 Text("Cargando...")
@@ -575,7 +574,6 @@ fun AppNavigation(navController: NavHostController) {
                 documentId = docId,
                 selectedType = type,
                 onBack = { navController.popBackStack() },
-                currentUserRole = UserRole.TRAINER,
                 routineViewModel = routineViewModel
             )
         }
@@ -595,7 +593,6 @@ fun AppNavigation(navController: NavHostController) {
             CreateRoutineScreen(
                 onBack = { navController.popBackStack() },
                 navController = navController,
-                currentUserRole = UserRole.TRAINER,
                 targetClientId = clientId, // ✅ PASAR el ID del cliente
                 clientName = clientName // ✅ PASAR el nombre del cliente
             )

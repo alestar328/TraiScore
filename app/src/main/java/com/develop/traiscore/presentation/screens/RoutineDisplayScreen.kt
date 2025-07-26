@@ -43,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import androidx.compose.ui.platform.LocalContext
+import com.develop.traiscore.BuildConfig
 import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.data.firebaseData.RoutineDocument
 import com.develop.traiscore.data.firebaseData.RoutineSection
@@ -57,14 +58,14 @@ fun RoutineScreen(
     routineViewModel: RoutineViewModel = viewModel(),
     documentId: String,
     selectedType: String, // <- nuevo parámetro
-    onBack: () -> Unit,
-    currentUserRole: UserRole,
+    onBack: () -> Unit
 ) {
 
     val context = LocalContext.current
     var showEmptyDialog by remember { mutableStateOf(false) }
     val userId = FirebaseAuth.getInstance().currentUser?.uid
         ?: run { onBack(); return }
+    val isTrainerVersion = BuildConfig.FLAVOR == "trainer"
 
     LaunchedEffect(documentId) {
         routineViewModel.loadRoutine(documentId)
@@ -118,7 +119,7 @@ fun RoutineScreen(
         },
         floatingActionButton = {
             // Solo para TRAINER mostramos el FAB de “Enviar rutina”
-            if (currentUserRole == UserRole.TRAINER) {
+            if (isTrainerVersion) {
                 FloatingActionButton(
                     onClick = {
                         // ✅ NUEVA FUNCIONALIDAD DE EXPORTACIÓN
@@ -242,7 +243,7 @@ fun RoutineScreen(
                     onDeleteExercise = {},
                     enableSwipe = false,
                     validateInput = routineViewModel::validateInput,
-                    bottomPadding = if (currentUserRole == UserRole.TRAINER) 80.dp else 20.dp
+                    bottomPadding = if (isTrainerVersion) 80.dp else 20.dp
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
@@ -332,7 +333,6 @@ fun RoutineScreenPreview() {
         routineViewModel = mockViewModel,
         documentId = "dummyDocumentId",
         selectedType = "Pierna",
-        onBack = {},
-        currentUserRole = UserRole.TRAINER
+        onBack = {}
     )
 }
