@@ -86,7 +86,6 @@ fun SplashScreen(onNavigate: () -> Unit) {
                     .alpha(logoAlpha.value)
             )
 
-            Spacer(modifier = Modifier.height(40.dp))
 
             // Texto con efecto máquina de escribir
             Text(
