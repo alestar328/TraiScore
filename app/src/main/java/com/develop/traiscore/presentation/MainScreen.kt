@@ -41,7 +41,6 @@ import com.develop.traiscore.presentation.screens.StatScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
-import com.google.firebase.auth.FirebaseAuth
 import com.develop.traiscore.BuildConfig
 
 @OptIn(ExperimentalMaterial3Api::class)
