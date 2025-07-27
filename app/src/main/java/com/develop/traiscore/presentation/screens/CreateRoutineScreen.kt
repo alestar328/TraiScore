@@ -32,6 +32,10 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -63,6 +67,9 @@ import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.google.firebase.auth.FirebaseAuth
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.layout.ContentScale
+import com.develop.traiscore.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -85,7 +92,10 @@ fun CreateRoutineScreen(
     var exerciseCategory by remember { mutableStateOf<DefaultCategoryExer?>(null) }
     var nameError by remember { mutableStateOf<String?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+
+    // ✅ Estado para la imagen seleccionada del carousel
     var selectedMuscleGroupImage by remember { mutableStateOf<Int?>(null) }
+    var showSelectedImage by remember { mutableStateOf(false) }
 
     fun updateExerciseField(index: Int, columnType: ColumnType, newValue: String) {
         exercises = exercises.toMutableList().apply {
@@ -385,6 +395,7 @@ fun CreateRoutineScreen(
                 Spacer(modifier = Modifier.height(24.dp))
             }
 
+
             item {
                 // Sección de ejercicios
                 Text(
@@ -431,18 +442,9 @@ fun CreateRoutineScreen(
                             },
                             enableSwipe = true,
                             validateInput = routineVM::validateInput,
-                            bottomPadding = 120.dp
+                            bottomPadding = 20.dp
                         )
                     }
-
-                    MuscleGroupCarousel(
-                        modifier = Modifier.fillMaxWidth(),
-                        onImageSelected = { imageRes ->
-                            selectedMuscleGroupImage = imageRes
-                            Log.d("CreateRoutineScreen", "Imagen seleccionada: $imageRes")
-                            // Aquí puedes hacer lo que necesites con la imagen seleccionada
-                        }
-                    )
                 } else {
                     // Mensaje cuando no hay ejercicios
                     Box(
@@ -460,8 +462,31 @@ fun CreateRoutineScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(120.dp)) // Espacio para los FABs
+                Spacer(modifier = Modifier.height(20.dp)) // Espacio para los FABs
             }
+            item {
+                // ✅ Carousel de grupos musculares - SIEMPRE VISIBLE
+                Text(
+                    text = "Selecciona el grupo muscular principal",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                )
+
+                MuscleGroupCarousel(
+                    modifier = Modifier.fillMaxWidth(),
+                    onImageSelected = { imageRes ->
+                        selectedMuscleGroupImage = imageRes
+                        showSelectedImage = true
+                        Log.d("CreateRoutineScreen", "Imagen seleccionada: $imageRes")
+                    }
+                )
+                Spacer(modifier = Modifier.height(100.dp))
+            }
+
+
         }
     }
 }

@@ -58,7 +58,7 @@ fun RoutineTable(
     onRirChanged: (Int, String) -> Unit = { _, _ -> },
     onFieldChanged: (exerciseIndex: Int, columnType: ColumnType, newValue: String) -> Unit,
     onDuplicateExercise: (index: Int) -> Unit = { _ -> }, // ✅ NUEVO: Callback para duplicar
-    backgroundColor: Color = Color.DarkGray,
+    backgroundColor: Color = MaterialTheme.colorScheme.onBackground,
     headerTextColor: Color = Color.Yellow,
     bodyTextColor: Color = Color.White,
     dividerColor: Color = traiBlue,

@@ -1,8 +1,10 @@
 package com.develop.traiscore.presentation.components
 
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -45,11 +47,21 @@ fun MuscleGroupCarousel(
         R.drawable.chest_pic,
         R.drawable.glutes_pic,
         R.drawable.back_pic,
-        // Aquí puedes añadir más drawable resources cuando los tengas
         R.drawable.legs_pic,
         R.drawable.arms_pic,
         R.drawable.shoulders_pic,
         R.drawable.core_pic,
+    )
+
+    // Lista de nombres para mostrar
+    val muscleGroupNames = listOf(
+        "Pecho",
+        "Glúteos",
+        "Espalda",
+        "Piernas",
+        "Brazos",
+        "Hombros",
+        "Core"
     )
 
     val pagerState = rememberPagerState(pageCount = { muscleGroups.size })
@@ -63,25 +75,19 @@ fun MuscleGroupCarousel(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(
-            text = "Grupos Musculares",
-            style = MaterialTheme.typography.labelLarge,
-            color = Color.White,
-            modifier = Modifier.padding(bottom = 12.dp)
-        )
-
         HorizontalPager(
             state = pagerState,
             modifier = Modifier
                 .fillMaxWidth()
-                .height(140.dp),
+                .height(160.dp), // Aumentamos la altura para el texto
             contentPadding = PaddingValues(horizontal = 60.dp),
             pageSpacing = 20.dp
         ) { page ->
-            Box(
-                modifier = Modifier.fillMaxWidth(),
-                contentAlignment = Alignment.Center
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
+                // Card con la imagen
                 Card(
                     modifier = Modifier
                         .size(120.dp) // Contenedor cuadrado
@@ -106,43 +112,46 @@ fun MuscleGroupCarousel(
                                 stop = 1.0f,
                                 fraction = 1f - pageOffset.coerceIn(0f, 1f)
                             )
+                        }
+                        // ✅ Agregar borde cuando es la página actual
+                        .let { mod ->
+                            if (pagerState.currentPage == page) {
+                                mod.border(
+                                    width = 3.dp,
+                                    color = Color.Green,
+                                    shape = RoundedCornerShape(16.dp)
+                                )
+                            } else mod
                         },
                     shape = RoundedCornerShape(16.dp),
                     elevation = CardDefaults.cardElevation(
-                        defaultElevation = if (pagerState.currentPage == page) 8.dp else 4.dp
+                        defaultElevation = if (pagerState.currentPage == page) 12.dp else 4.dp
                     )
                 ) {
                     Image(
                         painter = painterResource(id = muscleGroups[page]),
-                        contentDescription = "Grupo muscular ${page + 1}",
+                        contentDescription = "Grupo muscular ${muscleGroupNames[page]}",
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
                     )
                 }
-            }
-        }
 
-        // Indicadores de página
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            repeat(muscleGroups.size) { index ->
-                Box(
-                    modifier = Modifier
-                        .size(
-                            if (pagerState.currentPage == index) 12.dp else 8.dp
-                        )
-                        .background(
-                            color = if (pagerState.currentPage == index)
-                                Color.White
-                            else
-                                Color.Gray.copy(alpha = 0.5f),
-                            shape = CircleShape
-                        )
-                        .animateContentSize()
+                // ✅ Texto del nombre del grupo muscular
+                Text(
+                    text = muscleGroupNames[page],
+                    style = if (pagerState.currentPage == page) {
+                        MaterialTheme.typography.labelLarge
+                    } else {
+                        MaterialTheme.typography.labelMedium
+                    },
+                    color = if (pagerState.currentPage == page) {
+                        Color.Green
+                    } else {
+                        Color.White.copy(alpha = 0.7f)
+                    },
+                    modifier = Modifier.animateContentSize(
+                        animationSpec = tween(300)
+                    )
                 )
             }
         }

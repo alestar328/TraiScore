@@ -23,6 +23,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -192,11 +193,10 @@ fun RoutineScreen(
         }
     )
     { innerPadding ->
-
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
-                .background(Color.DarkGray)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding),
             contentPadding = PaddingValues(bottom = 60.dp)
         ) {
@@ -243,16 +243,15 @@ fun RoutineScreen(
                     onDeleteExercise = {},
                     enableSwipe = false,
                     validateInput = routineViewModel::validateInput,
-                    bottomPadding = if (isTrainerVersion) 80.dp else 20.dp
+                    bottomPadding = if (isTrainerVersion) 80.dp else 10.dp
                 )
-                Spacer(modifier = Modifier.height(16.dp))
             }
 
             item {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 16.dp),
+                        .padding(vertical = 5.dp),
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
