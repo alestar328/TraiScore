@@ -1,5 +1,6 @@
 package com.develop.traiscore.presentation.components
 
+import android.annotation.SuppressLint
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
@@ -31,12 +32,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
 import com.develop.traiscore.R
 import kotlin.math.absoluteValue
 
+@SuppressLint("ConfigurationScreenWidthHeight")
 @Composable
 fun MuscleGroupCarousel(
     modifier: Modifier = Modifier,
@@ -80,7 +83,7 @@ fun MuscleGroupCarousel(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(160.dp), // Aumentamos la altura para el texto
-            contentPadding = PaddingValues(horizontal = 60.dp),
+            contentPadding = PaddingValues(horizontal = (LocalConfiguration.current.screenWidthDp.dp - 150.dp) / 2), // Centrado dinámico
             pageSpacing = 20.dp
         ) { page ->
             Column(
