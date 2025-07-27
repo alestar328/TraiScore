@@ -146,13 +146,13 @@ fun RoutineMenuScreen(
             title = {
                 Text(
                     text = "Confirmar eliminación",
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             },
             text = {
                 Text(
                     text = "¿Estás seguro de que quieres eliminar la rutina '${routineToDelete?.second?.clientName}'?",
-                    color = Color.Black
+                    color = MaterialTheme.colorScheme.onBackground
                 )
             },
             confirmButton = {
@@ -304,7 +304,7 @@ fun RoutineMenuScreen(
             LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(MaterialTheme.tsColors.primaryBackgroundColor)
+                    .background(MaterialTheme.colorScheme.background)
                     .padding(innerPadding)
                     .navigationBarsPadding(),          // evita que el contenido quede tras la nav‐bar
                 verticalArrangement = Arrangement.spacedBy(16.dp)

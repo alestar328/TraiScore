@@ -230,7 +230,7 @@ fun StatScreen(
                                 Modifier
                             }
                         )
-                        .background(MaterialTheme.tsColors.primaryBackgroundColor)
+                        .background(MaterialTheme.colorScheme.background)
                         .fillMaxSize()
                 ) {
                     // Toggle Buttons justo debajo del TopAppBar
@@ -271,7 +271,7 @@ fun StatScreen(
                                         Text(
                                             text = "Filtrar por:",
                                             style = MaterialTheme.typography.titleLarge,
-                                            color = Color.White,
+                                            color = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.padding(bottom = 8.dp)
                                         )
                                         FilterableDropdown(
@@ -280,8 +280,8 @@ fun StatScreen(
                                             placeholder = "Ejercicio",
                                             onItemSelected = { viewModel.onExerciseSelected(it) },
                                             modifier = Modifier.fillMaxWidth(),
-                                            textFieldHeight = 48.dp,
-                                            textSize = 13.sp,
+                                            textFieldHeight = 55.dp,
+                                            textSize = 15.sp,
                                             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.2.dp)
 
                                             )
@@ -364,7 +364,7 @@ fun StatScreen(
                                         Text(
                                             text = "Por peso:",
                                             style = MaterialTheme.typography.titleLarge,
-                                            color = Color.White,
+                                            color = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.padding(bottom = 8.dp)
                                         )
                                         LineChartView(
@@ -383,7 +383,7 @@ fun StatScreen(
                                         Text(
                                             text = "Por repeticiones:",
                                             style = MaterialTheme.typography.titleLarge,
-                                            color = Color.White,
+                                            color = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.padding(bottom = 8.dp)
                                         )
                                         LineChartView(
@@ -449,12 +449,12 @@ fun StatScreen(
                                                     Spacer(modifier = Modifier.height(8.dp))
                                                     Text(
                                                         "Sin datos de progreso",
-                                                        color = Color.White,
+                                                        color = MaterialTheme.colorScheme.onBackground,
                                                         style = MaterialTheme.typography.titleMedium
                                                     )
                                                     Text(
                                                         "Registra más entrenamientos para ver tu progreso",
-                                                        color = Color.Gray,
+                                                        color = MaterialTheme.colorScheme.onBackground,
                                                         style = MaterialTheme.typography.bodyMedium,
                                                         textAlign = TextAlign.Center
                                                     )
@@ -527,7 +527,7 @@ fun StatScreen(
                                         Text(
                                             text = "Seleccionar medida:",
                                             style = MaterialTheme.typography.titleLarge,
-                                            color = Color.White,
+                                            color = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.padding(bottom = 8.dp)
                                         )
                                         FilterableDropdown(
@@ -539,8 +539,8 @@ fun StatScreen(
                                                     availableBodyMetrics.find { it.displayName == selectedName }
                                             },
                                             modifier = Modifier.fillMaxWidth(),
-                                            textFieldHeight = 48.dp,
-                                            textSize = 13.sp,
+                                            textFieldHeight = 55.dp,
+                                            textSize = 15.sp,
                                             contentPadding = PaddingValues(horizontal = 4.dp, vertical = 2.dp)
                                         )
                                         Spacer(modifier = Modifier.height(4.dp))
@@ -550,7 +550,7 @@ fun StatScreen(
                                             Text(
                                                 text = "Progreso de ${metric.displayName}:",
                                                 style = MaterialTheme.typography.titleLarge,
-                                                color = Color.White,
+                                                color = MaterialTheme.colorScheme.onBackground,
                                                 modifier = Modifier.padding(bottom = 8.dp)
                                             )
 
@@ -562,7 +562,7 @@ fun StatScreen(
                                                     modifier = Modifier
                                                         .fillMaxWidth()
                                                         .height(120.dp)
-                                                        .padding(horizontal = 0.dp)
+                                                        .padding(horizontal = 4.dp)
                                                 )
                                             } else {
                                                 Box(

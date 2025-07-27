@@ -2,8 +2,10 @@ package com.develop.traiscore.presentation.screens
 
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -51,18 +53,16 @@ import androidx.navigation.compose.rememberNavController
 import com.develop.traiscore.BuildConfig
 import com.develop.traiscore.core.ColumnType
 import com.develop.traiscore.core.DefaultCategoryExer
-import com.develop.traiscore.core.UserRole
-import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.exports.RoutineExportManager
 import com.develop.traiscore.presentation.components.AddExeRoutineDialog
 import com.develop.traiscore.presentation.components.AddRestButton
-import com.develop.traiscore.presentation.components.CategoryCard
+import com.develop.traiscore.presentation.components.MuscleGroupCarousel
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
+import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.google.firebase.auth.FirebaseAuth
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -82,11 +82,10 @@ fun CreateRoutineScreen(
     }
     var workoutName by remember { mutableStateOf("") }
     val exerciseVM: AddExerciseViewModel = viewModel()
-    var selectedCategory by remember { mutableStateOf<DefaultCategoryExer?>(null) }
     var exerciseCategory by remember { mutableStateOf<DefaultCategoryExer?>(null) }
     var nameError by remember { mutableStateOf<String?>(null) }
     var showDialog by remember { mutableStateOf(false) }
-    val categories = DefaultCategoryExer.entries
+    var selectedMuscleGroupImage by remember { mutableStateOf<Int?>(null) }
 
     fun updateExerciseField(index: Int, columnType: ColumnType, newValue: String) {
         exercises = exercises.toMutableList().apply {
@@ -102,8 +101,7 @@ fun CreateRoutineScreen(
     fun validateRoutineName(name: String): String? {
         return when {
             name.isBlank() -> "El nombre no puede estar vacío"
-            name.length > 13 -> "El nombre no puede tener más de 13 caracteres"
-            !name.matches(Regex("^[a-zA-ZáéíóúÁÉÍÓÚñÑ\\s]+$")) -> "Solo se permiten letras y espacios"
+            name.length > 50 -> "El nombre no puede tener más de 50 caracteres"
             else -> null
         }
     }
@@ -113,259 +111,198 @@ fun CreateRoutineScreen(
         nameError = validateRoutineName(newName)
     }
 
+    fun canSave(): Boolean {
+        return workoutName.trim().isNotEmpty() &&
+                nameError == null &&
+                exercises.isNotEmpty()
+    }
+
     val screenTitle = when {
         targetClientId != null && clientName != null -> "Nueva Rutina para $clientName"
         else -> "Nueva Rutina"
     }
     val effectiveUserId = targetClientId ?: FirebaseAuth.getInstance().currentUser?.uid
 
-
-
     Scaffold(
         topBar = {
             TopAppBar(
                 title = {
                     Text(
-                        text = screenTitle, // ✅ TÍTULO DINÁMICO
-                        color = Color.White
+                        text = screenTitle,
+                        color = MaterialTheme.colorScheme.onBackground
                     )
                 },
-                navigationIcon = {                            // ②
+                navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver",
-                            tint = Color.Yellow
+                            tint = traiBlue
                         )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.DarkGray
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
-        containerColor = Color.DarkGray,
+        containerColor = MaterialTheme.colorScheme.background,
         floatingActionButton = {
-            if (selectedCategory != null) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly
-                ) {
-
-                    if (isTrainerVersion) {
-                        Log.d("CreateRoutineScreen", "Showing TRAINER button")
-
-                        FloatingActionButton(
-                            onClick = {
-                                Log.d("CreateRoutineScreen", "TRAINER export button clicked")
-
-                                // Primero verificar si hay datos para exportar
-                                if (selectedCategory == null || exercises.isEmpty() || workoutName.isBlank()) {
-                                    // Si no hay datos completos, mostrar debug
-                                    Log.d("CreateRoutineScreen", "=== MANUAL DEBUG ===")
-
-                                    Log.d(
-                                        "CreateRoutineScreen",
-                                        "Selected category: $selectedCategory"
-                                    )
-                                    Log.d(
-                                        "CreateRoutineScreen",
-                                        "Exercises count: ${exercises.size}"
-                                    )
-                                    Log.d("CreateRoutineScreen", "Workout name: '$workoutName'")
-
-                                    UserRoleManager.debugUserDocument()
-                                    UserRoleManager.getCurrentUserRole { role ->
-                                        Log.d("CreateRoutineScreen", "Role from callback: $role")
-                                    }
-
-                                    Toast.makeText(
-                                        context,
-                                        "Completa la rutina antes de exportar (nombre, categoría y ejercicios)",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                    return@FloatingActionButton
-                                }
-
-                                // Si hay datos completos, exportar
-                                try {
-                                    val routineToExport =
-                                        com.develop.traiscore.data.firebaseData.RoutineDocument(
-                                            userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
-                                                ?: "",
-                                            trainerId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid,
-                                            documentId = "",
-                                            type = selectedCategory!!.name,
-                                            createdAt = com.google.firebase.Timestamp.now(),
-                                            clientName = workoutName,
-                                            routineName = workoutName,
-                                            sections = listOf(
-                                                com.develop.traiscore.data.firebaseData.RoutineSection(
-                                                    type = selectedCategory!!.name,
-                                                    exercises = exercises
-                                                )
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly
+            ) {
+                if (isTrainerVersion && canSave()) {
+                    FloatingActionButton(
+                        onClick = {
+                            try {
+                                val routineToExport =
+                                    com.develop.traiscore.data.firebaseData.RoutineDocument(
+                                        userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
+                                            ?: "",
+                                        trainerId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid,
+                                        documentId = "",
+                                        type = "CUSTOM", // Valor por defecto sin categoría forzada
+                                        createdAt = com.google.firebase.Timestamp.now(),
+                                        clientName = workoutName,
+                                        routineName = workoutName,
+                                        sections = listOf(
+                                            com.develop.traiscore.data.firebaseData.RoutineSection(
+                                                type = workoutName, // Usar el nombre como tipo
+                                                exercises = exercises
                                             )
                                         )
-
-                                    // Aquí irá la función de exportación cuando esté implementada
-                                    Toast.makeText(
-                                        context,
-                                        "🚀 Exportando rutina: $workoutName (${exercises.size} ejercicios)",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-
-                                    Log.d(
-                                        "CreateRoutineScreen",
-                                        "Routine ready for export: ${routineToExport.routineName}"
                                     )
 
-
-                                    RoutineExportManager.exportRoutine(
-                                        context = context,
-                                        routine = routineToExport,
-                                        onSuccess = { fileUri ->
-                                            RoutineExportManager.shareRoutineFile(
-                                                context = context,
-                                                fileUri = fileUri,
-                                                routineName = workoutName
-                                            )
-                                            Toast.makeText(
-                                                context,
-                                                "Rutina exportada exitosamente",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        },
-                                        onError = { error ->
-                                            Toast.makeText(
-                                                context,
-                                                error,
-                                                Toast.LENGTH_LONG
-                                            ).show()
-                                        }
-                                    )
-
-
-                                } catch (e: Exception) {
-                                    Log.e("CreateRoutineScreen", "Error preparing export", e)
-                                    Toast.makeText(
-                                        context,
-                                        "Error al preparar la exportación: ${e.message}",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                            },
-                            backgroundColor = Color.Yellow,
-                            contentColor = Color.Black,
-                            modifier = Modifier.size(56.dp)  // tamaño estándar
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Email,
-                                contentDescription = "Archivo",
-                                tint = Color.Black
-                            )
-                        }
-                    }
-
-                    // Botón de "Guardar rutina"
-                    ExtendedFloatingActionButton(
-                        onClick = {
-                            val validationError = validateRoutineName(workoutName)
-                            if (validationError != null) {
-                                Toast.makeText(
-                                    context,
-                                    validationError,
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return@ExtendedFloatingActionButton
-                            }
-
-                            if (exercises.isEmpty()) {
-                                Toast.makeText(
-                                    context,
-                                    "Agrega al menos un ejercicio",
-                                    Toast.LENGTH_SHORT
-                                ).show()
-                                return@ExtendedFloatingActionButton
-                            }
-
-                            // ✅ NUEVO: Lógica mejorada para guardar rutina
-                            if (effectiveUserId != null && selectedCategory != null) {
-                                // Guardar usando el AddExerciseViewModel pero con el userId correcto
-                                viewModel.createRoutineForUser(
-                                    userId = effectiveUserId, // ✅ USAR el userId efectivo (cliente o usuario actual)
-                                    clientName = workoutName,
-                                    trainerId = if (targetClientId != null) FirebaseAuth.getInstance().currentUser?.uid else null
-                                ) { newRoutineId, createError ->
-                                    if (createError != null || newRoutineId == null) {
+                                RoutineExportManager.exportRoutine(
+                                    context = context,
+                                    routine = routineToExport,
+                                    onSuccess = { fileUri ->
+                                        RoutineExportManager.shareRoutineFile(
+                                            context = context,
+                                            fileUri = fileUri,
+                                            routineName = workoutName
+                                        )
                                         Toast.makeText(
                                             context,
-                                            "Error creando rutina: $createError",
+                                            "Rutina exportada exitosamente",
                                             Toast.LENGTH_SHORT
                                         ).show()
-                                        return@createRoutineForUser
+                                    },
+                                    onError = { error ->
+                                        Toast.makeText(
+                                            context,
+                                            error,
+                                            Toast.LENGTH_LONG
+                                        ).show()
                                     }
-
-                                    viewModel.saveSectionToRoutineForUser(
-                                        userId = effectiveUserId, // ✅ USAR el userId efectivo
-                                        routineId = newRoutineId,
-                                        sectionType = selectedCategory!!,
-                                        exercises = exercises
-                                    ) { success, errorMsg ->
-                                        if (success) {
-                                            Toast.makeText(
-                                                context,
-                                                if (targetClientId != null) {
-                                                    "Rutina creada para $clientName exitosamente"
-                                                } else {
-                                                    "Rutina guardada con éxito"
-                                                },
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                            onBack()
-                                        } else {
-                                            Toast.makeText(
-                                                context,
-                                                "Error al guardar: $errorMsg",
-                                                Toast.LENGTH_SHORT
-                                            ).show()
-                                        }
-                                    }
-                                }
-                            } else {
+                                )
+                            } catch (e: Exception) {
                                 Toast.makeText(
                                     context,
-                                    "Complete todos los campos",
-                                    Toast.LENGTH_SHORT
+                                    "Error al preparar la exportación: ${e.message}",
+                                    Toast.LENGTH_LONG
                                 ).show()
                             }
                         },
-                        icon = {
-                            Icon(
-                                Icons.Default.Check,
-                                contentDescription = "Guardar rutina"
-                            )
-                        },
-                        text = {
-                            Text(
-                                if (targetClientId != null) "Crear para cliente" else "Guardar rutina"
-                            )
-                        },
-                        containerColor = Color.Green,
-                        contentColor = Color.Black
-                    )
+                        backgroundColor = Color.Yellow,
+                        contentColor = Color.Black,
+                        modifier = Modifier.size(56.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Email,
+                            contentDescription = "Exportar",
+                            tint = Color.Black
+                        )
+                    }
+                }
 
-                    // Botón de agregar/restar ejercicio
-                    AddRestButton(
-                        onAdd = { showDialog = true },
-                        onRemove = {
-                            if (exercises.isNotEmpty()) {
-                                exercises = exercises.dropLast(1)
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        if (!canSave()) {
+                            when {
+                                workoutName.trim().isEmpty() -> {
+                                    Toast.makeText(context, "Ingresa un nombre para la rutina", Toast.LENGTH_SHORT).show()
+                                }
+                                nameError != null -> {
+                                    Toast.makeText(context, nameError, Toast.LENGTH_SHORT).show()
+                                }
+                                exercises.isEmpty() -> {
+                                    Toast.makeText(context, "Agrega al menos un ejercicio", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            return@ExtendedFloatingActionButton
+                        }
+
+                        if (effectiveUserId != null) {
+                            viewModel.createRoutineForUser(
+                                userId = effectiveUserId,
+                                clientName = workoutName,
+                                trainerId = if (targetClientId != null) FirebaseAuth.getInstance().currentUser?.uid else null
+                            ) { newRoutineId, createError ->
+                                if (createError != null || newRoutineId == null) {
+                                    Toast.makeText(
+                                        context,
+                                        "Error creando rutina: $createError",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+                                    return@createRoutineForUser
+                                }
+
+                                // Guardar todos los ejercicios en una sola sección
+                                viewModel.saveSectionToRoutineForUser(
+                                    userId = effectiveUserId,
+                                    routineId = newRoutineId,
+                                    sectionName = workoutName, // ✅ String simple
+                                    exercises = exercises
+                                ) { success, errorMsg ->
+                                    if (success) {
+                                        Toast.makeText(
+                                            context,
+                                            if (targetClientId != null) {
+                                                "Rutina creada para $clientName exitosamente"
+                                            } else {
+                                                "Rutina guardada con éxito"
+                                            },
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                        onBack()
+                                    } else {
+                                        Toast.makeText(
+                                            context,
+                                            "Error al guardar: $errorMsg",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
+                                    }
+                                }
                             }
                         }
-                    )
-                }
+                    },
+                    icon = {
+                        Icon(
+                            Icons.Default.Check,
+                            contentDescription = "Guardar rutina"
+                        )
+                    },
+                    text = {
+                        Text(
+                            if (targetClientId != null) "Crear para cliente" else "Guardar rutina"
+                        )
+                    },
+                    containerColor = if (canSave()) Color.Green else Color.Gray,
+                    contentColor = Color.Black
+                )
+
+                AddRestButton(
+                    onAdd = { showDialog = true },
+                    onRemove = {
+                        if (exercises.isNotEmpty()) {
+                            exercises = exercises.dropLast(1)
+                        }
+                    }
+                )
             }
 
             if (showDialog) {
@@ -375,18 +312,15 @@ fun CreateRoutineScreen(
                     onDismiss = { showDialog = false },
                     onSave = { name, category ->
                         exercises = exercises + SimpleExercise(name, 0, "", "", 0)
-
                         showDialog = false
                     },
                     exerciseNames = exerciseVM.exerciseNames,
-                    selectedCategory = exerciseCategory, // 👈 correctamente pasado
+                    selectedCategory = exerciseCategory,
                     onExerciseSelected = { name ->
-                        // pide al VM la categoría y la actualiza
                         exerciseVM.fetchCategoryFor(name) { cat ->
                             exerciseCategory = cat
                         }
                     }
-
                 )
             }
         }
@@ -395,16 +329,17 @@ fun CreateRoutineScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .background(MaterialTheme.colorScheme.background)
                 .navigationBarsPadding()
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             item {
-                Spacer(modifier = Modifier.height(8.dp))
+                // Campo de nombre de la rutina
                 Text(
                     text = "Nombre de la rutina",
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 4.dp)
@@ -412,17 +347,15 @@ fun CreateRoutineScreen(
 
                 OutlinedTextField(
                     value = workoutName,
-                    modifier = Modifier
-                        .fillMaxWidth(),
+                    modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
-                    keyboardOptions = KeyboardOptions.Default.copy( // ✅ AÑADIR: Configuración del teclado
+                    keyboardOptions = KeyboardOptions.Default.copy(
                         capitalization = KeyboardCapitalization.Sentences,
                         imeAction = ImeAction.Done
                     ),
                     onValueChange = { onNameChange(it) },
                     isError = nameError != null,
-
-                    placeholder = { Text("Nombra tu rutina") },
+                    placeholder = { Text("Ej: Push Day, Rutina Piernas, Día 1...") },
                     supportingText = {
                         nameError?.let { error ->
                             Text(
@@ -432,15 +365,15 @@ fun CreateRoutineScreen(
                             )
                         } ?: run {
                             Text(
-                                text = "${workoutName.length}/13 caracteres",
+                                text = "${workoutName.length}/50 caracteres",
                                 color = Color.Gray,
                                 style = MaterialTheme.typography.bodySmall
                             )
                         }
                     },
                     colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = com.develop.traiscore.presentation.theme.traiBlue,
-                        unfocusedBorderColor = com.develop.traiscore.presentation.theme.traiBlue,
+                        focusedBorderColor = traiBlue,
+                        unfocusedBorderColor = traiBlue,
                         focusedTextColor = Color.Black,
                         unfocusedTextColor = Color.Black,
                         focusedContainerColor = Color.White,
@@ -448,101 +381,87 @@ fun CreateRoutineScreen(
                         cursorColor = Color.Black
                     ),
                 )
+
+                Spacer(modifier = Modifier.height(24.dp))
             }
 
             item {
-                Spacer(modifier = Modifier.height(8.dp))
+                // Sección de ejercicios
                 Text(
-                    text = "Categorías",
+                    text = "Ejercicios",
                     style = MaterialTheme.typography.labelLarge,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(bottom = 8.dp)
                 )
-            }
-            item {
-                if (selectedCategory != null) {
-                    val cat = selectedCategory!!
 
-                    CategoryCard(
-                        category = cat,
+                if (exercises.isNotEmpty()) {
+                    // Mostrar tabla de ejercicios
+                    Box(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        RoutineTable(
+                            exercises = exercises,
+                            onDeleteExercise = { index ->
+                                exercises = exercises.toMutableList().apply {
+                                    removeAt(index)
+                                }
+                            },
+                            onDuplicateExercise = { index ->
+                                val exerciseToDuplicate = exercises[index]
+                                exercises = exercises.toMutableList().apply {
+                                    add(index + 1, exerciseToDuplicate.copy())
+                                }
+                            },
+                            onSeriesChanged = { index, newSeries ->
+                                updateExerciseField(index, ColumnType.SERIES, newSeries)
+                            },
+                            onWeightChanged = { index, newWeight ->
+                                updateExerciseField(index, ColumnType.WEIGHT, newWeight)
+                            },
+                            onRepsChanged = { index, newReps ->
+                                updateExerciseField(index, ColumnType.REPS, newReps)
+                            },
+                            onRirChanged = { index, newRir ->
+                                updateExerciseField(index, ColumnType.RIR, newRir)
+                            },
+                            onFieldChanged = { exerciseIndex, columnType, newValue ->
+                                updateExerciseField(exerciseIndex, columnType, newValue)
+                            },
+                            enableSwipe = true,
+                            validateInput = routineVM::validateInput,
+                            bottomPadding = 120.dp
+                        )
+                    }
+
+                    MuscleGroupCarousel(
+                        modifier = Modifier.fillMaxWidth(),
+                        onImageSelected = { imageRes ->
+                            selectedMuscleGroupImage = imageRes
+                            Log.d("CreateRoutineScreen", "Imagen seleccionada: $imageRes")
+                            // Aquí puedes hacer lo que necesites con la imagen seleccionada
+                        }
+                    )
+                } else {
+                    // Mensaje cuando no hay ejercicios
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(vertical = 8.dp)
-                            .clickable {
-                                selectedCategory = null
-                            }
-                    )
-
-                    RoutineTable(
-                        exercises = exercises,
-                        onDeleteExercise = { index ->
-                            exercises = exercises.toMutableList().apply {
-                                removeAt(index)
-                            }
-                        },
-                        onDuplicateExercise = { index -> // ✅ AÑADIR: Callback para duplicar
-                            val exerciseToDuplicate = exercises[index]
-                            exercises = exercises.toMutableList().apply {
-                                add(
-                                    index + 1,
-                                    exerciseToDuplicate.copy()
-                                ) // Duplica justo después del original
-                            }
-                        },
-                        onSeriesChanged = { index, newSeries ->
-                            updateExerciseField(index, ColumnType.SERIES, newSeries)
-                        },
-                        onWeightChanged = { index, newWeight ->
-                            updateExerciseField(index, ColumnType.WEIGHT, newWeight)
-                        },
-                        onRepsChanged = { index, newReps ->
-                            updateExerciseField(index, ColumnType.REPS, newReps)
-                        },
-                        onRirChanged = { index, newRir ->
-                            updateExerciseField(index, ColumnType.RIR, newRir)
-                        },
-                        onFieldChanged = { exerciseIndex, columnType, newValue ->
-                            updateExerciseField(exerciseIndex, columnType, newValue)
-                        },
-                        enableSwipe = true,
-                        validateInput = routineVM::validateInput,
-                        bottomPadding = 120.dp
-                    )
-
-
-                } else {
-                    // Mostramos el grid usando directamente DefaultCategoryExer
-                    categories.chunked(2).forEach { rowItems ->
-
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 8.dp),
-                            horizontalArrangement = Arrangement.spacedBy(16.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            rowItems.forEach { cat ->
-                                CategoryCard(
-                                    category = cat,
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clickable {
-                                            // Al tocar guardamos la categoría seleccionada
-                                            selectedCategory = cat
-                                        }
-                                )
-                            }
-                            // Si hay un hueco, compensamos
-                            if (rowItems.size == 1) {
-                                Spacer(modifier = Modifier.weight(1f))
-                            }
-                        }
+                            .height(100.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No hay ejercicios agregados.\nToca el botón + para agregar ejercicios.",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = Color.Gray,
+                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                        )
                     }
                 }
-            }
 
+                Spacer(modifier = Modifier.height(120.dp)) // Espacio para los FABs
+            }
         }
     }
 }
@@ -552,7 +471,7 @@ fun CreateRoutineScreen(
 fun CreateRoutineScreenPreview() {
     TraiScoreTheme {
         CreateRoutineScreen(
-            onBack = { /* Aquí iría popBackStack() en tu app real */ },
+            onBack = { /* Preview */ },
             navController = rememberNavController()
         )
     }

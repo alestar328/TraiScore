@@ -113,12 +113,12 @@ class AddExerciseViewModel @Inject constructor(
     fun saveSectionToRoutineForUser(
         userId: String,
         routineId: String,
-        sectionType: DefaultCategoryExer,
+        sectionName: String, // ✅ CAMBIO: String en lugar de DefaultCategoryExer
         exercises: List<SimpleExercise>,
         onComplete: (Boolean, String?) -> Unit
     ) {
         val section = hashMapOf(
-            "type" to sectionType.name,
+            "type" to sectionName, // ✅ CAMBIO: Usar sectionName directamente
             "exercises" to exercises.map { exercise ->
                 hashMapOf(
                     "name" to exercise.name,
@@ -132,7 +132,7 @@ class AddExerciseViewModel @Inject constructor(
 
         firestore
             .collection("users")
-            .document(userId) // ✅ USAR el userId proporcionado
+            .document(userId)
             .collection("routines")
             .document(routineId)
             .update("sections", FieldValue.arrayUnion(section))

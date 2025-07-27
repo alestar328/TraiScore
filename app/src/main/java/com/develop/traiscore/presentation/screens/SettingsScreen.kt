@@ -57,9 +57,11 @@ import kotlinx.coroutines.launch
 fun SettingsScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
-    onNavigateToScreenMode: () -> Unit = {}
+    onNavigateToScreenMode: () -> Unit = {},
+    onNavigateToCreateCategory: () -> Unit = {}
 ) {
     var showDialog by remember { mutableStateOf(false) }
+
     val viewModel: AddExerciseViewModel = hiltViewModel()
     val coroutineScope = rememberCoroutineScope()
 
@@ -124,6 +126,11 @@ fun SettingsScreen(
                     icon = { Icon(Icons.Default.Add, contentDescription = "Añadir ejercicio", tint = Color.Cyan) },
                     label = "Añadir ejercicio",
                     onClick = { showDialog = true }
+                )
+                SettingsOptionRow(
+                    icon = { Icon(Icons.Default.Add, contentDescription = "Añadir categoria", tint = Color.Cyan) },
+                    label = "Añadir categoria",
+                    onClick = { onNavigateToCreateCategory() }
                 )
                 SettingsOptionRow(
                     icon = { Icon(Icons.Default.Star, contentDescription = "Cambiar idioma", tint = Color.Cyan) },

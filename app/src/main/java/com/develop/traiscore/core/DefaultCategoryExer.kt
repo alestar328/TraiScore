@@ -14,5 +14,5 @@ enum class DefaultCategoryExer(
     LEGS(R.string.category_legs,      R.drawable.legs_pic),
     ARMS(R.string.category_arms,      R.drawable.arms_pic),
     SHOULDERS(R.string.category_shoulders, R.drawable.shoulders_pic),
-    CORE(R.string.category_core,      R.drawable.core_pic);
+    CORE(R.string.category_core,      R.drawable.core_pic)
 }

@@ -47,6 +47,7 @@ import com.develop.traiscore.presentation.screens.BodyMeasurementsHistoryScreen
 import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
 import com.develop.traiscore.presentation.screens.CameraGalleryScreen
 import com.develop.traiscore.presentation.screens.ClientProfileScreen
+import com.develop.traiscore.presentation.screens.CreateCategoryUI
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -338,10 +339,21 @@ fun AppNavigation(navController: NavHostController) {
                 onBack = { navController.popBackStack() }
             )
         }
+        composable("createCategory") {
+            CreateCategoryUI(
+                onBack = { navController.popBackStack() },
+                onSave = { name, iconId, color ->
+                    navController.popBackStack()
+                }
+            )
+        }
         composable(NavigationRoutes.Settings.route) {
             SettingsScreen(
                 onBack = { navController.popBackStack() },
-                onNavigateToScreenMode = { navController.navigate("screen_mode") }
+                onNavigateToScreenMode = { navController.navigate("screen_mode") },
+                onNavigateToCreateCategory = {
+                    navController.navigate("createCategory") // ✅ O tu ruta
+                }
 
             )
         }

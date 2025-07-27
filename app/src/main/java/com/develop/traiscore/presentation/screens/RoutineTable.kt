@@ -15,6 +15,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.rememberDismissState
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
@@ -78,12 +79,12 @@ fun RoutineTable(
     val totalHeight = headerHeight + (rowHeight * exercises.size) + bottomPadding
 
     Column(
-modifier = modifier
-.fillMaxWidth()
-.padding(5.dp)
-.background(backgroundColor)
-.height(totalHeight) // ✅ Altura exacta según el número de ejercicios
-) {
+        modifier = modifier
+        .fillMaxWidth()
+        .padding(5.dp)
+        .background(MaterialTheme.colorScheme.background)
+        .height(totalHeight) // ✅ Altura exacta según el número de ejercicios
+        ) {
     // Header
     TableHeader(
         textColor = headerTextColor,
