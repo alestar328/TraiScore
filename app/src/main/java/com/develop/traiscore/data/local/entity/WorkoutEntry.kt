@@ -17,4 +17,6 @@ data class WorkoutEntry(
     val rir: Int? = 0,
     val type: String = "", // "Empuje", "Pierna", etc. — para agrupar en UI
     val timestamp: Date // Fecha del entrenamiento
+
+
 )

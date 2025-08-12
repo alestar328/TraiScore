@@ -15,11 +15,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.R
 import com.develop.traiscore.data.local.entity.WorkoutEntry
+import com.develop.traiscore.presentation.components.ActiveSessionCard
 import com.develop.traiscore.presentation.components.QuickStats
 import com.develop.traiscore.presentation.components.WorkoutCardList
+import com.develop.traiscore.presentation.components.general.NewSessionUX
 import com.develop.traiscore.presentation.theme.tsColors
+import com.develop.traiscore.presentation.viewmodels.NewSessionViewModel
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.util.*
@@ -29,7 +33,8 @@ fun TodayViewScreen(
     groupedEntries: Map<String, List<WorkoutEntry>>,
     onEditClick: (WorkoutEntry) -> Unit,
     onDeleteClick: (WorkoutEntry) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    viewModel: NewSessionViewModel = hiltViewModel()
 ) {
     val today = LocalDate.now()
     val todayFormatted = remember {
@@ -38,7 +43,16 @@ fun TodayViewScreen(
         SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(calendar.time)
     }
 
+    // ⭐ Estados del ViewModel
+    val hasActiveSession by viewModel.hasActiveSession.collectAsState()
+    val activeSession by viewModel.activeSession.collectAsState()
+
     val todayWorkouts = groupedEntries[todayFormatted] ?: emptyList()
+
+    // ⭐ Verificar sesión activa al iniciar
+    LaunchedEffect(Unit) {
+        viewModel.checkForActiveSession()
+    }
 
     // Estadísticas del día
     val totalExercises = todayWorkouts
@@ -47,7 +61,6 @@ fun TodayViewScreen(
         }
         .keys
         .size
-
 
     val totalSeries = todayWorkouts.size
     val totalReps = todayWorkouts.sumOf { it.reps }
@@ -58,7 +71,72 @@ fun TodayViewScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header con fecha de hoy
+        // ⭐ HEADER INTELIGENTE - Muestra sesión activa o estado normal
+        TodayHeaderSection(
+            hasActiveSession = hasActiveSession,
+            activeSession = activeSession
+        )
+
+        // Estadísticas rápidas
+        if (todayWorkouts.isNotEmpty()) {
+            QuickStats(
+                totalExercises = totalExercises,
+                totalSeries = totalSeries,
+                totalReps = totalReps,
+                totalWeight = totalWeight
+            )
+        }
+
+        // Lista de ejercicios
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(bottom = 100.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            if (todayWorkouts.isNotEmpty()) {
+                item {
+                    Text(
+                        text = "Ejercicios Realizados",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.SemiBold,
+                        modifier = Modifier.padding(bottom = 8.dp)
+                    )
+                }
+
+                item {
+                    WorkoutCardList(
+                        workouts = todayWorkouts,
+                        onEditClick = onEditClick,
+                        onDeleteClick = onDeleteClick
+                    )
+                }
+            } else {
+                // ⭐ SOLO mostrar EmptyState si NO hay sesión activa
+                if (!hasActiveSession) {
+                    item {
+                        EmptyTodayState(viewModel = viewModel)
+                    }
+                }
+            }
+        }
+    }
+}
+
+// ⭐ COMPONENTE SEPARADO para el header inteligente
+@Composable
+private fun TodayHeaderSection(
+    hasActiveSession: Boolean,
+    activeSession: com.develop.traiscore.presentation.viewmodels.ActiveSession?
+) {
+    if (hasActiveSession && activeSession != null) {
+        // ✅ Mostrar sesión activa con color personalizado
+        ActiveSessionCard(
+            sessionName = activeSession.name,
+            sessionColor = activeSession.color
+        )
+    } else {
+        // ❌ Mostrar header normal
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -99,53 +177,16 @@ fun TodayViewScreen(
                 }
             }
         }
-
-        // Estadísticas rápidas
-        if (todayWorkouts.isNotEmpty()) {
-            QuickStats(
-                totalExercises = totalExercises,
-                totalSeries = totalSeries,
-                totalReps = totalReps,
-                totalWeight = totalWeight
-            )
-        }
-
-        // Lista de ejercicios
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 100.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            if (todayWorkouts.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "Ejercicios Realizados",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
-                }
-
-                item {
-                    WorkoutCardList(
-                        workouts = todayWorkouts,
-                        onEditClick = onEditClick,
-                        onDeleteClick = onDeleteClick
-                    )
-                }
-            } else {
-                item {
-                    EmptyTodayState()
-                }
-            }
-        }
     }
 }
 
-
+// ⭐ EmptyState actualizado para usar el ViewModel
 @Composable
-private fun EmptyTodayState() {
+private fun EmptyTodayState(
+    viewModel: NewSessionViewModel
+) {
+    var showNewSessionDialog by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -163,8 +204,6 @@ private fun EmptyTodayState() {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Icon(
-                //Icono fitness bsucar
-
                 imageVector = Icons.Default.Star,
                 contentDescription = "Sin entrenamientos",
                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
@@ -185,7 +224,24 @@ private fun EmptyTodayState() {
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center
             )
+
+            FilledTonalButton(
+                onClick = { showNewSessionDialog = true },
+                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.tsColors.ledCyan)
+            ) {
+                Text("Nueva Sesión")
+            }
         }
     }
-}
 
+    if (showNewSessionDialog) {
+        NewSessionUX(
+            onDismiss = { showNewSessionDialog = false },
+            onSessionCreated = {
+                // ⭐ La UI se actualiza automáticamente por el StateFlow
+                showNewSessionDialog = false
+            },
+            viewModel = viewModel  // ⭐ Usar el mismo ViewModel
+        )
+    }
+}
