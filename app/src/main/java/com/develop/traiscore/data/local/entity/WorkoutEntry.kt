@@ -16,7 +16,9 @@ data class WorkoutEntry(
     val reps: Int,
     val rir: Int? = 0,
     val type: String = "", // "Empuje", "Pierna", etc. — para agrupar en UI
-    val timestamp: Date // Fecha del entrenamiento
+    val timestamp: Date,
 
-
+    val sessionId: String? = null,        // ID de la sesión a la que pertenece
+    val sessionName: String? = null,      // Nombre de la sesión (ej: "Pecho y Tríceps")
+    val sessionColor: String? = null
 )

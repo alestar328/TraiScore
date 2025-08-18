@@ -5,12 +5,13 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -46,14 +47,26 @@ fun TodayViewScreen(
     // ⭐ Estados del ViewModel
     val hasActiveSession by viewModel.hasActiveSession.collectAsState()
     val activeSession by viewModel.activeSession.collectAsState()
+    val isLoading by viewModel.isLoading.collectAsState()
+    val error by viewModel.error.collectAsState()
+    var showEndSessionDialog by remember { mutableStateOf(false) }
 
     val todayWorkouts = groupedEntries[todayFormatted] ?: emptyList()
+    val totalSeries = todayWorkouts.size
+    val totalReps = todayWorkouts.sumOf { it.reps }
+    val totalWeight = todayWorkouts.sumOf { it.weight.toDouble() }
 
-    // ⭐ Verificar sesión activa al iniciar
+
     LaunchedEffect(Unit) {
         viewModel.checkForActiveSession()
     }
-
+    error?.let { errorMessage ->
+        LaunchedEffect(errorMessage) {
+            // Aquí podrías mostrar un Toast
+            println("Error: $errorMessage")
+            viewModel.clearError()
+        }
+    }
     // Estadísticas del día
     val totalExercises = todayWorkouts
         .groupBy { workout ->
@@ -61,10 +74,6 @@ fun TodayViewScreen(
         }
         .keys
         .size
-
-    val totalSeries = todayWorkouts.size
-    val totalReps = todayWorkouts.sumOf { it.reps }
-    val totalWeight = todayWorkouts.sumOf { it.weight.toDouble() }
 
     Column(
         modifier = modifier
@@ -74,8 +83,18 @@ fun TodayViewScreen(
         // ⭐ HEADER INTELIGENTE - Muestra sesión activa o estado normal
         TodayHeaderSection(
             hasActiveSession = hasActiveSession,
-            activeSession = activeSession
+            activeSession = activeSession,
+            onEndSession = {
+                showEndSessionDialog = true
+            }
         )
+
+        if (isLoading) {
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.tsColors.ledCyan
+            )
+        }
 
         // Estadísticas rápidas
         if (todayWorkouts.isNotEmpty()) {
@@ -121,20 +140,108 @@ fun TodayViewScreen(
             }
         }
     }
-}
 
+    // ⭐ DIALOG de confirmación para terminar sesión
+    if (showEndSessionDialog) {
+        AlertDialog(
+            onDismissRequest = { showEndSessionDialog = false },
+            title = {
+                Text("Terminar Sesión")
+            },
+            text = {
+                Text(
+                    "¿Estás seguro de que quieres terminar la sesión \"${activeSession?.name ?: ""}\"?\n\n" +
+                            "Los ejercicios realizados se guardarán en tu historial."
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.endCurrentSession()
+                        showEndSessionDialog = false
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = Color.Red
+                    )
+                ) {
+                    Text("Terminar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showEndSessionDialog = false }
+                ) {
+                    Text("Cancelar")
+                }
+            }
+        )
+    }
+}
 // ⭐ COMPONENTE SEPARADO para el header inteligente
 @Composable
 private fun TodayHeaderSection(
     hasActiveSession: Boolean,
-    activeSession: com.develop.traiscore.presentation.viewmodels.ActiveSession?
+    activeSession: com.develop.traiscore.presentation.viewmodels.ActiveSession?,
+    onEndSession: () -> Unit = {}
 ) {
     if (hasActiveSession && activeSession != null) {
         // ✅ Mostrar sesión activa con color personalizado
-        ActiveSessionCard(
-            sessionName = activeSession.name,
-            sessionColor = activeSession.color
-        )
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp),
+            colors = CardDefaults.cardColors(
+                containerColor = activeSession.color.copy(alpha = 1f)
+            ),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Icono de pesa en negro
+                Icon(
+                    painter = painterResource(id = R.drawable.pesa_icon),
+                    contentDescription = "Sesión activa",
+                    tint = Color.Black,
+                    modifier = Modifier.size(32.dp)
+                )
+
+                Column(modifier = Modifier.weight(1f)) {
+                    // Nombre de la sesión
+                    Text(
+                        text = activeSession.name,
+                        style = MaterialTheme.typography.titleLarge,
+                        color = Color.Black,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    // Fecha actual
+                    Text(
+                        text = SimpleDateFormat("EEEE, dd MMMM yyyy", Locale.getDefault())
+                            .format(Calendar.getInstance().time),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Black
+                    )
+                }
+
+                // ⭐ NUEVO: Botón para terminar sesión
+                IconButton(
+                    onClick = onEndSession,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Terminar sesión",
+                        tint = Color.Red.copy(alpha = 0.7f),
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+        }
     } else {
         // ❌ Mostrar header normal
         Card(
@@ -179,7 +286,6 @@ private fun TodayHeaderSection(
         }
     }
 }
-
 // ⭐ EmptyState actualizado para usar el ViewModel
 @Composable
 private fun EmptyTodayState(

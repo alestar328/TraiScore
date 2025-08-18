@@ -5,10 +5,10 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="35" />
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="35" />
     <uses-permission android:name="android.permission.INTERNET" />
 
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
@@ -88,14 +88,13 @@
                 <data android:pathPattern=".*TraiScore.*\\.json" />
             </intent-filter>
 
-            <!-- Intent filter para compartir archivos JSON -->
+
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <data android:mimeType="application/json" />
             </intent-filter>
 
-            <!-- Intent filter para compartir archivos de texto -->
             <intent-filter android:priority="900">
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -108,5 +107,20 @@
             android:exported="false"
             android:theme="@style/Theme.TraiScore"/>
     </application>
+    <queries>
+        <!-- Cualquier app que maneje ACTION_SEND image/* -->
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+            <data android:mimeType="image/*" />
+        </intent>
 
+        <!-- Paquetes que te interesan asegurar -->
+        <package android:name="com.instagram.android" />
+        <package android:name="com.whatsapp" />
+        <package android:name="com.twitter.android" />
+        <package android:name="com.ss.android.ugc.trill" /> <!-- TikTok -->
+        <package android:name="com.facebook.katana" />
+        <package android:name="com.facebook.orca" />        <!-- Messenger -->
+        <package android:name="com.snapchat.android" />
+    </queries>
 </manifest>

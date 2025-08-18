@@ -1,11 +1,13 @@
 package com.develop.traiscore.presentation.screens
-
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,6 +17,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,10 +32,13 @@ import androidx.compose.ui.graphics.Color
 import java.time.format.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.presentation.components.QuickStats
 import com.develop.traiscore.presentation.components.WorkoutCardList
 import com.develop.traiscore.presentation.theme.tsColors
+import com.develop.traiscore.presentation.viewmodels.SessionWithWorkouts
+import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.YearMonth
@@ -44,9 +50,14 @@ fun CalendarScreen(
     selectedMonth: YearMonth?,
     onEditClick: (WorkoutEntry) -> Unit,
     onDeleteClick: (WorkoutEntry) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    workoutEntryViewModel: WorkoutEntryViewModel = hiltViewModel()
 ) {
     val selectedDate = remember { mutableStateOf("") }
+
+    // ⭐ Obtener sesiones agrupadas del ViewModel
+    val sessionWorkouts = workoutEntryViewModel.sessionWorkouts.value
+
     val selectedDayWorkouts = remember(selectedDate.value, groupedEntries) {
         if (selectedDate.value.isNotEmpty()) {
             val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
@@ -68,6 +79,28 @@ fun CalendarScreen(
         }
     }
 
+    // ⭐ Obtener sesiones del día seleccionado
+    val selectedDaySessions = remember(selectedDate.value, sessionWorkouts) {
+        if (selectedDate.value.isNotEmpty()) {
+            val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+            try {
+                val selectedLocalDate = LocalDate.parse(selectedDate.value)
+                val calendar = java.util.Calendar.getInstance()
+                calendar.set(
+                    selectedLocalDate.year,
+                    selectedLocalDate.monthValue - 1,
+                    selectedLocalDate.dayOfMonth
+                )
+                val formattedDate = formatter.format(calendar.time)
+                sessionWorkouts[formattedDate] ?: emptyList()
+            } catch (e: Exception) {
+                emptyList()
+            }
+        } else {
+            emptyList()
+        }
+    }
+
     val totalExercises = remember(selectedDayWorkouts) {
         if (selectedDayWorkouts.isNotEmpty()) {
             selectedDayWorkouts
@@ -81,18 +114,9 @@ fun CalendarScreen(
         }
     }
 
-    val totalSeries = remember(selectedDayWorkouts) {
-        selectedDayWorkouts.size
-    }
-
-    val totalReps = remember(selectedDayWorkouts) {
-        selectedDayWorkouts.sumOf { it.reps }
-    }
-
-    val totalWeight = remember(selectedDayWorkouts) {
-        selectedDayWorkouts.sumOf { it.weight.toDouble() }
-    }
-
+    val totalSeries = remember(selectedDayWorkouts) { selectedDayWorkouts.size }
+    val totalReps = remember(selectedDayWorkouts) { selectedDayWorkouts.sumOf { it.reps } }
+    val totalWeight = remember(selectedDayWorkouts) { selectedDayWorkouts.sumOf { it.weight.toDouble() } }
 
     Column(
         modifier = modifier
@@ -100,9 +124,9 @@ fun CalendarScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
         HorizontalDaysScroll(
-            selectedDate =selectedDate,
+            selectedDate = selectedDate,
             selectedMonth = selectedMonth,
-            groupedEntries = groupedEntries,
+            sessionWorkouts = sessionWorkouts, // ⭐ Pasar sesiones en lugar de entries
             onDateSelected = { date ->
                 selectedDate.value = date
             },
@@ -110,6 +134,7 @@ fun CalendarScreen(
                 .fillMaxWidth()
                 .padding(vertical = 8.dp)
         )
+
         if (selectedDayWorkouts.isNotEmpty()) {
             QuickStats(
                 totalExercises = totalExercises,
@@ -118,14 +143,24 @@ fun CalendarScreen(
                 totalWeight = totalWeight
             )
         }
+
         // Lista de ejercicios del día seleccionado
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp),
             contentPadding = PaddingValues(bottom = 105.dp)
         ) {
-            if (selectedDayWorkouts.isNotEmpty()) {
-                // **NUEVO**: Mostrar ejercicios del día seleccionado
+            if (selectedDaySessions.isNotEmpty()) {
+                // ⭐ MOSTRAR POR SESIONES
+                items(selectedDaySessions) { session ->
+                    SessionDayCard(
+                        session = session,
+                        onEditClick = onEditClick,
+                        onDeleteClick = onDeleteClick
+                    )
+                }
+            } else if (selectedDayWorkouts.isNotEmpty()) {
+                // ⭐ DATOS LEGACY (sin sesiones)
                 item {
                     val selectedLocalDate = try {
                         LocalDate.parse(selectedDate.value)
@@ -152,7 +187,7 @@ fun CalendarScreen(
                     )
                 }
             } else {
-                // **NUEVO**: Mensaje cuando no hay ejercicios
+                // SIN EJERCICIOS
                 item {
                     val selectedLocalDate = try {
                         LocalDate.parse(selectedDate.value)
@@ -186,39 +221,105 @@ fun CalendarScreen(
     }
 }
 
+// ⭐ NUEVO: Card compacta para mostrar sesiones en calendario
+@Composable
+private fun SessionDayCard(
+    session: SessionWithWorkouts,
+    onEditClick: (WorkoutEntry) -> Unit,
+    onDeleteClick: (WorkoutEntry) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    // ⭐ SOLUCIÓN: Obtener color por defecto fuera del try-catch
+    val defaultCyanColor = MaterialTheme.tsColors.ledCyan
+
+    val sessionColor = try {
+        Color(android.graphics.Color.parseColor(session.sessionColor))
+    } catch (e: Exception) {
+        defaultCyanColor  // ⭐ Usar variable en lugar de función @Composable
+    }
+
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 8.dp, vertical = 4.dp)
+    ) {
+        // Header compacto de la sesión
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            // Indicador de color
+            Box(
+                modifier = Modifier
+                    .size(12.dp)
+                    .background(sessionColor, CircleShape)
+            )
+
+            Text(
+                text = "${session.sessionName} (${session.workouts.size} ejercicios)",
+                style = MaterialTheme.typography.titleSmall,
+                color = MaterialTheme.colorScheme.onBackground,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+
+        // Lista de workouts
+        WorkoutCardList(
+            workouts = session.workouts,
+            onEditClick = onEditClick,
+            onDeleteClick = onDeleteClick
+        )
+    }
+}
 @Composable
 fun HorizontalDaysScroll(
     selectedDate: MutableState<String>,
     selectedMonth: YearMonth?,
-    groupedEntries: Map<String, List<WorkoutEntry>>, // **NUEVO**: Parámetro agregado
+    sessionWorkouts: Map<String, List<SessionWithWorkouts>>,
     onDateSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val currentDate = remember { LocalDate.now() }
     val currentMonth = remember(selectedMonth) { selectedMonth ?: YearMonth.now() }
 
-    val workoutDates = remember(groupedEntries) {
+    // ⭐ SOLUCIÓN: Obtener el color por defecto FUERA del remember
+    val defaultCyanColor = MaterialTheme.tsColors.ledCyan
+
+    // ⭐ Obtener días con sesiones y sus colores
+    val sessionDates = remember(sessionWorkouts, defaultCyanColor) {
         val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-        groupedEntries.keys.mapNotNull { dateString ->
+        sessionWorkouts.mapNotNull { (dateString, sessions) ->
             try {
                 val date = formatter.parse(dateString)
                 date?.let {
                     val calendar = java.util.Calendar.getInstance()
                     calendar.time = it
-                    LocalDate.of(
+                    val localDate = LocalDate.of(
                         calendar.get(java.util.Calendar.YEAR),
                         calendar.get(java.util.Calendar.MONTH) + 1,
                         calendar.get(java.util.Calendar.DAY_OF_MONTH)
                     )
+                    // Si hay múltiples sesiones, usar el color de la primera
+                    val sessionColor = if (sessions.isNotEmpty()) {
+                        try {
+                            Color(android.graphics.Color.parseColor(sessions.first().sessionColor))
+                        } catch (e: Exception) {
+                            defaultCyanColor  // ⭐ Usar variable en lugar de función @Composable
+                        }
+                    } else {
+                        defaultCyanColor  // ⭐ Usar variable en lugar de función @Composable
+                    }
+                    localDate to sessionColor
                 }
             } catch (e: Exception) {
                 null
             }
-        }.toSet()
+        }.toMap()
     }
 
     // Generar todos los días del mes actual
-    val daysInMonth = remember(currentMonth, workoutDates) {
+    val daysInMonth = remember(currentMonth, sessionDates) {
         (1..currentMonth.lengthOfMonth()).map { day ->
             val date = currentMonth.atDay(day)
             DayInfo(
@@ -226,15 +327,14 @@ fun HorizontalDaysScroll(
                 dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
                 date = date,
                 isToday = date == currentDate,
-                hasWorkouts = workoutDates.contains(date)
+                hasWorkouts = sessionDates.containsKey(date),
+                sessionColor = sessionDates[date] // ⭐ Color de la sesión
             )
         }
     }
 
     LaunchedEffect(currentMonth) {
         if (selectedDate.value.isEmpty() || selectedMonth != null) {
-            // Si hay un mes seleccionado, usar el primer día de ese mes
-            // Si no, usar el día actual
             val initialDate = if (selectedMonth != null) {
                 selectedMonth.atDay(1)
             } else {
@@ -246,10 +346,8 @@ fun HorizontalDaysScroll(
 
     val listState = rememberLazyListState()
 
-    // Centrar en el día actual al inicio
     LaunchedEffect(daysInMonth, currentMonth) {
         if (currentMonth == YearMonth.now()) {
-            // Solo centrar en hoy si estamos viendo el mes actual
             val todayIndex = daysInMonth.indexOfFirst { it.isToday }
             if (todayIndex != -1) {
                 listState.animateScrollToItem(
@@ -258,7 +356,6 @@ fun HorizontalDaysScroll(
                 )
             }
         } else {
-            // Para meses diferentes, empezar desde el principio
             listState.animateScrollToItem(0)
         }
     }
@@ -287,7 +384,8 @@ data class DayInfo(
     val dayOfWeek: String,
     val date: LocalDate,
     val isToday: Boolean,
-    val hasWorkouts: Boolean = false
+    val hasWorkouts: Boolean = false,
+    val sessionColor: Color? = null // ⭐ Color de la sesión del día
 )
 
 @Composable
@@ -297,19 +395,21 @@ fun DayCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    // ⭐ SOLUCIÓN: Obtener colores FUERA de las condiciones
+    val cyanColor = MaterialTheme.tsColors.ledCyan
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+
     val backgroundColor = when {
-        isSelected -> MaterialTheme.tsColors.ledCyan
+        isSelected -> cyanColor
         else -> Color.Transparent
     }
 
     val textColor = when {
         isSelected -> Color.Black
-        dayInfo.isToday || dayInfo.hasWorkouts -> MaterialTheme.tsColors.ledCyan // **CAMBIO**: Agregar hasWorkouts
-        else -> MaterialTheme.colorScheme.onSurface
+        dayInfo.isToday || dayInfo.hasWorkouts -> dayInfo.sessionColor ?: cyanColor
+        else -> onSurfaceColor
     }
 
-
-    // Franja uniforme sin Card
     Box(
         modifier = modifier
             .clickable { onClick() }
@@ -318,27 +418,37 @@ fun DayCard(
             .background(
                 color = backgroundColor,
                 shape = RoundedCornerShape(12.dp)
-            ),
+            )
+            // ⭐ Borde con color de sesión si tiene workouts
+            .let { modifierBox ->
+                if (dayInfo.hasWorkouts && dayInfo.sessionColor != null && !isSelected) {
+                    modifierBox.border(
+                        width = 2.dp,
+                        color = dayInfo.sessionColor,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                } else {
+                    modifierBox
+                }
+            },
         contentAlignment = Alignment.Center
     ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
-            // Día de la semana en MAYÚSCULA
             Text(
-                text = dayInfo.dayOfWeek.take(1).uppercase(), // **MAYÚSCULA**
+                text = dayInfo.dayOfWeek.take(1).uppercase(),
                 style = MaterialTheme.typography.bodySmall,
                 color = textColor.copy(alpha = 0.7f),
                 fontWeight = FontWeight.Normal
             )
 
-            // Número del día
             Text(
                 text = dayInfo.dayNumber.toString(),
                 style = MaterialTheme.typography.titleMedium,
                 color = textColor,
-                fontWeight = if (isSelected || dayInfo.isToday || dayInfo.hasWorkouts) FontWeight.Bold else FontWeight.Normal // **CAMBIO**: Agregar hasWorkouts
+                fontWeight = if (isSelected || dayInfo.isToday || dayInfo.hasWorkouts) FontWeight.Bold else FontWeight.Normal
             )
         }
     }

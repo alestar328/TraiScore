@@ -5,10 +5,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.develop.traiscore.data.firebaseData.CreateSessionRequest
+import com.develop.traiscore.data.repository.SessionRepository
+import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class ActiveSession(
@@ -21,7 +26,7 @@ data class ActiveSession(
 
 @HiltViewModel
 class NewSessionViewModel @Inject constructor(
-    // Aquí agregaremos dependencias como repositorio cuando implementemos persistencia
+    private val sessionRepository: SessionRepository
 ) : ViewModel() {
 
     // Estado de la sesión activa
@@ -40,69 +45,122 @@ class NewSessionViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    init {
+        // Verificar sesión activa al inicializar
+        checkForActiveSession()
+    }
+
     /**
      * Crear una nueva sesión
      */
     fun createSession(name: String, color: Color) {
-        try {
-            _isLoading.value = true
-            _error.value = null
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _error.value = null
 
-            // Validaciones
-            if (name.isBlank()) {
-                _error.value = "El nombre de la sesión no puede estar vacío"
-                return
+                // Validaciones
+                if (name.isBlank()) {
+                    _error.value = "El nombre de la sesión no puede estar vacío"
+                    return@launch
+                }
+
+                val userId = FirebaseAuth.getInstance().currentUser?.uid
+                if (userId == null) {
+                    _error.value = "Usuario no autenticado"
+                    return@launch
+                }
+
+                // Crear sesión en Firebase
+                val createRequest = CreateSessionRequest(
+                    name = name.trim(),
+                    color = colorToHex(color),
+                    userId = userId
+                )
+
+                val response = sessionRepository.createSession(createRequest)
+
+                if (response.success && response.session != null) {
+                    // Actualizar estado local
+                    val session = response.session
+                    _activeSession.value = ActiveSession(
+                        id = session.sessionId,
+                        name = session.name,
+                        color = hexToColor(session.color),
+                        createdAt = session.createdAt.time,
+                        isActive = session.isActive
+                    )
+                    _hasActiveSession.value = true
+
+                    println("✅ Sesión creada exitosamente: ${session.name}")
+
+                } else {
+                    _error.value = response.error ?: "Error desconocido al crear sesión"
+                    println("❌ Error creando sesión: ${response.error}")
+                }
+
+            } catch (e: Exception) {
+                _error.value = "Error al crear la sesión: ${e.message}"
+                println("❌ Excepción creando sesión: ${e.message}")
+            } finally {
+                _isLoading.value = false
             }
-
-            // Si ya hay una sesión activa, terminarla primero
-            if (_hasActiveSession.value) {
-                endCurrentSession()
-            }
-
-            // Crear nueva sesión
-            val newSession = ActiveSession(
-                id = generateSessionId(),
-                name = name.trim(),
-                color = color,
-                createdAt = System.currentTimeMillis(),
-                isActive = true
-            )
-
-            // Actualizar estados
-            _activeSession.value = newSession
-            _hasActiveSession.value = true
-
-            println("✅ Sesión creada: ${newSession.name} con color $color")
-
-        } catch (e: Exception) {
-            _error.value = "Error al crear la sesión: ${e.message}"
-            println("❌ Error creando sesión: ${e.message}")
-        } finally {
-            _isLoading.value = false
         }
     }
-
+    private fun hexToColor(hex: String): Color {
+        return try {
+            Color(android.graphics.Color.parseColor(hex))
+        } catch (e: Exception) {
+            Color.Cyan // Color por defecto
+        }
+    }
+    fun getSessionDataForWorkout(): Triple<String, String, String>? {
+        val session = _activeSession.value
+        return if (session != null && session.isActive) {
+            Triple(
+                session.id,
+                session.name,
+                colorToHex(session.color)
+            )
+        } else {
+            null
+        }
+    }
+    private fun colorToHex(color: Color): String {
+        val red = (color.red * 255).toInt()
+        val green = (color.green * 255).toInt()
+        val blue = (color.blue * 255).toInt()
+        return String.format("#%02X%02X%02X", red, green, blue)
+    }
     /**
      * Terminar la sesión actual
      */
     fun endCurrentSession() {
-        try {
-            val currentSession = _activeSession.value
-            if (currentSession != null) {
-                println("🔚 Terminando sesión: ${currentSession.name}")
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
 
-                // Aquí se implementará la lógica de guardado/persistencia
-                // saveSessionToDatabase(currentSession.copy(isActive = false))
+                val response = sessionRepository.endActiveSession()
+
+                if (response.success) {
+                    // Limpiar estados locales
+                    _activeSession.value = null
+                    _hasActiveSession.value = false
+                    _error.value = null
+
+                    println("✅ Sesión terminada exitosamente")
+
+                } else {
+                    _error.value = response.error ?: "Error al terminar sesión"
+                    println("❌ Error terminando sesión: ${response.error}")
+                }
+
+            } catch (e: Exception) {
+                _error.value = "Error al terminar la sesión: ${e.message}"
+                println("❌ Excepción terminando sesión: ${e.message}")
+            } finally {
+                _isLoading.value = false
             }
-
-            // Limpiar estados
-            _activeSession.value = null
-            _hasActiveSession.value = false
-            _error.value = null
-
-        } catch (e: Exception) {
-            _error.value = "Error al terminar la sesión: ${e.message}"
-            println("❌ Error terminando sesión: ${e.message}")
         }
     }
 
@@ -117,10 +175,36 @@ class NewSessionViewModel @Inject constructor(
      * Verificar si hay una sesión activa al iniciar
      */
     fun checkForActiveSession() {
-        // Aquí implementaremos la verificación desde la base de datos
-        // Por ahora, simulamos que no hay sesión activa
-        _hasActiveSession.value = false
-        _activeSession.value = null
+        viewModelScope.launch {
+            try {
+                val response = sessionRepository.getActiveSession()
+
+                if (response.success && response.session != null) {
+                    val session = response.session
+                    _activeSession.value = ActiveSession(
+                        id = session.sessionId,
+                        name = session.name,
+                        color = hexToColor(session.color),
+                        createdAt = session.createdAt.time,
+                        isActive = session.isActive
+                    )
+                    _hasActiveSession.value = true
+
+                    println("✅ Sesión activa encontrada: ${session.name}")
+
+                } else {
+                    // No hay sesión activa
+                    _activeSession.value = null
+                    _hasActiveSession.value = false
+
+                    println("ℹ️ No hay sesión activa")
+                }
+
+            } catch (e: Exception) {
+                _error.value = "Error al verificar sesión activa: ${e.message}"
+                println("❌ Error verificando sesión activa: ${e.message}")
+            }
+        }
     }
 
     /**

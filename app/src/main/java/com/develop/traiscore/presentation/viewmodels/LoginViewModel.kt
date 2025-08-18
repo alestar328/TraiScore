@@ -1,7 +1,9 @@
 package com.develop.traiscore.presentation.viewmodels
 
 import android.app.Application
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -161,6 +163,7 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // Google Sign In
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun signInWithGoogle(authManager: AuthenticationManager) {
         viewModelScope.launch {
             authManager.signInWithGoogle()

@@ -4,21 +4,26 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.data.firebaseData.saveExerciseToFirebase
 import com.develop.traiscore.data.local.dao.ExerciseDao
+import com.develop.traiscore.data.repository.SessionRepository
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
 class AddExerciseViewModel @Inject constructor(
     private val exerciseDao: ExerciseDao,
+    private val workoutEntryViewModel: WorkoutEntryViewModel,
+    private val sessionRepository: SessionRepository,
 ) : ViewModel() {
     var exerciseNames by mutableStateOf<List<String>>(emptyList())
         private set
@@ -107,6 +112,92 @@ class AddExerciseViewModel @Inject constructor(
             }
             .addOnFailureListener {
                 onResult(null)
+            }
+    }
+    fun hasActiveSession(callback: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            try {
+                val response = sessionRepository.getActiveSession()
+                if (response.success && response.session != null) {
+                    callback(true, response.session.name)
+                } else {
+                    callback(false, null)
+                }
+            } catch (e: Exception) {
+                callback(false, null)
+            }
+        }
+    }
+
+    fun addExerciseToActiveSession(
+        title: String,
+        reps: Int,
+        weight: Float,
+        rir: Int
+    ) {
+        viewModelScope.launch {
+            try {
+                // ⭐ OBTENER SESIÓN ACTIVA DIRECTAMENTE DEL REPOSITORIO
+                val activeSessionResponse = sessionRepository.getActiveSession()
+
+                if (activeSessionResponse.success && activeSessionResponse.session != null) {
+                    val session = activeSessionResponse.session
+
+                    // Agregar workout a la sesión activa
+                    workoutEntryViewModel.addWorkoutToActiveSession(
+                        title = title,
+                        reps = reps,
+                        weight = weight,
+                        rir = rir,
+                        activeSessionId = session.sessionId,
+                        activeSessionName = session.name,
+                        activeSessionColor = session.color
+                    )
+
+                    // Incrementar contador de workouts en la sesión
+                    sessionRepository.incrementWorkoutCount(session.sessionId)
+
+                    println("✅ Ejercicio agregado a sesión: ${session.name}")
+
+                } else {
+                    // No hay sesión activa - crear workout sin sesión (legacy)
+                    addWorkoutWithoutSession(title, reps, weight, rir)
+                    println("⚠️ Ejercicio agregado sin sesión activa")
+                }
+
+            } catch (e: Exception) {
+                println("❌ Error agregando ejercicio: ${e.message}")
+            }
+        }
+    }
+
+    private fun addWorkoutWithoutSession(
+        title: String,
+        reps: Int,
+        weight: Float,
+        rir: Int
+    ) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        val workoutData = mapOf(
+            "title" to title,
+            "reps" to reps,
+            "weight" to weight,
+            "rir" to rir,
+            "timestamp" to Date()
+            // Sin sessionId, sessionName, sessionColor para compatibilidad legacy
+        )
+
+        Firebase.firestore
+            .collection("users")
+            .document(userId)
+            .collection("workoutEntries")
+            .add(workoutData)
+            .addOnSuccessListener { documentReference ->
+                println("✅ Workout legacy agregado: ${documentReference.id}")
+            }
+            .addOnFailureListener { e ->
+                println("❌ Error al agregar workout legacy: ${e.message}")
             }
     }
 

@@ -33,6 +33,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.presentation.viewmodels.NewSessionViewModel
 
+
 @Composable
 fun NewSessionUX(
     onDismiss: () -> Unit,

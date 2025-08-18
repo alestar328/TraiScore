@@ -1,9 +1,11 @@
 package com.develop.traiscore.presentation.screens
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -445,7 +447,7 @@ private suspend fun shareImageWithData(
         // ✅ CREAR URI PARA COMPARTIR
         val fileUri = FileProvider.getUriForFile(
             context,
-            "com.develop.traiscore.fileprovider",
+            "${context.packageName}.fileprovider", // dinámico con flavors
             file
         )
 
@@ -469,7 +471,6 @@ private fun shareImageToSocialMedia(
     maxReps: Int
 ) {
     try {
-        // Crear texto para compartir
         val shareText = buildString {
             append("💪 ¡Nuevo récord en el gym! 💪\n\n")
             append("🏋️ Mayor peso: $exerciseName (${topWeight.toInt()} kg)\n")
@@ -477,76 +478,62 @@ private fun shareImageToSocialMedia(
             append("#TraiScore #Gym #Fitness #Training")
         }
 
-        // ✅ CREAR INTENT PARA COMPARTIR LA IMAGEN CAPTURADA
         val shareIntent = Intent().apply {
             action = Intent.ACTION_SEND
-            type = "image/jpeg"
+            type = "image/*" // Usa "image/*" para la imagen
             putExtra(Intent.EXTRA_STREAM, imageUri)
             putExtra(Intent.EXTRA_TEXT, shareText)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
 
-        // ✅ CREAR SELECTOR ESPECÍFICO PARA REDES SOCIALES
         val chooserIntent = Intent.createChooser(shareIntent, "Compartir en redes sociales")
 
-        // ✅ AGREGAR INTENTS ESPECÍFICOS PARA APPS POPULARES
-        val targetIntents = mutableListOf<Intent>()
-
-        // Instagram Stories - AHORA CON LA IMAGEN CAPTURADA
-        val instagramIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            type = "image/jpeg"
-            putExtra(Intent.EXTRA_STREAM, imageUri)
-            setPackage("com.instagram.android")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-
-        // TikTok
-        val tiktokIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            type = "image/jpeg"
-            putExtra(Intent.EXTRA_STREAM, imageUri)
-            putExtra(Intent.EXTRA_TEXT, shareText)
-            setPackage("com.ss.android.ugc.trill")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-
-        // Twitter/X
-        val twitterIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            type = "image/jpeg"
-            putExtra(Intent.EXTRA_STREAM, imageUri)
-            putExtra(Intent.EXTRA_TEXT, shareText)
-            setPackage("com.twitter.android")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-
-        // WhatsApp
-        val whatsappIntent = Intent().apply {
-            action = Intent.ACTION_SEND
-            type = "image/jpeg"
-            putExtra(Intent.EXTRA_STREAM, imageUri)
-            putExtra(Intent.EXTRA_TEXT, shareText)
-            setPackage("com.whatsapp")
-            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-        }
-
-        // Verificar qué apps están instaladas y agregar a la lista
-        val packageManager = context.packageManager
-        listOf(instagramIntent, tiktokIntent, twitterIntent, whatsappIntent).forEach { intent ->
-            if (intent.resolveActivity(packageManager) != null) {
-                targetIntents.add(intent)
-            }
-        }
-
-        // Si hay apps específicas instaladas, mostrarlas junto con el selector general
-        if (targetIntents.isNotEmpty()) {
-            chooserIntent.putExtra(Intent.EXTRA_INITIAL_INTENTS, targetIntents.toTypedArray())
+        // Esta línea es crucial si la función no se llama desde una Activity.
+        // Asegúrate de que tu `context` sea una `Activity` o añade esta flag.
+        if (context !is android.app.Activity) {
+            chooserIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 
         context.startActivity(chooserIntent)
 
     } catch (e: Exception) {
         android.util.Log.e("SocialMediaScreen", "Error al compartir: ${e.message}")
+    }
+}
+private fun buildInstagramStoryIntent(
+    context: Context,
+    imageUri: Uri
+): Intent? {
+    val pkg = "com.instagram.android"
+    val pm = context.packageManager
+    val isInstalled = try {
+        pm.getPackageInfo(pkg, 0); true
+    } catch (_: Exception) { false }
+    if (!isInstalled) return null
+
+    // Concede permiso a Instagram para leer tu content://
+    context.grantUriPermission(
+        pkg,
+        imageUri,
+        Intent.FLAG_GRANT_READ_URI_PERMISSION
+    )
+
+    // Intent oficial para historias
+    return Intent("com.instagram.share.ADD_TO_STORY").apply {
+        setPackage(pkg)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+
+        // Dos vías que funcionan según versión de IG:
+        // 1) Extra backgroundImage (nuevo)
+        putExtra("com.instagram.sharedSticker.backgroundImage", imageUri)
+        type = "image/*"
+
+        // 2) (opcional) además fija data+type (antiguo, mantiene compat)
+        setDataAndType(imageUri, "image/*")
+
+        // Extras opcionales
+        putExtra("source_application", context.packageName)
+        // putExtra("top_background_color", "#000000")
+        // putExtra("bottom_background_color", "#000000")
     }
 }
