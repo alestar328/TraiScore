@@ -3,6 +3,7 @@ package com.develop.traiscore.presentation.screens
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
@@ -21,6 +22,8 @@ import com.develop.traiscore.R
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.presentation.components.ActiveSessionCard
 import com.develop.traiscore.presentation.components.QuickStats
+import com.develop.traiscore.presentation.components.SessionCard
+import com.develop.traiscore.presentation.components.SessionWorkoutCard
 import com.develop.traiscore.presentation.components.WorkoutCardList
 import com.develop.traiscore.presentation.components.general.NewSessionUX
 import com.develop.traiscore.presentation.theme.tsColors
@@ -44,49 +47,48 @@ fun TodayViewScreen(
         SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(calendar.time)
     }
 
-    // ⭐ Estados del ViewModel
+    // Estados del ViewModel
     val hasActiveSession by viewModel.hasActiveSession.collectAsState()
     val activeSession by viewModel.activeSession.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val finishedSessions by viewModel.finishedSessions.collectAsState()
+    val availableSessions by viewModel.availableSessions.collectAsState() // NUEVO
+
     var showEndSessionDialog by remember { mutableStateOf(false) }
 
     val todayWorkouts = groupedEntries[todayFormatted] ?: emptyList()
-    val totalSeries = todayWorkouts.size
-    val totalReps = todayWorkouts.sumOf { it.reps }
-    val totalWeight = todayWorkouts.sumOf { it.weight.toDouble() }
-
 
     LaunchedEffect(Unit) {
         viewModel.checkForActiveSession()
+        viewModel.loadAvailableSessions()
     }
+
     error?.let { errorMessage ->
         LaunchedEffect(errorMessage) {
-            // Aquí podrías mostrar un Toast
             println("Error: $errorMessage")
             viewModel.clearError()
         }
     }
-    // Estadísticas del día
-    val totalExercises = todayWorkouts
-        .groupBy { workout ->
-            if (workout.exerciseId > 0) workout.exerciseId else workout.title
+
+    fun hexToColor(hex: String): Color {
+        return try {
+            Color(android.graphics.Color.parseColor(hex))
+        } catch (e: Exception) {
+            Color(0xFF355E58)
         }
-        .keys
-        .size
+    }
 
     Column(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // ⭐ HEADER INTELIGENTE - Muestra sesión activa o estado normal
+        // Header
         TodayHeaderSection(
             hasActiveSession = hasActiveSession,
             activeSession = activeSession,
-            onEndSession = {
-                showEndSessionDialog = true
-            }
+            onEndSession = { showEndSessionDialog = true }
         )
 
         if (isLoading) {
@@ -96,26 +98,40 @@ fun TodayViewScreen(
             )
         }
 
-        // Estadísticas rápidas
-        if (todayWorkouts.isNotEmpty()) {
-            QuickStats(
-                totalExercises = totalExercises,
-                totalSeries = totalSeries,
-                totalReps = totalReps,
-                totalWeight = totalWeight
-            )
+        // QuickStats solo si hay sesión activa y workouts de hoy
+        if (hasActiveSession && todayWorkouts.isNotEmpty()) {
+            val activeSessionWorkouts = todayWorkouts.filter {
+                it.sessionId == activeSession?.id
+            }
+
+            if (activeSessionWorkouts.isNotEmpty()) {
+                val totalSeries = activeSessionWorkouts.size
+                val totalReps = activeSessionWorkouts.sumOf { it.reps }
+                val totalWeight = activeSessionWorkouts.sumOf { it.weight.toDouble() }
+                val totalExercises = activeSessionWorkouts
+                    .groupBy { if (it.exerciseId > 0) it.exerciseId else it.title }
+                    .keys.size
+
+                QuickStats(
+                    totalExercises = totalExercises,
+                    totalSeries = totalSeries,
+                    totalReps = totalReps,
+                    totalWeight = totalWeight
+                )
+            }
         }
 
-        // Lista de ejercicios
+        // Lista principal
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 100.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            if (todayWorkouts.isNotEmpty()) {
+            // Sesiones terminadas (solo mostrar si no hay sesión activa)
+            if (availableSessions.isNotEmpty() && !hasActiveSession) {
                 item {
                     Text(
-                        text = "Ejercicios Realizados",
+                        text = "Mis Sesiones",
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.SemiBold,
@@ -123,31 +139,67 @@ fun TodayViewScreen(
                     )
                 }
 
-                item {
-                    WorkoutCardList(
-                        workouts = todayWorkouts,
-                        onEditClick = onEditClick,
-                        onDeleteClick = onDeleteClick
+                items(availableSessions) { session ->
+                    val sessionName = session["name"] as? String ?: "Sesión"
+                    val sessionColor = session["color"] as? String ?: "#355E58"
+                    val sessionId = session["sessionId"] as? String ?: ""
+
+                    SessionCard(
+                        title = sessionName,
+                        accent = hexToColor(sessionColor),
+                        onClick = {
+                            viewModel.activateSession(sessionId)
+                        }
                     )
                 }
-            } else {
-                // ⭐ SOLO mostrar EmptyState si NO hay sesión activa
-                if (!hasActiveSession) {
+
+                item {
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+            }
+
+            // Workouts agrupados por sesión (solo del día actual)
+            if (hasActiveSession && todayWorkouts.isNotEmpty()) {
+                val workoutsBySession = todayWorkouts.groupBy { workout ->
+                    workout.sessionId ?: "legacy_session"
+                }
+
+
+                val activeSessionWorkouts = workoutsBySession.filter { (sessionId, _) ->
+                    sessionId == activeSession?.id
+                }
+
+                if (activeSessionWorkouts.isNotEmpty()) {
+                    items(activeSessionWorkouts.entries.toList()) { (sessionId, sessionWorkouts) ->
+                        val firstWorkout = sessionWorkouts.first()
+                        val sessionName = firstWorkout.sessionName ?: "Entrenamiento"
+                        val sessionColor = firstWorkout.sessionColor ?: "#43f4ff"
+
+                        SessionWorkoutCard(
+                            sessionName = sessionName,
+                            sessionColor = sessionColor,
+                            workouts = sessionWorkouts,
+                            isActive = true,
+                            onEditClick = onEditClick,
+                            onDeleteClick = onDeleteClick,
+                            modifier = Modifier.padding(horizontal = 4.dp)
+                        )
+                    }
+                }
+            } else if (!hasActiveSession && availableSessions.isEmpty()) {
                     item {
                         EmptyTodayState(viewModel = viewModel)
                     }
-                }
+
             }
         }
     }
 
-    // ⭐ DIALOG de confirmación para terminar sesión
+    // Dialog de confirmación
     if (showEndSessionDialog) {
         AlertDialog(
             onDismissRequest = { showEndSessionDialog = false },
-            title = {
-                Text("Terminar Sesión")
-            },
+            title = { Text("Terminar Sesión") },
             text = {
                 Text(
                     "¿Estás seguro de que quieres terminar la sesión \"${activeSession?.name ?: ""}\"?\n\n" +
@@ -160,17 +212,13 @@ fun TodayViewScreen(
                         viewModel.endCurrentSession()
                         showEndSessionDialog = false
                     },
-                    colors = ButtonDefaults.textButtonColors(
-                        contentColor = Color.Red
-                    )
+                    colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
                 ) {
                     Text("Terminar")
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = { showEndSessionDialog = false }
-                ) {
+                TextButton(onClick = { showEndSessionDialog = false }) {
                     Text("Cancelar")
                 }
             }
@@ -344,7 +392,6 @@ private fun EmptyTodayState(
         NewSessionUX(
             onDismiss = { showNewSessionDialog = false },
             onSessionCreated = {
-                // ⭐ La UI se actualiza automáticamente por el StateFlow
                 showNewSessionDialog = false
             },
             viewModel = viewModel  // ⭐ Usar el mismo ViewModel

@@ -45,6 +45,13 @@ class NewSessionViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _finishedSessions = MutableStateFlow<List<Map<String, Any>>>(emptyList())
+    val finishedSessions: StateFlow<List<Map<String, Any>>> = _finishedSessions.asStateFlow()
+
+    private val _availableSessions = MutableStateFlow<List<Map<String, Any>>>(emptyList())
+    val availableSessions: StateFlow<List<Map<String, Any>>> = _availableSessions.asStateFlow()
+
+
     init {
         // Verificar sesión activa al inicializar
         checkForActiveSession()
@@ -107,6 +114,78 @@ class NewSessionViewModel @Inject constructor(
             }
         }
     }
+    fun createInactiveSession(name: String, color: Color) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
+                _error.value = null
+
+                val createRequest = CreateSessionRequest(
+                    name = name.trim(),
+                    color = colorToHex(color),
+                    userId = FirebaseAuth.getInstance().currentUser?.uid ?: ""
+                )
+
+                val response = sessionRepository.createInactiveSession(createRequest)
+
+                if (response.success) {
+                    loadAvailableSessions() // Recargar lista
+                    println("✅ SessionCard creada: ${response.session?.name}")
+                } else {
+                    _error.value = response.error ?: "Error al crear sesión"
+                }
+            } catch (e: Exception) {
+                _error.value = "Error: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+    fun activateSession(sessionId: String) {
+        viewModelScope.launch {
+            try {
+                val response = sessionRepository.activateSession(sessionId)
+
+                if (response.success && response.session != null) {
+                    val session = response.session
+                    _activeSession.value = ActiveSession(
+                        id = session.sessionId,
+                        name = session.name,
+                        color = hexToColor(session.color),
+                        createdAt = session.createdAt.time,
+                        isActive = true
+                    )
+                    _hasActiveSession.value = true
+
+                    println("✅ Sesión activada: ${session.name}")
+                }
+            } catch (e: Exception) {
+                _error.value = "Error al activar sesión: ${e.message}"
+            }
+        }
+    }
+
+    /**
+     * Cargar sesiones disponibles
+     */
+    fun loadAvailableSessions() {
+        viewModelScope.launch {
+            try {
+                println("🔍 Iniciando carga de sesiones disponibles...")
+                val sessions = sessionRepository.getUserAvailableSessions()
+                println("🔍 Sesiones obtenidas: ${sessions.size}")
+                sessions.forEach { session ->
+                    println("🔍 Sesión: ${session["name"]} - ${session["sessionId"]} - Active: ${session["isActive"]}")
+                }
+                _availableSessions.value = sessions
+                println("🔍 Estado actualizado con ${sessions.size} sesiones")
+            } catch (e: Exception) {
+                println("❌ Error al cargar sesiones viewmodel: ${e.message}")
+                _error.value = "Error al cargar sesiones: ${e.message}"
+            }
+        }
+    }
+
     private fun hexToColor(hex: String): Color {
         return try {
             Color(android.graphics.Color.parseColor(hex))
@@ -126,6 +205,21 @@ class NewSessionViewModel @Inject constructor(
             null
         }
     }
+    fun loadFinishedSessions() {
+        viewModelScope.launch {
+            try {
+                val result = sessionRepository.getUserFinishedSessions()
+                result.onSuccess { sessions ->
+                    _finishedSessions.value = sessions
+                }.onFailure { error ->
+                    _error.value = error.message ?: "Error al cargar sesiones"
+                }
+            } catch (e: Exception) {
+                _error.value = "Error al cargar sesiones: ${e.message}"
+            }
+        }
+    }
+
     private fun colorToHex(color: Color): String {
         val red = (color.red * 255).toInt()
         val green = (color.green * 255).toInt()
@@ -148,22 +242,20 @@ class NewSessionViewModel @Inject constructor(
                     _hasActiveSession.value = false
                     _error.value = null
 
-                    println("✅ Sesión terminada exitosamente")
+                    // Recargar sesiones disponibles (no terminadas)
+                    loadAvailableSessions()
 
+                    println("✅ Sesión terminada exitosamente")
                 } else {
                     _error.value = response.error ?: "Error al terminar sesión"
-                    println("❌ Error terminando sesión: ${response.error}")
                 }
-
             } catch (e: Exception) {
                 _error.value = "Error al terminar la sesión: ${e.message}"
-                println("❌ Excepción terminando sesión: ${e.message}")
             } finally {
                 _isLoading.value = false
             }
         }
     }
-
     /**
      * Limpiar errores
      */
@@ -225,4 +317,5 @@ class NewSessionViewModel @Inject constructor(
             Triple("", Color.Cyan, false)
         }
     }
+
 }

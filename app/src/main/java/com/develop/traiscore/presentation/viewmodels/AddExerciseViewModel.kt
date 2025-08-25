@@ -67,7 +67,8 @@ class AddExerciseViewModel @Inject constructor(
         exerciseId : Int,
         reps: Int,
         weight: Double,
-        rir: Int
+        rir: Int,
+        sessionData: Triple<String, String, String>? = null
     ) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid
         if (userId == null) {
@@ -84,6 +85,12 @@ class AddExerciseViewModel @Inject constructor(
             "rir" to rir,
             "timestamp" to Date()
         )
+        sessionData?.let { (sessionId, sessionName, sessionColor) ->
+            workoutData["sessionId"] = sessionId
+            workoutData["sessionName"] = sessionName
+            workoutData["sessionColor"] = sessionColor
+        }
+
 
         // Guardar la entrada de entrenamiento en la subcolección workoutEntries del usuario
         Firebase.firestore.collection("users")

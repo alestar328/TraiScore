@@ -111,7 +111,7 @@ fun NewSessionUX(
             IconButton(
                 onClick = {
                     if (sessionName.isNotBlank() && !isLoading) {
-                        viewModel.createSession(
+                        viewModel.createInactiveSession( // CAMBIO: usar createInactiveSession
                             name = sessionName.trim(),
                             color = colorSeleccionado
                         )

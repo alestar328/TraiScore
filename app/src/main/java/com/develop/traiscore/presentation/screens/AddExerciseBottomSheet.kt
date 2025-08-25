@@ -41,6 +41,7 @@ import com.develop.traiscore.presentation.components.RIRSlider
 import com.develop.traiscore.presentation.theme.primaryWhite
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
+import com.develop.traiscore.presentation.viewmodels.NewSessionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -93,6 +94,7 @@ private fun AddExerciseBottomSheetContent(
     var rirValue by remember { mutableStateOf(workoutToEdit?.rir ?: 2) }
     var repsError by remember { mutableStateOf(false) }
     var weightError by remember { mutableStateOf(false) }
+    val newSessionViewModel: NewSessionViewModel = hiltViewModel()
 
     val context = LocalContext.current
 
@@ -245,12 +247,12 @@ private fun AddExerciseBottomSheetContent(
             Button(
                 onClick = {
                     if (workoutToEdit == null) {
+                        val sessionData = newSessionViewModel.getSessionDataForWorkout()
                         // Guardar nuevo
-                        viewModel.saveWorkoutEntry(
+                        viewModel.addExerciseToActiveSession(
                             title = selectedExercise,
-                            exerciseId = exerciseId,
                             reps = repsText.toIntOrNull() ?: 0,
-                            weight = weightText.toDoubleOrNull() ?: 0.0,
+                            weight = weightText.toFloatOrNull() ?: 0.0f, // Float en lugar de Double
                             rir = rirValue
                         )
                     } else {

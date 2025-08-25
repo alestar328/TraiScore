@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         applicationId = "com.develop.traiscore"
-        minSdk = 30
+        minSdk = 26
         targetSdk = 35
         versionCode = 13
         versionName = "1.1.0"
@@ -81,6 +81,20 @@ android {
 dependencies {
     val activity_version = "1.10.1"
     val camerax_version = "1.5.0-beta01"
+    val composeBom = platform("androidx.compose:compose-bom:2025.08.00")
+    implementation(composeBom)
+    testImplementation(composeBom)
+    androidTestImplementation(composeBom)
+
+    // Specify Compose library dependencies without a version definition
+    implementation("androidx.compose.foundation:foundation")
+    // ..
+    testImplementation("androidx.compose.ui:ui-test-junit4")
+    // ..
+    androidTestImplementation("androidx.compose.ui:ui-test")
+
+
+
     implementation("androidx.camera:camera-core:${camerax_version}")
     implementation("androidx.camera:camera-camera2:${camerax_version}")
     implementation("androidx.camera:camera-lifecycle:${camerax_version}")

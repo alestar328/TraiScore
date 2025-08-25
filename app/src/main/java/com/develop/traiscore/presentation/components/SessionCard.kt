@@ -20,6 +20,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.develop.traiscore.R
@@ -28,11 +29,11 @@ import com.develop.traiscore.R
 fun SessionCard(
     title : String,
     modifier: Modifier = Modifier,
-    accent: Color = Color(0xFF79E0D1),
+    accent: Color = Color(0xFF355E58),
     onClick: () -> Unit = {}
 ){
-    val background = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.08f)
-    val iconCircle = accent.copy(alpha = 0.22f)
+    val background = Color.Gray
+    val iconCircle = accent.copy(alpha = 0.5f)
 
     ElevatedCard(
         modifier = modifier
@@ -75,7 +76,7 @@ fun SessionCard(
                     text = title,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.SemiBold,
-                    color = Color(0xFFEDEDED) // alto contraste sobre fondo oscuro
+                    color = Color(0xFF000000) // alto contraste sobre fondo oscuro
                 )
                 Spacer(Modifier.height(2.dp))
                 Text(
@@ -86,4 +87,13 @@ fun SessionCard(
             }
         }
     }
+}
+
+@Preview(showBackground = true)
+@Composable
+fun SessionCardPreview() {
+    SessionCard(
+        title = "Sesión de Pecho",
+        accent = Color(0xFF79E0D1)
+    )
 }

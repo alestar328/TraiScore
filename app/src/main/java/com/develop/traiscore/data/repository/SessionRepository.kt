@@ -78,7 +78,164 @@ class SessionRepository @Inject constructor() {
             )
         }
     }
+    suspend fun getUserAvailableSessions(): List<Map<String, Any>> {
+        return try {
+            val userId = auth.currentUser?.uid ?: return emptyList()
 
+            println("🔍 Buscando sesiones para usuario: $userId")
+
+            // CAMBIO: Quitar el orderBy que está causando problemas con índices
+            val snapshot = firestore.collection("users")
+                .document(userId)
+                .collection("sessions")
+                .whereEqualTo("isActive", false)
+                // .orderBy("createdAt") // COMENTAR esta línea temporalmente
+                .get()
+                .await()
+
+            println("🔍 Documentos encontrados: ${snapshot.documents.size}")
+
+            val sessions = snapshot.documents.mapNotNull { doc ->
+                println("🔍 Documento: ${doc.id} - ${doc.data}")
+                doc.data
+            }
+
+            println("✅ Sesiones disponibles encontradas: ${sessions.size}")
+            return sessions
+
+        } catch (e: Exception) {
+            println("❌ Error obteniendo sesiones disponibles repository: ${e.message}")
+            e.printStackTrace()
+            emptyList()
+        }
+    }
+
+    suspend fun createInactiveSession(request: CreateSessionRequest): SessionResponse {
+        return try {
+            val userId = auth.currentUser?.uid ?: return SessionResponse(
+                success = false,
+                error = "Usuario no autenticado"
+            )
+
+            // Verificar límite de 6 sesiones
+            val existingSessions = getUserAvailableSessions()
+            if (existingSessions.size >= 6) {
+                return SessionResponse(
+                    success = false,
+                    error = "Has alcanzado el límite de 6 sesiones"
+                )
+            }
+
+            val sessionId = generateSessionId()
+            val now = Date()
+
+            val sessionData = mapOf(
+                "sessionId" to sessionId,
+                "name" to request.name,
+                "color" to request.color,
+                "createdAt" to now,
+                "updatedAt" to now,
+                "isActive" to false,  // INACTIVA por defecto
+                "userId" to userId,
+                "workoutCount" to 0
+            )
+
+            firestore.collection("users")
+                .document(userId)
+                .collection("sessions")
+                .document(sessionId)
+                .set(sessionData)
+                .await()
+
+            SessionResponse(
+                success = true,
+                sessionId = sessionId,
+                session = SessionDocument(
+                    sessionId = sessionId,
+                    name = request.name,
+                    color = request.color,
+                    createdAt = now,
+                    updatedAt = now,
+                    isActive = false,
+                    userId = userId,
+                    workoutCount = 0
+                )
+            )
+        } catch (e: Exception) {
+            SessionResponse(success = false, error = e.message)
+        }
+    }
+
+    suspend fun activateSession(sessionId: String): SessionResponse {
+        return try {
+            val userId = auth.currentUser?.uid ?: return SessionResponse(
+                success = false,
+                error = "Usuario no autenticado"
+            )
+
+            // Desactivar todas las sesiones primero
+            deactivateAllSessions(userId)
+
+            // Activar la sesión seleccionada
+            firestore.collection("users")
+                .document(userId)
+                .collection("sessions")
+                .document(sessionId)
+                .update(mapOf("isActive" to true, "updatedAt" to Date()))
+                .await()
+
+            // Obtener la sesión actualizada
+            val doc = firestore.collection("users")
+                .document(userId)
+                .collection("sessions")
+                .document(sessionId)
+                .get()
+                .await()
+
+            val session = SessionDocument(
+                sessionId = doc.getString("sessionId") ?: "",
+                name = doc.getString("name") ?: "",
+                color = doc.getString("color") ?: "#43f4ff",
+                createdAt = doc.getDate("createdAt") ?: Date(),
+                updatedAt = doc.getDate("updatedAt") ?: Date(),
+                isActive = true,
+                userId = userId,
+                workoutCount = doc.getLong("workoutCount")?.toInt() ?: 0
+            )
+
+            println("✅ Sesión activada: ${session.name}")
+            SessionResponse(success = true, session = session)
+
+        } catch (e: Exception) {
+            println("❌ Error activando sesión: ${e.message}")
+            SessionResponse(success = false, error = e.message)
+        }
+    }
+
+
+    suspend fun getUserFinishedSessions(): Result<List<Map<String, Any>>> {
+        return try {
+            val userId = auth.currentUser?.uid ?: return Result.failure(
+                Exception("Usuario no autenticado")
+            )
+
+            val snapshot = firestore.collection("users")
+                .document(userId)
+                .collection("sessions")  // ✅ CAMBIO: usar subcolección del usuario
+                .whereEqualTo("isActive", false)
+                .get()
+                .await()
+
+            val sessions = snapshot.documents.mapNotNull { doc ->
+                doc.data
+            }
+
+            Result.success(sessions)
+
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
     /**
      * Obtener la sesión activa del usuario
      */
