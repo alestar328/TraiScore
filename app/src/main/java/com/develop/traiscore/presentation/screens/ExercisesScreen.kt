@@ -21,6 +21,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -31,6 +32,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,7 +51,10 @@ import com.develop.traiscore.data.local.entity.WorkoutWithExercise
 import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.components.WorkoutCard
+import com.develop.traiscore.presentation.components.general.NewSessionUX
 import com.develop.traiscore.presentation.theme.tsColors
+import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
+import com.develop.traiscore.presentation.viewmodels.NewSessionViewModel
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.util.Date
@@ -83,7 +88,12 @@ fun ExercisesScreen(
     } else {
         groupedEntries
     }
+    val sessionViewModel: NewSessionViewModel = hiltViewModel()
+    val availableSessions by sessionViewModel.availableSessions.collectAsState()
+    val hasActiveSession by sessionViewModel.hasActiveSession.collectAsState()
+    var showNewSessionDialog by remember { mutableStateOf(false) }
 
+    val newSessionViewModel: NewSessionViewModel = hiltViewModel()
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -135,6 +145,25 @@ fun ExercisesScreen(
                         }
                     }
                 )
+            },
+            floatingActionButton = {
+                // FAB condicional solo en vista TODAY
+                if (currentViewMode.value == ViewMode.TODAY &&
+                    !hasActiveSession &&
+                    availableSessions.size < 6) {
+                    FloatingActionButton(
+                        onClick = { showNewSessionDialog = true },
+                        containerColor = MaterialTheme.tsColors.ledCyan,
+                        contentColor = Color.Black,
+                        modifier = Modifier
+                            .padding(bottom = 100.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Nueva Sesión"
+                        )
+                    }
+                }
             },
             content = { paddingValues ->
                 Column(
@@ -269,6 +298,15 @@ fun ExercisesScreen(
             }
         }
     )
+    if (showNewSessionDialog) {
+        NewSessionUX(
+            onDismiss = { showNewSessionDialog = false },
+            onSessionCreated = {
+                showNewSessionDialog = false
+            },
+            viewModel = newSessionViewModel
+        )
+    }
 }
 
 @Preview(

@@ -1,12 +1,15 @@
 package com.develop.traiscore.presentation.screens
 
 import androidx.compose.foundation.background
+import androidx.compose.material.FloatingActionButton
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,11 +23,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.R
 import com.develop.traiscore.data.local.entity.WorkoutEntry
-import com.develop.traiscore.presentation.components.ActiveSessionCard
 import com.develop.traiscore.presentation.components.QuickStats
 import com.develop.traiscore.presentation.components.SessionCard
 import com.develop.traiscore.presentation.components.SessionWorkoutCard
-import com.develop.traiscore.presentation.components.WorkoutCardList
 import com.develop.traiscore.presentation.components.general.NewSessionUX
 import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.NewSessionViewModel
@@ -124,7 +125,7 @@ fun TodayViewScreen(
         // Lista principal
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 100.dp),
+            contentPadding = PaddingValues(bottom = 110.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Sesiones terminadas (solo mostrar si no hay sesión activa)
@@ -184,15 +185,22 @@ fun TodayViewScreen(
                             onDeleteClick = onDeleteClick,
                             modifier = Modifier.padding(horizontal = 4.dp)
                         )
+
                     }
                 }
             } else if (!hasActiveSession && availableSessions.isEmpty()) {
                     item {
-                        EmptyTodayState(viewModel = viewModel)
+                        EmptyTodayState(
+                            viewModel = viewModel,
+                            availableSessionsCount = availableSessions.size
+
+                        )
                     }
 
             }
         }
+
+
     }
 
     // Dialog de confirmación
@@ -317,7 +325,7 @@ private fun TodayHeaderSection(
 
                 Column {
                     Text(
-                        text = "Entrenamientos de Hoy",
+                        text = "¡Es hora de entrenar!",
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold
@@ -337,9 +345,12 @@ private fun TodayHeaderSection(
 // ⭐ EmptyState actualizado para usar el ViewModel
 @Composable
 private fun EmptyTodayState(
-    viewModel: NewSessionViewModel
+    viewModel: NewSessionViewModel,
+    availableSessionsCount: Int
 ) {
     var showNewSessionDialog by remember { mutableStateOf(false) }
+    val canAddMoreSessions = availableSessionsCount < 6
+
 
     Card(
         modifier = Modifier
@@ -373,17 +384,23 @@ private fun EmptyTodayState(
             )
 
             Text(
-                text = "No tienes entrenamientos registrados para hoy. ¡Agrega tu primer ejercicio!",
+                text = if (canAddMoreSessions) {
+                    "No tienes entrenamientos registrados para hoy. ¡Agrega tu primer ejercicio!"
+                } else {
+                    "Has alcanzado el límite de 6 sesiones. Selecciona una existente para entrenar."
+                },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                 textAlign = TextAlign.Center
             )
 
-            FilledTonalButton(
-                onClick = { showNewSessionDialog = true },
-                colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.tsColors.ledCyan)
-            ) {
-                Text("Nueva Sesión")
+            if (canAddMoreSessions) {
+                FilledTonalButton(
+                    onClick = { showNewSessionDialog = true },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.tsColors.ledCyan)
+                ) {
+                    Text("Nueva Sesión")
+                }
             }
         }
     }
@@ -394,7 +411,7 @@ private fun EmptyTodayState(
             onSessionCreated = {
                 showNewSessionDialog = false
             },
-            viewModel = viewModel  // ⭐ Usar el mismo ViewModel
+            viewModel = viewModel
         )
     }
 }
