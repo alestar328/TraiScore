@@ -69,6 +69,15 @@ suspend fun saveExerciseToFirebase(
     category: String,
     exerciseDao: ExerciseDao
 ) {
+    // Obtener el usuario actual
+    val currentUser = FirebaseAuth.getInstance().currentUser
+    if (currentUser == null) {
+        println("❌ Usuario no autenticado")
+        return
+    }
+
+    val userId = currentUser.uid
+
     // Primero guardar en local para generar ID
     val localExercise = ExerciseEntity(
         id = 0,
@@ -80,11 +89,13 @@ suspend fun saveExerciseToFirebase(
 
     val localId = exerciseDao.insertExercise(localExercise)
 
-    // Luego sincronizar con Firebase (tu código existente)
+    // Luego sincronizar con Firebase en la subcolección del usuario
     val db = Firebase.firestore
-    val exercisesCollection = db.collection("exercises")
+    val userExercisesCollection = db.collection("users")
+        .document(userId)
+        .collection("exercises")
 
-    exercisesCollection.get()
+    userExercisesCollection.get()
         .addOnSuccessListener { snapshot ->
             val userExerciseDocs = snapshot.documents.filter {
                 it.id.startsWith("userExer")
@@ -100,15 +111,15 @@ suspend fun saveExerciseToFirebase(
                 "name" to name,
                 "category" to category,
                 "isDefault" to false,
-                "createdBy" to FirebaseAuth.getInstance().currentUser?.uid,
+                "createdBy" to userId,
                 "localId" to localId
             )
 
-            exercisesCollection
+            userExercisesCollection
                 .document(newDocId)
                 .set(newExercise)
                 .addOnSuccessListener {
-                    println("✅ Ejercicio guardado con ID: $newDocId")
+                    println("✅ Ejercicio guardado con ID: $newDocId en subcolección del usuario")
 
                     // Actualizar el registro local con el Firebase ID
                     CoroutineScope(Dispatchers.IO).launch {

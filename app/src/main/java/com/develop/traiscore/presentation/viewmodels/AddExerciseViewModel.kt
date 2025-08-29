@@ -57,6 +57,50 @@ class AddExerciseViewModel @Inject constructor(
             .addOnFailureListener { exception ->
             }
     }
+    init {
+        // Cargar ejercicios de la colección global (ejercicios por defecto)
+        // Y de la subcolección del usuario (ejercicios personalizados)
+        loadAllExercises()
+    }
+    private fun loadAllExercises() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            println("❌ Usuario no autenticado")
+            return
+        }
+
+        val userId = currentUser.uid
+        val allExercises = mutableListOf<String>()
+
+        // Primero cargar ejercicios por defecto de la colección global
+        Firebase.firestore.collection("exercises")
+            .get()
+            .addOnSuccessListener { globalSnapshot ->
+                val defaultExercises = globalSnapshot.documents.mapNotNull { it.getString("name") }
+                allExercises.addAll(defaultExercises)
+
+                // Luego cargar ejercicios personalizados de la subcolección del usuario
+                Firebase.firestore.collection("users")
+                    .document(userId)
+                    .collection("exercises")
+                    .get()
+                    .addOnSuccessListener { userSnapshot ->
+                        val userExercises = userSnapshot.documents.mapNotNull { it.getString("name") }
+                        allExercises.addAll(userExercises)
+
+                        // Actualizar la lista combinada sin duplicados
+                        exerciseNames = allExercises.distinct()
+                    }
+                    .addOnFailureListener { exception ->
+                        println("❌ Error al cargar ejercicios del usuario: ${exception.message}")
+                        // Si falla, al menos usar los ejercicios por defecto
+                        exerciseNames = defaultExercises
+                    }
+            }
+            .addOnFailureListener { exception ->
+                println("❌ Error al cargar ejercicios por defecto: ${exception.message}")
+            }
+    }
 
     suspend fun saveExerciseToDatabase(name: String, category: String) {
         saveExerciseToFirebase(name, category, exerciseDao)
@@ -109,16 +153,55 @@ class AddExerciseViewModel @Inject constructor(
         lastUsedExerciseName = name
     }
     fun fetchCategoryFor(exerciseName: String, onResult: (DefaultCategoryExer?) -> Unit) {
-        Firebase.firestore.collection("exercises")
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            onResult(null)
+            return
+        }
+
+        val userId = currentUser.uid
+
+        // Primero buscar en ejercicios personalizados del usuario
+        Firebase.firestore.collection("users")
+            .document(userId)
+            .collection("exercises")
             .whereEqualTo("name", exerciseName)
             .get()
-            .addOnSuccessListener { snapshot ->
-                val categoryName = snapshot.documents.firstOrNull()?.getString("category")
-                val matchedCategory = firebaseCategoryToEnum[categoryName]
-                onResult(matchedCategory)
+            .addOnSuccessListener { userSnapshot ->
+                val userCategoryName = userSnapshot.documents.firstOrNull()?.getString("category")
+                val userMatchedCategory = firebaseCategoryToEnum[userCategoryName]
+
+                if (userMatchedCategory != null) {
+                    // Encontrado en ejercicios del usuario
+                    onResult(userMatchedCategory)
+                } else {
+                    // Si no se encuentra, buscar en ejercicios por defecto
+                    Firebase.firestore.collection("exercises")
+                        .whereEqualTo("name", exerciseName)
+                        .get()
+                        .addOnSuccessListener { globalSnapshot ->
+                            val globalCategoryName = globalSnapshot.documents.firstOrNull()?.getString("category")
+                            val globalMatchedCategory = firebaseCategoryToEnum[globalCategoryName]
+                            onResult(globalMatchedCategory)
+                        }
+                        .addOnFailureListener {
+                            onResult(null)
+                        }
+                }
             }
             .addOnFailureListener {
-                onResult(null)
+                // Si falla la búsqueda en ejercicios del usuario, buscar en globales
+                Firebase.firestore.collection("exercises")
+                    .whereEqualTo("name", exerciseName)
+                    .get()
+                    .addOnSuccessListener { globalSnapshot ->
+                        val categoryName = globalSnapshot.documents.firstOrNull()?.getString("category")
+                        val matchedCategory = firebaseCategoryToEnum[categoryName]
+                        onResult(matchedCategory)
+                    }
+                    .addOnFailureListener {
+                        onResult(null)
+                    }
             }
     }
     fun hasActiveSession(callback: (Boolean, String?) -> Unit) {
@@ -268,14 +351,7 @@ class AddExerciseViewModel @Inject constructor(
             }
     }
     fun refreshExercises() {
-        Firebase.firestore.collection("exercises")
-            .get()
-            .addOnSuccessListener { snapshot ->
-                exerciseNames = snapshot.documents.mapNotNull { it.getString("name") }
-            }
-            .addOnFailureListener { exception ->
-                println("❌ Error al refrescar ejercicios: ${exception.message}")
-            }
+        loadAllExercises() // Reutilizar la función que ya carga ambas fuentes
     }
     fun createRoutine(
         clientName: String,

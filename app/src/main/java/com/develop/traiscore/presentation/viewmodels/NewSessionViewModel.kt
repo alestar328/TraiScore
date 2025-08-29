@@ -164,7 +164,27 @@ class NewSessionViewModel @Inject constructor(
             }
         }
     }
+    fun deleteSession(sessionId: String) {
+        viewModelScope.launch {
+            try {
+                _isLoading.value = true
 
+                val response = sessionRepository.deleteSession(sessionId)
+
+                if (response.success) {
+                    // Recargar la lista de sesiones disponibles
+                    loadAvailableSessions()
+                    println("✅ Sesión eliminada correctamente")
+                } else {
+                    _error.value = response.error ?: "Error al eliminar sesión"
+                }
+            } catch (e: Exception) {
+                _error.value = "Error al eliminar sesión: ${e.message}"
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
     /**
      * Cargar sesiones disponibles
      */

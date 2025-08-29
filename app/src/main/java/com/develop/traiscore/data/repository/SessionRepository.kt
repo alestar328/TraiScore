@@ -370,43 +370,7 @@ class SessionRepository @Inject constructor() {
         }
     }
 
-    /**
-     * Obtener todas las sesiones del usuario
-     */
-    suspend fun getAllSessions(): List<SessionDocument> {
-        return try {
-            val userId = auth.currentUser?.uid ?: return emptyList()
 
-            val snapshot = firestore.collection("users")
-                .document(userId)
-                .collection("sessions")
-                .orderBy("createdAt", com.google.firebase.firestore.Query.Direction.DESCENDING)
-                .get()
-                .await()
-
-            snapshot.documents.mapNotNull { doc ->
-                try {
-                    SessionDocument(
-                        sessionId = doc.getString("sessionId") ?: return@mapNotNull null,
-                        name = doc.getString("name") ?: return@mapNotNull null,
-                        color = doc.getString("color") ?: "#43f4ff",
-                        createdAt = doc.getDate("createdAt") ?: Date(),
-                        updatedAt = doc.getDate("updatedAt") ?: Date(),
-                        isActive = doc.getBoolean("isActive") ?: false,
-                        userId = doc.getString("userId") ?: "",
-                        workoutCount = doc.getLong("workoutCount")?.toInt() ?: 0
-                    )
-                } catch (e: Exception) {
-                    println("❌ Error parseando sesión: ${e.message}")
-                    null
-                }
-            }
-
-        } catch (e: Exception) {
-            println("❌ Error obteniendo sesiones: ${e.message}")
-            emptyList()
-        }
-    }
 
     /**
      * Desactivar todas las sesiones activas del usuario
@@ -440,5 +404,30 @@ class SessionRepository @Inject constructor() {
      */
     private fun generateSessionId(): String {
         return "session_${System.currentTimeMillis()}_${(1000..9999).random()}"
+    }
+    suspend fun deleteSession(sessionId: String): SessionResponse {
+        return try {
+            val userId = auth.currentUser?.uid ?: return SessionResponse(
+                success = false,
+                error = "Usuario no autenticado"
+            )
+
+            firestore.collection("users")
+                .document(userId)
+                .collection("sessions")
+                .document(sessionId)
+                .delete()
+                .await()
+
+            println("✅ Sesión eliminada: $sessionId")
+            SessionResponse(success = true)
+
+        } catch (e: Exception) {
+            println("❌ Error eliminando sesión: ${e.message}")
+            SessionResponse(
+                success = false,
+                error = "Error al eliminar sesión: ${e.message}"
+            )
+        }
     }
 }

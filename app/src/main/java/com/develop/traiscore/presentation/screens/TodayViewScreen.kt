@@ -7,9 +7,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -148,8 +146,12 @@ fun TodayViewScreen(
                     SessionCard(
                         title = sessionName,
                         accent = hexToColor(sessionColor),
+                        sessionId = sessionId, // ✅ Pasar sessionId
                         onClick = {
                             viewModel.activateSession(sessionId)
+                        },
+                        onDelete = { id -> // ✅ Añadir callback de borrado
+                            viewModel.deleteSession(id)
                         }
                     )
                 }
