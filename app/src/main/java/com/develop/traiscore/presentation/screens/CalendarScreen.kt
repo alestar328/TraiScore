@@ -257,7 +257,7 @@ private fun SessionDayCard(
             )
 
             Text(
-                text = "${session.sessionName} (${session.workouts.size} ejercicios)",
+                text = "${session.sessionName} (${session.workouts.size} series)",
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.onBackground,
                 fontWeight = FontWeight.SemiBold

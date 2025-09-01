@@ -227,7 +227,6 @@ class AddExerciseViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             try {
-                // ⭐ OBTENER SESIÓN ACTIVA DIRECTAMENTE DEL REPOSITORIO
                 val activeSessionResponse = sessionRepository.getActiveSession()
 
                 if (activeSessionResponse.success && activeSessionResponse.session != null) {
@@ -246,12 +245,14 @@ class AddExerciseViewModel @Inject constructor(
 
                     // Incrementar contador de workouts en la sesión
                     sessionRepository.incrementWorkoutCount(session.sessionId)
+                    updateLastUsedExercise(title)
 
                     println("✅ Ejercicio agregado a sesión: ${session.name}")
 
                 } else {
                     // No hay sesión activa - crear workout sin sesión (legacy)
                     addWorkoutWithoutSession(title, reps, weight, rir)
+                    updateLastUsedExercise(title)
                     println("⚠️ Ejercicio agregado sin sesión activa")
                 }
 
