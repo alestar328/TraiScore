@@ -400,7 +400,8 @@ fun DayCard(
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
 
     val backgroundColor = when {
-        isSelected -> cyanColor
+        isSelected && dayInfo.sessionColor != null -> dayInfo.sessionColor!! // ⭐ USAR COLOR DE SESIÓN cuando está seleccionado
+        isSelected -> cyanColor // ⭐ Fallback al cyan por defecto
         else -> Color.Transparent
     }
 

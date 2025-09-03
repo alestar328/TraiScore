@@ -20,8 +20,8 @@ android {
         applicationId = "com.develop.traiscore"
         minSdk = 26
         targetSdk = 35
-        versionCode = 13
-        versionName = "1.1.0"
+        versionCode = 15
+        versionName = "1.1.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -36,10 +36,15 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            signingConfig = signingConfigs.getByName("debug")
         }
     }
     flavorDimensions += "version"
     productFlavors {
+        create("production") { // Nuevo flavor para la version de Google Play
+            dimension = "version"
+            // No hay applicationIdSuffix, por lo que usará el defaultConfig.applicationId
+        }
         create("athlete") {
             dimension = "version"
             applicationIdSuffix  = ".athlete"
