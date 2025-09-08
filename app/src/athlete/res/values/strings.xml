@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">TraiScore</string>
-    <string name="trai_Score">TraiScore</string>
-    <string name="s_logan">Track your trainings</string>
-    <string name="app_logo">App logo</string>
+    <string name="app_name" translatable="false">TraiScore</string>
+    <string name="trai_Score" translatable="false">TraiScore</string>
+    <string name="s_logan" translatable="false">Track your trainings</string>
+    <string name="app_logo" translatable="false">App logo</string>
     <string name="login">Login</string>
 
     <string name="category_chest">Pecho</string>

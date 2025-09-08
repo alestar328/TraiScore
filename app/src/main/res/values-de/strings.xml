@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TraiScore</string>
+    <string name="trai_Score">TraiScore</string>
+    <string name="s_logan">Verfolgen Sie Ihre Trainings</string>
+    <string name="app_logo">App logo</string>
+    <string name="login">Login</string>
+
+    <string name="category_chest">Brust</string>
+    <string name="category_back">Zurück</string>
+    <string name="category_glutes">Gesäßmuskeln</string>
+    <string name="category_legs">Beine</string>
+    <string name="category_arms">Waffen</string>
+    <string name="category_shoulders">Schultern</string>
+    <string name="category_core">Kern</string>
+
+    <!--Navbar-->
+
+    <string name="navbar_exercises">Übungen</string>
+    <string name="navbar_stats">Grafik</string>
+    <string name="navbar_routines">Routinen</string>
+    <string name="navbar_profile">Profil</string>
+
+    <!--Exercise Screen-->
+
+    <string name="exer_screen_welcome_phrase">Es ist Zeit zu trainieren!</string>
+    <string name="exer_screen_my_sessions">Meine Sitzungen</string>
+    <string name="exer_screen_cancel">Stornieren</string>
+    <string name="exer_new_session">Neue Sitzung</string>
+    <string name="exer_name_it">Nennen Sie sie</string>
+    <string name="exer_no_data_session">Für heute sind keine Trainingseinheiten geplant.</string>
+    <string name="exer_add_first_session">Fügen Sie Ihre erste Übung hinzu!</string>
+
+    <!--Calendar-->
+    <string name="calendar_year">Jahr</string>
+    <string name="calendar_year_no_data">Keine Ausbildung</string>
+    <string name="calendar_year_days_with_data">Tage mit Training</string>
+    <string name="calendar_month">Monat</string>
+    <string name="calendar_month_no_data">Für heute sind keine Übungen aufgezeichnet</string>
+    <string name="calendar_month_exercises">Übungen</string>
+    <string name="calendar_month_series">Serie</string>
+    <string name="calendar_month_reps">Reps</string>
+    <string name="calendar_month_summation">Summe</string>
+    <string name="calendar_today">Heute</string>
+
+    <!--Camara y filtro-->
+
+    <string name="camara_gallery">Galerie</string>
+    <string name="camara_access_gallery">Zugriff auf Galerie</string>
+    <string name="camara_permission">Erlaube den Zugriff, um deine Fotos anzusehen</string>
+    <string name="camara_permission_button">Zugriff erlauben</string>
+    <string name="camara_choose_photo">Foto auswählen</string>
+
+    <string name="filter_main_exercise">Hauptübung</string>
+    <string name="filter_no_main_exercise">Keine Trainings</string>
+    <string name="filter_max_reps">Maximale Wiederholungen</string>
+    <string name="filter_no_max_reps">Keine Einträge</string>
+    <string name="filter_total_sessions_month">Trainingseinheiten in diesem Monat</string>
+
+
+    <!--STATS-->
+
+    <string name="stats_my_sizes">Meine Maße</string>
+    <string name="stats_my_sizes_no_data">Nicht genügend Daten</string>
+    <string name="stats_my_sizes_no_data_message">Du brauchst mindestens 2 Einträge</string>
+
+    <string name="stats_my_records">Meine Rekorde</string>
+    <string name="stats_filter">Filtern nach:</string>
+    <string name="stats_exercises">Übung</string>
+    <string name="stats_effort">Anstrengung</string>
+    <string name="stats_by_weight">Nach Gewicht:</string>
+    <string name="stats_by_reps">Nach Wiederholungen:</string>
+    <string name="stats_top_5_exer">Top 5 Übungen – Fortschritt</string>
+
+    <string name="stats_top_3_exer">Top 3 Übungen</string>
+    <string name="stats_top_3_no_data">Nicht genügend Daten</string>
+
+    <!--ADD EXERCISES-->
+
+    <string name="add_exer_new_activity">Top 3 Übungen</string>
+    <string name="add_exer_select_exer">Übung auswählen</string>
+    <string name="add_exer_weight">Gewicht</string>
+    <string name="add_exer_reps">Wiederholungen</string>
+    <string name="add_exer_rir">RIR:</string>
+    <string name="add_exer_save">Speichern</string>
+    <string name="add_exer_cancel">Abbrechen</string>
+
+
+    <!--ROUTINE-->
+    <string name="routines_no_data">Keine Routinen</string>
+    <string name="routines_no_data_message">Du hast keine gespeicherten Routinen</string>
+    <string name="routines_accept">Akzeptieren</string>
+
+    <!--PROFILE-->
+
+
+    <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
+
+</resources>

@@ -12,6 +12,86 @@
     <string name="category_arms">Brazos</string>
     <string name="category_shoulders">Hombros</string>
     <string name="category_core">Abdomen</string>
+
+    <!--Navbar-->
+
+    <string name="navbar_exercises">Ejercicios</string>
+    <string name="navbar_stats">Gráficas</string>
+    <string name="navbar_routines">Rutinas</string>
+    <string name="navbar_profile">Perfil</string>
+
+    <!--Exercise Screen-->
+
+    <string name="exer_screen_welcome_phrase">¡Es hora de entrenar!</string>
+    <string name="exer_screen_my_sessions">Mis sesiones</string>
+    <string name="exer_screen_cancel">Cancelar</string>
+    <string name="exer_new_session">Nueva Sesión</string>
+    <string name="exer_name_it">Nómbrala</string>
+    <string name="exer_no_data_session">No tienes entrenamientos registrados para hoy.</string>
+    <string name="exer_add_first_session">¡Agrega tu primer ejercicio!</string>
+
+    <!--Calendar-->
+    <string name="calendar_year">Año</string>
+    <string name="calendar_year_no_data">Sin entrenamientos</string>
+    <string name="calendar_year_days_with_data">días con entrenamiento</string>
+    <string name="calendar_month">Mes</string>
+    <string name="calendar_month_no_data">No hay ejercicios registrados hoy</string>
+    <string name="calendar_month_exercises">Ejercicios</string>
+    <string name="calendar_month_series">Series</string>
+    <string name="calendar_month_reps">Reps</string>
+    <string name="calendar_month_summation">Sumatoria</string>
+    <string name="calendar_today">Hoy</string>
+
+    <!--Camara y filtro-->
+
+    <string name="camara_gallery">Galería</string>
+    <string name="camara_access_gallery">Acceso a Galería</string>
+    <string name="camara_permission">Permite acceso para ver tus fotos</string>
+    <string name="camara_permission_button">Permitir Acceso</string>
+    <string name="camara_choose_photo">Seleccionar foto</string>
+
+    <string name="filter_main_exercise">Ejercicio principal</string>
+    <string name="filter_no_main_exercise">Sin entrenamientos</string>
+    <string name="filter_max_reps">Repeticiones máximas</string>
+    <string name="filter_no_max_reps">Sin registros</string>
+    <string name="filter_total_sessions_month">sesiones de entrenamiento este mes</string>
+
+
+    <!--STATS-->
+
+    <string name="stats_my_sizes">Mis medidas</string>
+    <string name="stats_my_sizes_no_data">No hay suficientes datos</string>
+    <string name="stats_my_sizes_no_data_message">Necesitas al menos 2 registros de medidas para ver el progreso</string>
+
+    <string name="stats_my_records">Mis records</string>
+    <string name="stats_filter">Filtrar por:</string>
+    <string name="stats_exercises">Ejercicio</string>
+    <string name="stats_effort">Esfuerzo</string>
+    <string name="stats_by_weight">Por peso:</string>
+    <string name="stats_by_reps">Por repeticiones:</string>
+    <string name="stats_top_5_exer">Top 5 ejercicios - Progreso</string>
+
+    <string name="stats_top_3_exer">Top 3 ejercicios</string>
+    <string name="stats_top_3_no_data">Sin datos suficientes</string>
+
+    <!--ADD EXERCISES-->
+    <string name="add_exer_new_activity">Top 3 ejercicios</string>
+    <string name="add_exer_select_exer">Selecciona ejercicio</string>
+    <string name="add_exer_weight">Peso</string>
+    <string name="add_exer_reps">Repeticiones</string>
+    <string name="add_exer_rir">RIR:</string>
+    <string name="add_exer_save">Guardar</string>
+    <string name="add_exer_cancel">Cancelar</string>
+
+
+    <!--ROUTINE-->
+
+    <string name="routines_no_data">Sin rutinas</string> 
+    <string name="routines_no_data_message">No tienes rutinas guardadas</string> 
+    <string name="routines_accept">Aceptar</string> 
+
+    <!--PROFILE-->
+    
     
     <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
 </resources>
