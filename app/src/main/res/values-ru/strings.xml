@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Navigation Labels -->
+    <string name="nav_exercises">Упражнения</string>
+    <string name="nav_stats">Статистика</string>
+    <string name="nav_add">Добавить</string>
+    <string name="nav_routines">Программы</string>
+    <string name="nav_profile">Профиль</string>
+    <string name="nav_clients">Мои клиенты</string>
+
+    <!-- Language Screen -->
+    <string name="language_title">Язык</string>
+    <string name="language_description">Выбери предпочитаемый язык</string>
+    <string name="language_selected">Выбран</string>
+    <string name="back_button">Назад</string>
+
+    <string name="app_name">TraiScore</string>
+    <string name="trai_Score">TraiScore</string>
+    <string name="s_logan">Отслеживай свои тренировки</string>
+    <string name="app_logo">Логотип приложения</string>
+    <string name="login">Войти</string>
+
+    <string name="category_chest">Грудь</string>
+    <string name="category_back">Спина</string>
+    <string name="category_glutes">Ягодицы</string>
+    <string name="category_legs">Ноги</string>
+    <string name="category_arms">Руки</string>
+    <string name="category_shoulders">Плечи</string>
+    <string name="category_core">Пресс</string>
+
+    <!--Navbar-->
+    <string name="navbar_exercises">Упражнения</string>
+    <string name="navbar_stats">Графики</string>
+    <string name="navbar_routines">Программы</string>
+    <string name="navbar_profile">Профиль</string>
+
+    <!--Exercise Screen-->
+    <string name="exer_screen_welcome_phrase">Время тренироваться!</string>
+    <string name="exer_screen_my_sessions">Мои сессии</string>
+    <string name="exer_screen_cancel">Отмена</string>
+    <string name="exer_new_session">Новая сессия</string>
+    <string name="exer_name_it">Дай ей название</string>
+    <string name="exer_no_data_session">На сегодня нет зарегистрированных тренировок.</string>
+    <string name="exer_add_first_session">Добавь своё первое упражнение!</string>
+    <string name="exer_no_trainings">Нет тренировок</string>
+
+    <!--Today view Screen-->
+    <string name="today_session_active">Активная сессия</string>
+    <string name="today_close_session">Завершить сессию</string>
+    <string name="today_today">Сегодня</string>
+    <string name="today_no_data_start">На сегодня нет зарегистрированных тренировок. Добавь своё первое упражнение!</string>
+    <string name="today_limit_data">Ты достиг лимита в 6 сессий. Выбери существующую, чтобы продолжить тренировку.</string>
+    <string name="today_end_session">Завершить сессию</string>
+    <string name="today_end">Завершить</string>
+    <string name="today_cancel">Отмена</string>
+    <string name="today_closing_message">Ты уверен, что хочешь завершить сессию?</string>
+    <string name="today_closing_message2">Выполненные упражнения будут сохранены в твоей истории.</string>
+
+    <!--Calendar-->
+    <string name="calendar_year">Год</string>
+    <string name="calendar_year_no_data">Нет тренировок</string>
+    <string name="calendar_year_days_with_data">дней с тренировкой</string>
+    <string name="calendar_month">Месяц</string>
+    <string name="calendar_month_no_data">Сегодня нет зарегистрированных упражнений</string>
+    <string name="calendar_month_no_data_that_day">В этот день нет зарегистрированных упражнений</string>
+    <string name="calendar_month_exercises">Упражнения</string>
+    <string name="calendar_month_series">Подходы</string>
+    <string name="calendar_month_reps">Повторы</string>
+    <string name="calendar_month_summation">Итого</string>
+    <string name="calendar_today">Сегодня</string>
+
+    <!--Camera & filter-->
+    <string name="camara_gallery">Галерея</string>
+    <string name="camara_access_gallery">Доступ к галерее</string>
+    <string name="camara_permission">Разреши доступ, чтобы просматривать свои фото</string>
+    <string name="camara_permission_button">Разрешить доступ</string>
+    <string name="camara_choose_photo">Выбрать фото</string>
+    <string name="camara_no_photo">Нет фото</string>
+
+    <string name="filter_main_exercise">Основное упражнение</string>
+    <string name="filter_no_main_exercise">Нет тренировок</string>
+    <string name="filter_max_reps">Максимум повторов</string>
+    <string name="filter_no_max_reps">Нет записей</string>
+    <string name="filter_total_weight_today">Общий вес за сегодня</string>
+    <string name="filter_total_sessions_month">сессий тренировки в этом месяце</string>
+    <string name="filter_title">ТРЕНИРОВОЧНАЯ СЕССИЯ</string>
+    <string name="no_data_start_to_add">У тебя ещё нет сохранённых замеров.\nДобавь первый, чтобы начать!</string>
+
+    <!--STATS-->
+    <string name="stats_my_sizes">Мои замеры</string>
+    <string name="stats_my_sizes_no_data">Недостаточно данных</string>
+    <string name="stats_my_sizes_no_data_message">Нужно как минимум 2 записи замеров, чтобы увидеть прогресс</string>
+
+    <string name="stats_my_records">Мои рекорды</string>
+    <string name="stats_filter">Фильтровать по:</string>
+    <string name="stats_exercises">Упражнение</string>
+    <string name="stats_effort">Усилие</string>
+    <string name="stats_by_weight">По весу:</string>
+    <string name="stats_by_reps">По повторам:</string>
+    <string name="stats_top_5_exer">Топ-5 упражнений — Прогресс</string>
+
+    <string name="stats_top_3_exer">Топ-3 упражнения</string>
+    <string name="stats_top_3_no_data">Недостаточно данных</string>
+
+    <string name="stats_size_select">Выбери замер:</string>
+    <string name="stats_size_progress">Прогресс по</string>
+    <string name="stats_size_resume">Сводка по </string>
+    <string name="stats_size_placeholder">Измерение тела</string>
+    <string name="stats_actual_value">Текущее значение:</string>
+    <string name="stats_total_change">Общее изменение:</string>
+    <string name="stats_size_records">Записи:</string>
+
+    <!--ADD ACTIVITY-->
+    <string name="add_activity_title">Новое занятие</string>
+    <string name="add_exer_select_exer">Выбери упражнение</string>
+    <string name="add_exer_weight">Вес</string>
+    <string name="add_exer_reps">Повторы</string>
+    <string name="add_exer_rir">RIR:</string>
+    <string name="add_exer_save">Сохранить</string>
+    <string name="add_exer_cancel">Отмена</string>
+    <string name="add_exer_saved">Сохранено!</string>
+
+    <!--New Session-->
+    <string name="new_session">Новая сессия</string>
+    <string name="new_session_name_it">Дай ей название</string>
+    <string name="new_session_placeholder">Фулбоди</string>
+    <string name="new_session_confirm">Подтвердить создание</string>
+    <string name="new_session_cancel">Отмена</string>
+
+    <!--QuickStats-->
+    <string name="quickstats_exer">Упражнения</string>
+    <string name="quickstats_series">Подходы</string>
+    <string name="quickstats_reps">Повторы</string>
+    <string name="quickstats_sumatory">Итого</string>
+
+    <!--ROUTINE-->
+    <string name="routines_no_data">Нет программ</string>
+    <string name="routines_no_data_message">У тебя нет сохранённых программ</string>
+    <string name="routines_accept">ОК</string>
+
+    <!-- Session card -->
+    <string name="session_card_touch">Нажми, чтобы начать</string>
+    <string name="session_new_session">Новая сессия</string>
+
+    <!--PROFILE-->
+    <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
+</resources>

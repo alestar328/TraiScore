@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Navigation Labels -->
+    <string name="nav_exercises">訓練</string>
+    <string name="nav_stats">統計</string>
+    <string name="nav_add">新增</string>
+    <string name="nav_routines">課表</string>
+    <string name="nav_profile">個人資料</string>
+    <string name="nav_clients">我的客戶</string>
+
+    <!-- Language Screen -->
+    <string name="language_title">語言</string>
+    <string name="language_description">選擇你偏好的語言</string>
+    <string name="language_selected">已選擇</string>
+    <string name="back_button">返回</string>
+
+    <string name="app_name">TraiScore</string>
+    <string name="trai_Score">TraiScore</string>
+    <string name="s_logan">追蹤你的訓練</string>
+    <string name="app_logo">應用程式標誌</string>
+    <string name="login">登入</string>
+
+    <string name="category_chest">胸部</string>
+    <string name="category_back">背部</string>
+    <string name="category_glutes">臀部</string>
+    <string name="category_legs">腿部</string>
+    <string name="category_arms">手臂</string>
+    <string name="category_shoulders">肩膀</string>
+    <string name="category_core">核心</string>
+
+    <!--Navbar-->
+    <string name="navbar_exercises">訓練</string>
+    <string name="navbar_stats">圖表</string>
+    <string name="navbar_routines">課表</string>
+    <string name="navbar_profile">個人資料</string>
+
+    <!--Exercise Screen-->
+    <string name="exer_screen_welcome_phrase">該開始訓練了！</string>
+    <string name="exer_screen_my_sessions">我的課程</string>
+    <string name="exer_screen_cancel">取消</string>
+    <string name="exer_new_session">新增課程</string>
+    <string name="exer_name_it">給它命名</string>
+    <string name="exer_no_data_session">今天沒有註冊的訓練。</string>
+    <string name="exer_add_first_session">新增你的第一個動作！</string>
+    <string name="exer_no_trainings">沒有訓練</string>
+
+    <!--Today view Screen-->
+    <string name="today_session_active">進行中的課程</string>
+    <string name="today_close_session">結束課程</string>
+    <string name="today_today">今天</string>
+    <string name="today_no_data_start">今天沒有註冊的訓練。新增你的第一個動作！</string>
+    <string name="today_limit_data">你已達到 6 個課程的上限。請選擇一個現有的課程來訓練。</string>
+    <string name="today_end_session">結束課程</string>
+    <string name="today_end">結束</string>
+    <string name="today_cancel">取消</string>
+    <string name="today_closing_message">你確定要結束這個課程嗎？</string>
+    <string name="today_closing_message2">完成的動作將會保存到你的紀錄中。</string>
+
+    <!--Calendar-->
+    <string name="calendar_year">年份</string>
+    <string name="calendar_year_no_data">沒有訓練</string>
+    <string name="calendar_year_days_with_data">有訓練的天數</string>
+    <string name="calendar_month">月份</string>
+    <string name="calendar_month_no_data">今天沒有註冊的動作</string>
+    <string name="calendar_month_no_data_that_day">該天沒有註冊的動作</string>
+    <string name="calendar_month_exercises">動作</string>
+    <string name="calendar_month_series">組數</string>
+    <string name="calendar_month_reps">次數</string>
+    <string name="calendar_month_summation">總計</string>
+    <string name="calendar_today">今天</string>
+
+    <!--Camera & filter-->
+    <string name="camara_gallery">相簿</string>
+    <string name="camara_access_gallery">相簿存取權限</string>
+    <string name="camara_permission">允許存取以查看你的照片</string>
+    <string name="camara_permission_button">允許存取</string>
+    <string name="camara_choose_photo">選擇照片</string>
+    <string name="camara_no_photo">沒有照片</string>
+
+    <string name="filter_main_exercise">主要動作</string>
+    <string name="filter_no_main_exercise">沒有訓練</string>
+    <string name="filter_max_reps">最大次數</string>
+    <string name="filter_no_max_reps">沒有紀錄</string>
+    <string name="filter_total_weight_today">今日總舉重量</string>
+    <string name="filter_total_sessions_month">本月訓練課程數</string>
+    <string name="filter_title">訓練課程</string>
+    <string name="no_data_start_to_add">你尚未儲存任何身體數據。\n新增你的第一筆數據以開始！</string>
+
+    <!--STATS-->
+    <string name="stats_my_sizes">我的身體數據</string>
+    <string name="stats_my_sizes_no_data">資料不足</string>
+    <string name="stats_my_sizes_no_data_message">至少需要 2 筆數據才能查看進度</string>
+
+    <string name="stats_my_records">我的紀錄</string>
+    <string name="stats_filter">篩選依據：</string>
+    <string name="stats_exercises">動作</string>
+    <string name="stats_effort">強度</string>
+    <string name="stats_by_weight">依重量：</string>
+    <string name="stats_by_reps">依次數：</string>
+    <string name="stats_top_5_exer">前 5 個動作 - 進度</string>
+
+    <string name="stats_top_3_exer">前三個動作</string>
+    <string name="stats_top_3_no_data">資料不足</string>
+
+    <string name="stats_size_select">選擇數據：</string>
+    <string name="stats_size_progress">進度：</string>
+    <string name="stats_size_resume">摘要：</string>
+    <string name="stats_size_placeholder">身體測量</string>
+    <string name="stats_actual_value">當前值：</string>
+    <string name="stats_total_change">總變化：</string>
+    <string name="stats_size_records">紀錄：</string>
+
+    <!--ADD ACTIVITY-->
+    <string name="add_activity_title">新增活動</string>
+    <string name="add_exer_select_exer">選擇動作</string>
+    <string name="add_exer_weight">重量</string>
+    <string name="add_exer_reps">次數</string>
+    <string name="add_exer_rir">RIR：</string>
+    <string name="add_exer_save">儲存</string>
+    <string name="add_exer_cancel">取消</string>
+    <string name="add_exer_saved">已儲存！</string>
+
+    <!--New Session-->
+    <string name="new_session">新增課程</string>
+    <string name="new_session_name_it">給它命名</string>
+    <string name="new_session_placeholder">全身</string>
+    <string name="new_session_confirm">確認建立</string>
+    <string name="new_session_cancel">取消</string>
+
+    <!--QuickStats-->
+    <string name="quickstats_exer">動作</string>
+    <string name="quickstats_series">組數</string>
+    <string name="quickstats_reps">次數</string>
+    <string name="quickstats_sumatory">總計</string>
+
+    <!--ROUTINE-->
+    <string name="routines_no_data">沒有課表</string>
+    <string name="routines_no_data_message">你沒有儲存任何課表</string>
+    <string name="routines_accept">確定</string>
+
+    <!-- Session card -->
+    <string name="session_card_touch">點擊開始</string>
+    <string name="session_new_session">新增課程</string>
+
+    <!--PROFILE-->
+    <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
+</resources>

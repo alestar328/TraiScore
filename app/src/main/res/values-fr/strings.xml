@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Navigation Labels -->
+    <string name="nav_exercises">Exercices</string>
+    <string name="nav_stats">Statistiques</string>
+    <string name="nav_add">Ajouter</string>
+    <string name="nav_routines">Routines</string>
+    <string name="nav_profile">Profil</string>
+    <string name="nav_clients">Mes clients</string>
+
+    <!-- Language Screen -->
+    <string name="language_title">Langue</string>
+    <string name="language_description">Sélectionne ta langue préférée</string>
+    <string name="language_selected">Sélectionné</string>
+    <string name="back_button">Retour</string>
+
+    <string name="app_name">TraiScore</string>
+    <string name="trai_Score">TraiScore</string>
+    <string name="s_logan">Suis tes entraînements</string>
+    <string name="app_logo">Logo de l’application</string>
+    <string name="login">Connexion</string>
+
+    <string name="category_chest">Poitrine</string>
+    <string name="category_back">Dos</string>
+    <string name="category_glutes">Fessiers</string>
+    <string name="category_legs">Jambes</string>
+    <string name="category_arms">Bras</string>
+    <string name="category_shoulders">Épaules</string>
+    <string name="category_core">Abdos</string>
+
+    <!--Navbar-->
+    <string name="navbar_exercises">Exercices</string>
+    <string name="navbar_stats">Graphiques</string>
+    <string name="navbar_routines">Routines</string>
+    <string name="navbar_profile">Profil</string>
+
+    <!--Exercise Screen-->
+    <string name="exer_screen_welcome_phrase">C’est l’heure de s’entraîner !</string>
+    <string name="exer_screen_my_sessions">Mes sessions</string>
+    <string name="exer_screen_cancel">Annuler</string>
+    <string name="exer_new_session">Nouvelle session</string>
+    <string name="exer_name_it">Donne-lui un nom</string>
+    <string name="exer_no_data_session">Tu n’as pas d’entraînements enregistrés pour aujourd’hui.</string>
+    <string name="exer_add_first_session">Ajoute ton premier exercice !</string>
+    <string name="exer_no_trainings">Aucun entraînement</string>
+
+    <!--Today view Screen-->
+    <string name="today_session_active">Session active</string>
+    <string name="today_close_session">Terminer la session</string>
+    <string name="today_today">Aujourd’hui</string>
+    <string name="today_no_data_start">Tu n’as pas d’entraînements enregistrés pour aujourd’hui. Ajoute ton premier exercice !</string>
+    <string name="today_limit_data">Tu as atteint la limite de 6 sessions. Sélectionne-en une existante pour t’entraîner.</string>
+    <string name="today_end_session">Terminer la session</string>
+    <string name="today_end">Terminer</string>
+    <string name="today_cancel">Annuler</string>
+    <string name="today_closing_message">Es-tu sûr(e) de vouloir terminer la session ?</string>
+    <string name="today_closing_message2">Les exercices effectués seront enregistrés dans ton historique.</string>
+
+    <!--Calendar-->
+    <string name="calendar_year">Année</string>
+    <string name="calendar_year_no_data">Aucun entraînement</string>
+    <string name="calendar_year_days_with_data">jours avec entraînement</string>
+    <string name="calendar_month">Mois</string>
+    <string name="calendar_month_no_data">Aucun exercice enregistré aujourd’hui</string>
+    <string name="calendar_month_no_data_that_day">Aucun exercice enregistré ce jour-là</string>
+    <string name="calendar_month_exercises">Exercices</string>
+    <string name="calendar_month_series">Séries</string>
+    <string name="calendar_month_reps">Répétitions</string>
+    <string name="calendar_month_summation">Total</string>
+    <string name="calendar_today">Aujourd’hui</string>
+
+    <!--Camera & filter-->
+    <string name="camara_gallery">Galerie</string>
+    <string name="camara_access_gallery">Accès à la galerie</string>
+    <string name="camara_permission">Autorise l’accès pour voir tes photos</string>
+    <string name="camara_permission_button">Autoriser l’accès</string>
+    <string name="camara_choose_photo">Choisir une photo</string>
+    <string name="camara_no_photo">Aucune photo</string>
+
+    <string name="filter_main_exercise">Exercice principal</string>
+    <string name="filter_no_main_exercise">Aucun entraînement</string>
+    <string name="filter_max_reps">Répétitions maximales</string>
+    <string name="filter_no_max_reps">Aucun enregistrement</string>
+    <string name="filter_total_weight_today">Poids total soulevé aujourd’hui</string>
+    <string name="filter_total_sessions_month">sessions d’entraînement ce mois-ci</string>
+    <string name="filter_title">SESSION D’ENTRAÎNEMENT</string>
+    <string name="no_data_start_to_add">Tu n’as encore aucune mesure enregistrée.\nAjoute ta première mesure pour commencer !</string>
+
+    <!--STATS-->
+    <string name="stats_my_sizes">Mes mesures</string>
+    <string name="stats_my_sizes_no_data">Données insuffisantes</string>
+    <string name="stats_my_sizes_no_data_message">Il faut au moins 2 mesures enregistrées pour voir ta progression</string>
+
+    <string name="stats_my_records">Mes records</string>
+    <string name="stats_filter">Filtrer par :</string>
+    <string name="stats_exercises">Exercice</string>
+    <string name="stats_effort">Effort</string>
+    <string name="stats_by_weight">Par poids :</string>
+    <string name="stats_by_reps">Par répétitions :</string>
+    <string name="stats_top_5_exer">Top 5 exercices – Progression</string>
+
+    <string name="stats_top_3_exer">Top 3 exercices</string>
+    <string name="stats_top_3_no_data">Pas assez de données</string>
+
+    <string name="stats_size_select">Sélectionner une mesure :</string>
+    <string name="stats_size_progress">Progression de</string>
+    <string name="stats_size_resume">Résumé de </string>
+    <string name="stats_size_placeholder">Mesure corporelle</string>
+    <string name="stats_actual_value">Valeur actuelle :</string>
+    <string name="stats_total_change">Changement total :</string>
+    <string name="stats_size_records">Enregistrements :</string>
+
+    <!--ADD ACTIVITY-->
+    <string name="add_activity_title">Nouvelle activité</string>
+    <string name="add_exer_select_exer">Sélectionner un exercice</string>
+    <string name="add_exer_weight">Poids</string>
+    <string name="add_exer_reps">Répétitions</string>
+    <string name="add_exer_rir">RIR :</string>
+    <string name="add_exer_save">Enregistrer</string>
+    <string name="add_exer_cancel">Annuler</string>
+    <string name="add_exer_saved">Enregistré !</string>
+
+    <!--New Session-->
+    <string name="new_session">Nouvelle session</string>
+    <string name="new_session_name_it">Donne-lui un nom</string>
+    <string name="new_session_placeholder">Fullbody</string>
+    <string name="new_session_confirm">Confirmer la création</string>
+    <string name="new_session_cancel">Annuler</string>
+
+    <!--QuickStats-->
+    <string name="quickstats_exer">Exercices</string>
+    <string name="quickstats_series">Séries</string>
+    <string name="quickstats_reps">Répétitions</string>
+    <string name="quickstats_sumatory">Total</string>
+
+    <!--ROUTINE-->
+    <string name="routines_no_data">Aucune routine</string>
+    <string name="routines_no_data_message">Tu n’as pas de routines enregistrées</string>
+    <string name="routines_accept">Accepter</string>
+
+    <!-- Session card -->
+    <string name="session_card_touch">Appuie pour commencer</string>
+    <string name="session_new_session">Nouvelle session</string>
+
+    <!--PROFILE-->
+    <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
+</resources>

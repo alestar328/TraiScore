@@ -66,7 +66,16 @@ fun LanguageScreenUI(
     // For now, only enable Spanish and German as you mentioned
     val languages = listOf(
         Language("es", "Español", "🇪🇸"),
-        Language("de", "Deutsch", "🇩🇪")
+        Language("de", "Deutsch", "🇩🇪"),
+        Language("it", "Italiano", "🇮🇹"),
+        Language("en", "English", "🇺🇸"),
+        Language("zh", "Chinese", "🇨🇳"),
+        Language("ar", "Arabic", "🇦🇪"),
+        Language("fr", "Français", "🇫🇷"),
+        Language("pt", "Português", "🇵🇹"),
+        Language("ru", "Русский", "🇷🇺"),
+        Language("ja", "日本語", "🇯🇵"),
+        Language("uk", "Українська", "🇺🇦"),
     )
 
     Scaffold(

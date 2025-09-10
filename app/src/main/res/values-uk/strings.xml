@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Navigation Labels -->
+    <string name="nav_exercises">Вправи</string>
+    <string name="nav_stats">Статистика</string>
+    <string name="nav_add">Додати</string>
+    <string name="nav_routines">Рутини</string>
+    <string name="nav_profile">Профіль</string>
+    <string name="nav_clients">Мої клієнти</string>
+
+    <!-- Language Screen -->
+    <string name="language_title">Мова</string>
+    <string name="language_description">Оберіть бажану мову</string>
+    <string name="language_selected">Вибрано</string>
+    <string name="back_button">Назад</string>
+
+    <string name="app_name">TraiScore</string>
+    <string name="trai_Score">TraiScore</string>
+    <string name="s_logan">Відстежуй свої тренування</string>
+    <string name="app_logo">Логотип застосунку</string>
+    <string name="login">Увійти</string>
+
+    <string name="category_chest">Груди</string>
+    <string name="category_back">Спина</string>
+    <string name="category_glutes">Сідниці</string>
+    <string name="category_legs">Ноги</string>
+    <string name="category_arms">Руки</string>
+    <string name="category_shoulders">Плечі</string>
+    <string name="category_core">Прес</string>
+
+    <!--Navbar-->
+    <string name="navbar_exercises">Вправи</string>
+    <string name="navbar_stats">Графіки</string>
+    <string name="navbar_routines">Рутини</string>
+    <string name="navbar_profile">Профіль</string>
+
+    <!--Exercise Screen-->
+    <string name="exer_screen_welcome_phrase">Час тренуватися!</string>
+    <string name="exer_screen_my_sessions">Мої сесії</string>
+    <string name="exer_screen_cancel">Скасувати</string>
+    <string name="exer_new_session">Нова сесія</string>
+    <string name="exer_name_it">Дай назву</string>
+    <string name="exer_no_data_session">Сьогодні немає зареєстрованих тренувань.</string>
+    <string name="exer_add_first_session">Додай свою першу вправу!</string>
+    <string name="exer_no_trainings">Немає тренувань</string>
+
+    <!--Today view Screen-->
+    <string name="today_session_active">Активна сесія</string>
+    <string name="today_close_session">Завершити сесію</string>
+    <string name="today_today">Сьогодні</string>
+    <string name="today_no_data_start">Сьогодні немає зареєстрованих тренувань. Додай свою першу вправу!</string>
+    <string name="today_limit_data">Ти досяг ліміту у 6 сесій. Обери існуючу, щоб тренуватися.</string>
+    <string name="today_end_session">Завершити сесію</string>
+    <string name="today_end">Завершити</string>
+    <string name="today_cancel">Скасувати</string>
+    <string name="today_closing_message">Ти впевнений, що хочеш завершити сесію?</string>
+    <string name="today_closing_message2">Виконані вправи буде збережено в історії.</string>
+
+    <!--Calendar-->
+    <string name="calendar_year">Рік</string>
+    <string name="calendar_year_no_data">Немає тренувань</string>
+    <string name="calendar_year_days_with_data">днів з тренуванням</string>
+    <string name="calendar_month">Місяць</string>
+    <string name="calendar_month_no_data">Сьогодні немає зареєстрованих вправ</string>
+    <string name="calendar_month_no_data_that_day">У цей день немає зареєстрованих вправ</string>
+    <string name="calendar_month_exercises">Вправи</string>
+    <string name="calendar_month_series">Підходи</string>
+    <string name="calendar_month_reps">Повтори</string>
+    <string name="calendar_month_summation">Разом</string>
+    <string name="calendar_today">Сьогодні</string>
+
+    <!--Camera & filter-->
+    <string name="camara_gallery">Галерея</string>
+    <string name="camara_access_gallery">Доступ до галереї</string>
+    <string name="camara_permission">Дозволь доступ, щоб переглядати свої фото</string>
+    <string name="camara_permission_button">Дозволити доступ</string>
+    <string name="camara_choose_photo">Вибрати фото</string>
+    <string name="camara_no_photo">Немає фото</string>
+
+    <string name="filter_main_exercise">Основна вправа</string>
+    <string name="filter_no_main_exercise">Немає тренувань</string>
+    <string name="filter_max_reps">Максимум повторів</string>
+    <string name="filter_no_max_reps">Немає записів</string>
+    <string name="filter_total_weight_today">Загальна вага за сьогодні</string>
+    <string name="filter_total_sessions_month">сесій тренування цього місяця</string>
+    <string name="filter_title">ТРЕНУВАЛЬНА СЕСІЯ</string>
+    <string name="no_data_start_to_add">У тебе ще немає збережених замірів.\nДодай перший, щоб почати!</string>
+
+    <!--STATS-->
+    <string name="stats_my_sizes">Мої заміри</string>
+    <string name="stats_my_sizes_no_data">Недостатньо даних</string>
+    <string name="stats_my_sizes_no_data_message">Потрібно щонайменше 2 записи замірів, щоб побачити прогрес</string>
+
+    <string name="stats_my_records">Мої рекорди</string>
+    <string name="stats_filter">Фільтрувати за:</string>
+    <string name="stats_exercises">Вправа</string>
+    <string name="stats_effort">Зусилля</string>
+    <string name="stats_by_weight">За вагою:</string>
+    <string name="stats_by_reps">За повторами:</string>
+    <string name="stats_top_5_exer">Топ-5 вправ – Прогрес</string>
+
+    <string name="stats_top_3_exer">Топ-3 вправи</string>
+    <string name="stats_top_3_no_data">Недостатньо даних</string>
+
+    <string name="stats_size_select">Вибери замір:</string>
+    <string name="stats_size_progress">Прогрес у</string>
+    <string name="stats_size_resume">Зведення по </string>
+    <string name="stats_size_placeholder">Вимірювання тіла</string>
+    <string name="stats_actual_value">Поточне значення:</string>
+    <string name="stats_total_change">Загальна зміна:</string>
+    <string name="stats_size_records">Записи:</string>
+
+    <!--ADD ACTIVITY-->
+    <string name="add_activity_title">Нова активність</string>
+    <string name="add_exer_select_exer">Вибери вправу</string>
+    <string name="add_exer_weight">Вага</string>
+    <string name="add_exer_reps">Повтори</string>
+    <string name="add_exer_rir">RIR:</string>
+    <string name="add_exer_save">Зберегти</string>
+    <string name="add_exer_cancel">Скасувати</string>
+    <string name="add_exer_saved">Збережено!</string>
+
+    <!--New Session-->
+    <string name="new_session">Нова сесія</string>
+    <string name="new_session_name_it">Дай назву</string>
+    <string name="new_session_placeholder">Фулбоді</string>
+    <string name="new_session_confirm">Підтвердити створення</string>
+    <string name="new_session_cancel">Скасувати</string>
+
+    <!--QuickStats-->
+    <string name="quickstats_exer">Вправи</string>
+    <string name="quickstats_series">Підходи</string>
+    <string name="quickstats_reps">Повтори</string>
+    <string name="quickstats_sumatory">Разом</string>
+
+    <!--ROUTINE-->
+    <string name="routines_no_data">Немає рутин</string>
+    <string name="routines_no_data_message">У тебе немає збережених рутин</string>
+    <string name="routines_accept">Прийняти</string>
+
+    <!-- Session card -->
+    <string name="session_card_touch">Натисни, щоб почати</string>
+    <string name="session_new_session">Нова сесія</string>
+
+    <!--PROFILE-->
+    <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
+</resources>

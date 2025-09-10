@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Navigation Labels -->
+    <string name="nav_exercises">التمارين</string>
+    <string name="nav_stats">الإحصائيات</string>
+    <string name="nav_add">إضافة</string>
+    <string name="nav_routines">الروتينات</string>
+    <string name="nav_profile">الملف الشخصي</string>
+    <string name="nav_clients">عملائي</string>
+
+    <!-- Language Screen -->
+    <string name="language_title">اللغة</string>
+    <string name="language_description">اختر لغتك المفضلة</string>
+    <string name="language_selected">محدد</string>
+    <string name="back_button">رجوع</string>
+
+    <string name="app_name">TraiScore</string>
+    <string name="trai_Score">TraiScore</string>
+    <string name="s_logan">تتبع تدريباتك</string>
+    <string name="app_logo">شعار التطبيق</string>
+    <string name="login">تسجيل الدخول</string>
+
+    <string name="category_chest">الصدر</string>
+    <string name="category_back">الظهر</string>
+    <string name="category_glutes">الأرداف</string>
+    <string name="category_legs">الساقان</string>
+    <string name="category_arms">الذراعان</string>
+    <string name="category_shoulders">الكتفان</string>
+    <string name="category_core">البطن</string>
+
+    <!--Navbar-->
+    <string name="navbar_exercises">التمارين</string>
+    <string name="navbar_stats">الرسوم البيانية</string>
+    <string name="navbar_routines">الروتينات</string>
+    <string name="navbar_profile">الملف الشخصي</string>
+
+    <!--Exercise Screen-->
+    <string name="exer_screen_welcome_phrase">حان وقت التدريب!</string>
+    <string name="exer_screen_my_sessions">جلساتي</string>
+    <string name="exer_screen_cancel">إلغاء</string>
+    <string name="exer_new_session">جلسة جديدة</string>
+    <string name="exer_name_it">امنحها اسماً</string>
+    <string name="exer_no_data_session">لا يوجد تدريبات مسجلة لهذا اليوم.</string>
+    <string name="exer_add_first_session">أضف أول تمرين لك!</string>
+    <string name="exer_no_trainings">لا يوجد تدريبات</string>
+
+    <!--Today view Screen-->
+    <string name="today_session_active">جلسة نشطة</string>
+    <string name="today_close_session">إنهاء الجلسة</string>
+    <string name="today_today">اليوم</string>
+    <string name="today_no_data_start">لا يوجد تدريبات مسجلة لهذا اليوم. أضف أول تمرين لك!</string>
+    <string name="today_limit_data">لقد وصلت إلى الحد الأقصى وهو 6 جلسات. اختر جلسة موجودة للتدريب.</string>
+    <string name="today_end_session">إنهاء الجلسة</string>
+    <string name="today_end">إنهاء</string>
+    <string name="today_cancel">إلغاء</string>
+    <string name="today_closing_message">هل أنت متأكد أنك تريد إنهاء الجلسة؟</string>
+    <string name="today_closing_message2">سيتم حفظ التمارين المنفذة في سجلك.</string>
+
+    <!--Calendar-->
+    <string name="calendar_year">السنة</string>
+    <string name="calendar_year_no_data">لا يوجد تدريبات</string>
+    <string name="calendar_year_days_with_data">أيام بها تدريب</string>
+    <string name="calendar_month">الشهر</string>
+    <string name="calendar_month_no_data">لا يوجد تمارين مسجلة اليوم</string>
+    <string name="calendar_month_no_data_that_day">لا يوجد تمارين مسجلة في ذلك اليوم</string>
+    <string name="calendar_month_exercises">التمارين</string>
+    <string name="calendar_month_series">المجموعات</string>
+    <string name="calendar_month_reps">التكرارات</string>
+    <string name="calendar_month_summation">المجموع</string>
+    <string name="calendar_today">اليوم</string>
+
+    <!--Camera & filter-->
+    <string name="camara_gallery">المعرض</string>
+    <string name="camara_access_gallery">الوصول إلى المعرض</string>
+    <string name="camara_permission">اسمح بالوصول لعرض صورك</string>
+    <string name="camara_permission_button">السماح بالوصول</string>
+    <string name="camara_choose_photo">اختر صورة</string>
+    <string name="camara_no_photo">لا توجد صور</string>
+
+    <string name="filter_main_exercise">التمرين الرئيسي</string>
+    <string name="filter_no_main_exercise">لا يوجد تدريبات</string>
+    <string name="filter_max_reps">أقصى عدد من التكرارات</string>
+    <string name="filter_no_max_reps">لا توجد سجلات</string>
+    <string name="filter_total_weight_today">إجمالي الوزن المرفوع اليوم</string>
+    <string name="filter_total_sessions_month">جلسات التدريب هذا الشهر</string>
+    <string name="filter_title">جلسة تدريب</string>
+    <string name="no_data_start_to_add">لا يوجد قياسات محفوظة بعد.\nأضف أول قياس للبدء!</string>
+
+    <!--STATS-->
+    <string name="stats_my_sizes">قياساتي</string>
+    <string name="stats_my_sizes_no_data">بيانات غير كافية</string>
+    <string name="stats_my_sizes_no_data_message">تحتاج على الأقل إلى سجلين من القياسات لرؤية التقدم</string>
+
+    <string name="stats_my_records">أرقامي القياسية</string>
+    <string name="stats_filter">تصفية حسب:</string>
+    <string name="stats_exercises">التمرين</string>
+    <string name="stats_effort">الجهد</string>
+    <string name="stats_by_weight">حسب الوزن:</string>
+    <string name="stats_by_reps">حسب التكرارات:</string>
+    <string name="stats_top_5_exer">أفضل 5 تمارين - التقدم</string>
+
+    <string name="stats_top_3_exer">أفضل 3 تمارين</string>
+    <string name="stats_top_3_no_data">بيانات غير كافية</string>
+
+    <string name="stats_size_select">اختر القياس:</string>
+    <string name="stats_size_progress">التقدم في</string>
+    <string name="stats_size_resume">ملخص </string>
+    <string name="stats_size_placeholder">قياس جسدي</string>
+    <string name="stats_actual_value">القيمة الحالية:</string>
+    <string name="stats_total_change">التغير الكلي:</string>
+    <string name="stats_size_records">السجلات:</string>
+
+    <!--ADD ACTIVITY-->
+    <string name="add_activity_title">نشاط جديد</string>
+    <string name="add_exer_select_exer">اختر تمرين</string>
+    <string name="add_exer_weight">الوزن</string>
+    <string name="add_exer_reps">التكرارات</string>
+    <string name="add_exer_rir">RIR:</string>
+    <string name="add_exer_save">حفظ</string>
+    <string name="add_exer_cancel">إلغاء</string>
+    <string name="add_exer_saved">تم الحفظ!</string>
+
+    <!--New Session-->
+    <string name="new_session">جلسة جديدة</string>
+    <string name="new_session_name_it">امنحها اسماً</string>
+    <string name="new_session_placeholder">تمارين شاملة</string>
+    <string name="new_session_confirm">تأكيد الإنشاء</string>
+    <string name="new_session_cancel">إلغاء</string>
+
+    <!--QuickStats-->
+    <string name="quickstats_exer">التمارين</string>
+    <string name="quickstats_series">المجموعات</string>
+    <string name="quickstats_reps">التكرارات</string>
+    <string name="quickstats_sumatory">المجموع</string>
+
+    <!--ROUTINE-->
+    <string name="routines_no_data">لا توجد روتينات</string>
+    <string name="routines_no_data_message">ليس لديك روتينات محفوظة</string>
+    <string name="routines_accept">موافق</string>
+
+    <!-- Session card -->
+    <string name="session_card_touch">اضغط للبدء</string>
+    <string name="session_new_session">جلسة جديدة</string>
+
+    <!--PROFILE-->
+    <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
+</resources>
