@@ -391,40 +391,6 @@ private fun HighlightStat(text: String, label: String) {
     }
 }
 
-@Composable
-private fun StatBlock(title: String, stat: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(
-            modifier = Modifier.weight(1f)
-        ) {
-            Text(
-                text = title,
-                fontSize = 13.sp,
-                color = Color.White.copy(alpha = 0.7f),
-                style = MaterialTheme.typography.bodySmall
-            )
-            Text(
-                text = stat,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = Color.White
-            )
-        }
-
-        Text(
-            text = value,
-            fontSize = 18.sp,
-            fontWeight = FontWeight.Bold,
-            color = traiBlue
-        )
-    }
-}
-
-
 private suspend fun shareImageWithData(
     context: Context,
     bitmap: Bitmap,
@@ -496,42 +462,5 @@ private fun shareImageToSocialMedia(
 
     } catch (e: Exception) {
         android.util.Log.e("SocialMediaScreen", "Error al compartir: ${e.message}")
-    }
-}
-private fun buildInstagramStoryIntent(
-    context: Context,
-    imageUri: Uri
-): Intent? {
-    val pkg = "com.instagram.android"
-    val pm = context.packageManager
-    val isInstalled = try {
-        pm.getPackageInfo(pkg, 0); true
-    } catch (_: Exception) { false }
-    if (!isInstalled) return null
-
-    // Concede permiso a Instagram para leer tu content://
-    context.grantUriPermission(
-        pkg,
-        imageUri,
-        Intent.FLAG_GRANT_READ_URI_PERMISSION
-    )
-
-    // Intent oficial para historias
-    return Intent("com.instagram.share.ADD_TO_STORY").apply {
-        setPackage(pkg)
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-
-        // Dos vías que funcionan según versión de IG:
-        // 1) Extra backgroundImage (nuevo)
-        putExtra("com.instagram.sharedSticker.backgroundImage", imageUri)
-        type = "image/*"
-
-        // 2) (opcional) además fija data+type (antiguo, mantiene compat)
-        setDataAndType(imageUri, "image/*")
-
-        // Extras opcionales
-        putExtra("source_application", context.packageName)
-        // putExtra("top_background_color", "#000000")
-        // putExtra("bottom_background_color", "#000000")
     }
 }

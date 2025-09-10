@@ -68,7 +68,6 @@ fun CameraGalleryScreen(
     navController: NavController
 ) {
     val context = LocalContext.current
-    val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
 
     // Estados principales

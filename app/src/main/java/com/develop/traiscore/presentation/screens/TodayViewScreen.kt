@@ -210,11 +210,11 @@ fun TodayViewScreen(
     if (showEndSessionDialog) {
         AlertDialog(
             onDismissRequest = { showEndSessionDialog = false },
-            title = { Text("Terminar Sesión") },
+            title = { Text(stringResource(id = R.string.today_end_session)) },
             text = {
                 Text(
-                    "¿Estás seguro de que quieres terminar la sesión \"${activeSession?.name ?: ""}\"?\n\n" +
-                            "Los ejercicios realizados se guardarán en tu historial."
+                    stringResource(id = R.string.today_closing_message) + "${activeSession?.name ?: ""}\"?\n\n" +
+                            stringResource(id = R.string.today_closing_message2)
                 )
             },
             confirmButton = {
@@ -225,12 +225,12 @@ fun TodayViewScreen(
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
                 ) {
-                    Text("Terminar")
+                    Text(stringResource(id = R.string.today_end))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showEndSessionDialog = false }) {
-                    Text("Cancelar")
+                    Text(stringResource(id = R.string.today_cancel))
                 }
             }
         )
@@ -264,7 +264,7 @@ private fun TodayHeaderSection(
                 // Icono de pesa en negro
                 Icon(
                     painter = painterResource(id = R.drawable.pesa_icon),
-                    contentDescription = "Sesión activa",
+                    contentDescription = stringResource(id = R.string.today_session_active),
                     tint = Color.Black,
                     modifier = Modifier.size(32.dp)
                 )
@@ -294,7 +294,7 @@ private fun TodayHeaderSection(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Clear,
-                        contentDescription = "Terminar sesión",
+                        contentDescription = stringResource(id = R.string.today_close_session),
                         tint = Color.Red.copy(alpha = 0.7f),
                         modifier = Modifier.size(24.dp)
                     )
@@ -321,7 +321,7 @@ private fun TodayHeaderSection(
             ) {
                 Icon(
                     painter = painterResource(id = R.drawable.today_icon),
-                    contentDescription = "Hoy",
+                    contentDescription = stringResource(id = R.string.today_today),
                     tint = MaterialTheme.tsColors.ledCyan,
                     modifier = Modifier.size(32.dp)
                 )
@@ -373,13 +373,13 @@ private fun EmptyTodayState(
         ) {
             Icon(
                 imageVector = Icons.Default.Star,
-                contentDescription = "Sin entrenamientos",
+                contentDescription = stringResource(id = R.string.exer_no_trainings),
                 tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                 modifier = Modifier.size(48.dp)
             )
 
             Text(
-                text = "¡Es hora de entrenar!",
+                text = stringResource(id = R.string.exer_screen_welcome_phrase),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
                 fontWeight = FontWeight.SemiBold,
@@ -388,9 +388,9 @@ private fun EmptyTodayState(
 
             Text(
                 text = if (canAddMoreSessions) {
-                    "No tienes entrenamientos registrados para hoy. ¡Agrega tu primer ejercicio!"
+                    stringResource(id = R.string.today_no_data_start)
                 } else {
-                    "Has alcanzado el límite de 6 sesiones. Selecciona una existente para entrenar."
+                    stringResource(id = R.string.today_limit_data)
                 },
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
@@ -402,7 +402,7 @@ private fun EmptyTodayState(
                     onClick = { showNewSessionDialog = true },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.tsColors.ledCyan)
                 ) {
-                    Text("Nueva Sesión")
+                    Text(stringResource(id = R.string.session_new_session))
                 }
             }
         }

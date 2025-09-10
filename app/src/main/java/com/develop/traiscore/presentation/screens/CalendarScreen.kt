@@ -29,10 +29,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import java.time.format.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.develop.traiscore.R
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.presentation.components.QuickStats
 import com.develop.traiscore.presentation.components.WorkoutCardList
@@ -206,9 +208,9 @@ fun CalendarScreen(
                         ) {
                             Text(
                                 text = if (selectedLocalDate == LocalDate.now()) {
-                                    "No hay ejercicios registrados hoy"
+                                    stringResource(id = R.string.calendar_month_no_data)
                                 } else {
-                                    "No hay ejercicios registrados este día"
+                                    stringResource(id = R.string.calendar_month_no_data_that_day)
                                 },
                                 style = MaterialTheme.typography.bodyLarge,
                                 color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
@@ -221,7 +223,6 @@ fun CalendarScreen(
     }
 }
 
-// ⭐ NUEVO: Card compacta para mostrar sesiones en calendario
 @Composable
 private fun SessionDayCard(
     session: SessionWithWorkouts,

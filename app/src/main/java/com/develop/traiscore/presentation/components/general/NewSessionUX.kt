@@ -27,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -59,7 +60,7 @@ fun NewSessionUX(
     AlertDialog(
         onDismissRequest = onDismiss,
         title = {
-            Text("Nueva Sesión")
+            Text(stringResource(id = R.string.session_card_touch))
         },
         text = {
             Column(
@@ -70,8 +71,8 @@ fun NewSessionUX(
                 OutlinedTextField(
                     value = sessionName,
                     onValueChange = {sessionName = it},
-                    label = {Text("Nómbrala")},
-                    placeholder = { Text("Ej: Fullbody")},
+                    label = {Text(stringResource(id = R.string.new_session_name_it))},
+                    placeholder = { Text(stringResource(id = R.string.new_session_placeholder))},
                     modifier = Modifier.fillMaxWidth(),
                     keyboardOptions = KeyboardOptions(
                         capitalization = KeyboardCapitalization.Sentences,
@@ -123,7 +124,7 @@ fun NewSessionUX(
             ) {
                 Icon(
                     imageVector = Icons.Default.Check,
-                    contentDescription = "Confirmar creación",
+                    contentDescription = stringResource(id = R.string.new_session_confirm),
                     tint = if (sessionName.isNotBlank() && !isLoading) {
                         MaterialTheme.tsColors.ledCyan
                     } else {
@@ -134,7 +135,7 @@ fun NewSessionUX(
         },
         dismissButton = {
             TextButton(onClick = onDismiss, enabled = !isLoading) {
-                Text("Cancelar")
+                Text(stringResource(id = R.string.new_session_cancel))
             }
         }
 

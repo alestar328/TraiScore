@@ -32,6 +32,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -133,7 +134,7 @@ fun SessionCard(
                     )
                     Spacer(Modifier.height(2.dp))
                     Text(
-                        text = "Toca para empezar",
+                        text = stringResource(id = R.string.session_card_touch),
                         fontSize = 13.sp,
                         color = Color(0xFFB8B8B8)
                     )

@@ -45,6 +45,23 @@
     <string name="exer_name_it">Nómbrala</string>
     <string name="exer_no_data_session">No tienes entrenamientos registrados para hoy.</string>
     <string name="exer_add_first_session">¡Agrega tu primer ejercicio!</string>
+    <string name="exer_no_trainings">Sin entrenamientos</string>
+
+    <!--Today view Screen-->
+
+    <string name="today_session_active">Sesión activa</string>
+    <string name="today_close_session">Terminar sesión</string>
+    <string name="today_today">Hoy</string>
+    <string name="today_no_data_start">No tienes entrenamientos registrados para hoy. ¡Agrega tu primer ejercicio!</string>
+    <string name="today_limit_data">Has alcanzado el límite de 6 sesiones. Selecciona una existente para entrenar.</string>
+    <string name="today_end_session">Terminar Sesión</string>
+    <string name="today_end">Terminar</string>
+    <string name="today_cancel">Cancelar</string>
+    <string name="today_closing_message">¿Estás seguro de que quieres terminar la sesión</string>
+    <string name="today_closing_message2">Los ejercicios realizados se guardarán en tu historial.</string>
+
+
+
 
     <!--Calendar-->
     <string name="calendar_year">Año</string>
@@ -52,6 +69,7 @@
     <string name="calendar_year_days_with_data">días con entrenamiento</string>
     <string name="calendar_month">Mes</string>
     <string name="calendar_month_no_data">No hay ejercicios registrados hoy</string>
+    <string name="calendar_month_no_data_that_day">No hay ejercicios registrados hoy</string>
     <string name="calendar_month_exercises">Ejercicios</string>
     <string name="calendar_month_series">Series</string>
     <string name="calendar_month_reps">Reps</string>
@@ -100,12 +118,29 @@
     <string name="add_exer_save">Guardar</string>
     <string name="add_exer_cancel">Cancelar</string>
 
+    <!--New Session-->
+
+    <string name="new_session">Nueva sesión</string>
+    <string name="new_session_name_it">Nómbrala</string>
+    <string name="new_session_placeholder">Fullbody</string>
+    <string name="new_session_confirm">Confirmar creación</string>
+    <string name="new_session_cancel">Cancelar</string>
+
+    <!--QuickStats-->
+    <string name="quickstats_exer">Ejercicios</string>
+    <string name="quickstats_series">Series</string>
+    <string name="quickstats_reps">Reps</string>
+    <string name="quickstats_sumatory">Sumatoria</string>
 
     <!--ROUTINE-->
 
     <string name="routines_no_data">Sin rutinas</string> 
     <string name="routines_no_data_message">No tienes rutinas guardadas</string> 
     <string name="routines_accept">Aceptar</string> 
+
+    <!-- Session card -->
+    <string name="session_card_touch">Toca para empezar</string>
+    <string name="session_new_session">Nueva sesión</string>
 
     <!--PROFILE-->
     

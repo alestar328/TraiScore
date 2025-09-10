@@ -6,7 +6,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.develop.traiscore.R
 
 @Composable
 fun QuickStats(
@@ -23,25 +25,25 @@ fun QuickStats(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         StatCard(
-            title = "Ejercicios",
+            title = stringResource(id = R.string.quickstats_exer),
             value = totalExercises.toString(),
             modifier = Modifier.weight(1f)
         )
 
         StatCard(
-            title = "Series",
+            title = stringResource(id = R.string.quickstats_series),
             value = totalSeries.toString(),
             modifier = Modifier.weight(1f)
         )
 
         StatCard(
-            title = "Reps",
+            title = stringResource(id = R.string.quickstats_reps),
             value = totalReps.toString(),
             modifier = Modifier.weight(1f)
         )
 
         StatCard(
-            title = "Sumatoria",
+            title = stringResource(id = R.string.quickstats_sumatory),
             value = "${totalWeight.toInt()} kg",
             modifier = Modifier.weight(1f)
         )

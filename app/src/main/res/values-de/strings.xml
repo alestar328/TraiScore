@@ -46,12 +46,29 @@
     <string name="exer_name_it">Nennen Sie sie</string>
     <string name="exer_no_data_session">Für heute sind keine Trainingseinheiten geplant.</string>
     <string name="exer_add_first_session">Fügen Sie Ihre erste Übung hinzu!</string>
+    <string name="exer_no_trainings">Keine Ausbildung</string>
+
+    <!--Today view Screen-->
+
+    <string name="today_session_active">Sesión activa</string>
+    <string name="today_close_session">Terminar sesión</string>
+    <string name="today_today">Hoy</string>
+    <string name="today_no_data_start">No tienes entrenamientos registrados para hoy. ¡Agrega tu primer ejercicio!</string>
+    <string name="today_limit_data">Has alcanzado el límite de 6 sesiones. Selecciona una existente para entrenar.</string>
+    <string name="today_end_session">Sitzung beenden</string>
+    <string name="today_end">Beenden</string>
+    <string name="today_cancel">Abbrechen</string>
+    <string name="today_closing_message">Bist du sicher, dass du die Sitzung beenden willst?</string>
+    <string name="today_closing_message2">Die durchgeführten Übungen werden in deinem Verlauf gespeichert.</string>
+
+
 
     <!--Calendar-->
     <string name="calendar_year">Jahr</string>
     <string name="calendar_year_no_data">Keine Ausbildung</string>
     <string name="calendar_year_days_with_data">Tage mit Training</string>
     <string name="calendar_month">Monat</string>
+    <string name="calendar_month_no_data_that_day">Für heute sind keine Übungen aufgezeichnet</string>
     <string name="calendar_month_no_data">Für heute sind keine Übungen aufgezeichnet</string>
     <string name="calendar_month_exercises">Übungen</string>
     <string name="calendar_month_series">Serie</string>
@@ -102,11 +119,30 @@
     <string name="add_exer_save">Speichern</string>
     <string name="add_exer_cancel">Abbrechen</string>
 
+    <!--New Session-->
+
+    <string name="new_session">Neue Sitzung</string>
+    <string name="new_session_name_it">Benenne sie</string>
+    <string name="new_session_placeholder">Ganzkörper</string>
+    <string name="new_session_confirm">Erstellung bestätigen</string>
+    <string name="new_session_cancel">Abbrechen</string>
+
+    <!--QuickStats-->
+    <string name="quickstats_exer">Übungen</string>
+    <string name="quickstats_series">Sätze</string>
+    <string name="quickstats_reps">Reps.</string>
+    <string name="quickstats_sumatory">Summe</string>
+
+
 
     <!--ROUTINE-->
     <string name="routines_no_data">Keine Routinen</string>
     <string name="routines_no_data_message">Du hast keine gespeicherten Routinen</string>
     <string name="routines_accept">Akzeptieren</string>
+
+    <!-- Session card -->
+    <string name="session_card_touch">Zum Starten tippen</string>
+    <string name="session_new_session">Neue Sitzung</string>
 
     <!--PROFILE-->
 

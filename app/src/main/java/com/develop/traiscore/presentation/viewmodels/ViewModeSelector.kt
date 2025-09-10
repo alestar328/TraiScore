@@ -16,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -41,7 +42,7 @@ fun ViewModeSelector(
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             ViewModeItem(
-                title = "Año",
+                title = stringResource(id = R.string.calendar_year),
                 icon = R.drawable.year_icon,
                 isSelected = selectedMode == ViewMode.YEAR,
                 onClick = { onModeSelected(ViewMode.YEAR) },
@@ -49,7 +50,7 @@ fun ViewModeSelector(
             )
 
             ViewModeItem(
-                title = "Mes",
+                title = stringResource(id = R.string.calendar_month),
                 icon = R.drawable.month_icon,
                 isSelected = selectedMode == ViewMode.MONTH,
                 onClick = { onModeSelected(ViewMode.MONTH) },
@@ -57,7 +58,7 @@ fun ViewModeSelector(
             )
 
             ViewModeItem(
-                title = "Hoy",
+                title = stringResource(id = R.string.calendar_today),
                 icon = R.drawable.today_icon,
                 isSelected = selectedMode == ViewMode.TODAY,
                 onClick = { onModeSelected(ViewMode.TODAY) },
