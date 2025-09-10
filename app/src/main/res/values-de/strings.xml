@@ -1,5 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- Navigation Labels -->
+    <string name="nav_exercises">Übungen</string>
+    <string name="nav_stats">Statistiken</string>
+    <string name="nav_add">Hinzufügen</string>
+    <string name="nav_routines">Routinen</string>
+    <string name="nav_profile">Profil</string>
+    <string name="nav_clients">Meine Kunden</string>
+
+    <!-- Language Screen -->
+    <string name="language_title">Sprache</string>
+    <string name="language_description">Wählen Sie Ihre bevorzugte Sprache</string>
+    <string name="language_selected">Ausgewählt</string>
+    <string name="back_button">Zurück</string>
+
+
     <string name="app_name">TraiScore</string>
     <string name="trai_Score">TraiScore</string>
     <string name="s_logan">Verfolgen Sie Ihre Trainings</string>
@@ -55,6 +71,7 @@
     <string name="filter_no_main_exercise">Keine Trainings</string>
     <string name="filter_max_reps">Maximale Wiederholungen</string>
     <string name="filter_no_max_reps">Keine Einträge</string>
+    <string name="filter_total_weight_today">Gesamtgewicht, das heute gehoben wurde</string>
     <string name="filter_total_sessions_month">Trainingseinheiten in diesem Monat</string>
 
 

@@ -1,17 +1,14 @@
 package com.develop.traiscore.presentation.screens
 
-import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
-import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -43,6 +40,7 @@ import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -283,7 +281,7 @@ private fun StatsOverlay(
             // Stat principal destacado
             HighlightStat(
                 text = "${totalWeight.toInt()} kg",
-                label = "Peso total levantado hoy"
+                label = stringResource(id = R.string.filter_total_weight_today)
             )
 
             // ✅ CONVERTIR A ROWS INDIVIDUALES PARA MEJOR CONTROL DEL ESPACIADO
@@ -308,7 +306,7 @@ private fun StatsOverlay(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = "Ejercicio principal",
+                            text = stringResource(id = R.string.filter_main_exercise),
                             fontSize = 13.sp,
                             color = Color.White.copy(alpha = 0.7f),
                             style = MaterialTheme.typography.bodySmall
@@ -338,7 +336,7 @@ private fun StatsOverlay(
                         modifier = Modifier.weight(1f)
                     ) {
                         Text(
-                            text = "Repeticiones máximas",
+                            text = stringResource(id = R.string.filter_max_reps),
                             fontSize = 13.sp,
                             color = Color.White.copy(alpha = 0.7f),
                             style = MaterialTheme.typography.bodySmall
@@ -364,7 +362,7 @@ private fun StatsOverlay(
                     horizontalArrangement = Arrangement.Center
                 ) {
                     Text(
-                        text = "$trainingDays sesiones de entrenamiento este mes",
+                        text = "$trainingDays " + stringResource(R.string.filter_total_sessions_month),
                         color = Color.White,
                         fontSize = 16.sp,
                         style = MaterialTheme.typography.bodyMedium

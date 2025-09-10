@@ -17,6 +17,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.develop.traiscore.R
@@ -45,7 +46,7 @@ fun TrainerBottomNavigationBar(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.clients_icon),
-                        contentDescription = "Mis Clientes",
+                        contentDescription = stringResource(R.string.nav_clients),
                         tint = if (selectedIndex == 0)
                             MaterialTheme.tsColors.ledCyan
                         else
@@ -55,7 +56,7 @@ fun TrainerBottomNavigationBar(
                     // Solo mostrar texto si está seleccionado
                     if (selectedIndex == 0) {
                         Text(
-                            text = "Mis Clientes",
+                            text = stringResource(R.string.nav_clients), // ✅ UPDATED
                             color = MaterialTheme.tsColors.ledCyan,
                             fontSize = 12.sp
                         )
@@ -83,7 +84,7 @@ fun TrainerBottomNavigationBar(
                 ) {
                     Icon(
                         painter = painterResource(id = R.drawable.routines_icon),
-                        contentDescription = "Rutinas",
+                        contentDescription = stringResource(R.string.nav_routines),
                         tint = if (selectedIndex == 1)
                             MaterialTheme.tsColors.ledCyan
                         else
@@ -93,7 +94,7 @@ fun TrainerBottomNavigationBar(
                     // Solo mostrar texto si está seleccionado
                     if (selectedIndex == 1) {
                         Text(
-                            text = "Rutinas",
+                            text = stringResource(R.string.nav_routines), // ✅ UPDATED
                             color = MaterialTheme.tsColors.ledCyan,
                             fontSize = 12.sp
                         )
@@ -121,7 +122,7 @@ fun TrainerBottomNavigationBar(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Person,
-                        contentDescription = "Profile",
+                        contentDescription = stringResource(R.string.nav_profile),
                         tint = if (selectedIndex == 2)
                             MaterialTheme.tsColors.ledCyan
                         else
@@ -131,7 +132,7 @@ fun TrainerBottomNavigationBar(
                     // Solo mostrar texto si está seleccionado
                     if (selectedIndex == 2) {
                         Text(
-                            text = "Profile",
+                            text = stringResource(R.string.nav_profile), // ✅ UPDATED
                             color = MaterialTheme.tsColors.ledCyan,
                             fontSize = 12.sp
                         )

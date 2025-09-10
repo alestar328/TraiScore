@@ -3,7 +3,6 @@ package com.develop.traiscore.di
 import android.content.Context
 import com.develop.traiscore.data.preferences.ThemePreferences
 import com.develop.traiscore.data.repository.InvitationRepository
-import com.develop.traiscore.presentation.viewmodels.MyClientsViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -57,4 +56,5 @@ object AppModule {
     fun provideThemePreferences(context: Context): ThemePreferences {
         return ThemePreferences(context)
     }
+
 }

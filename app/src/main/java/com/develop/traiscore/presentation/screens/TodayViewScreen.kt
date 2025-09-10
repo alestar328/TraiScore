@@ -15,6 +15,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -130,7 +131,7 @@ fun TodayViewScreen(
             if (availableSessions.isNotEmpty() && !hasActiveSession) {
                 item {
                     Text(
-                        text = "Mis Sesiones",
+                        text = stringResource(id = R.string.exer_screen_my_sessions),
                         style = MaterialTheme.typography.titleMedium,
                         color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.SemiBold,
@@ -327,7 +328,7 @@ private fun TodayHeaderSection(
 
                 Column {
                     Text(
-                        text = "¡Es hora de entrenar!",
+                        text = stringResource(id = R.string.exer_screen_welcome_phrase),
                         style = MaterialTheme.typography.titleLarge,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontWeight = FontWeight.Bold

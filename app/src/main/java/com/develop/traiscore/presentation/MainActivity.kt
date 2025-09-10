@@ -1,7 +1,9 @@
 package com.develop.traiscore.presentation
 
 import android.app.AlertDialog
+import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.provider.OpenableColumns
@@ -32,7 +34,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
@@ -49,6 +50,7 @@ import com.develop.traiscore.presentation.screens.CameraGalleryScreen
 import com.develop.traiscore.presentation.screens.ClientProfileScreen
 import com.develop.traiscore.presentation.screens.CreateCategoryUI
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
+import com.develop.traiscore.presentation.screens.LanguageScreenUI
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -67,11 +69,17 @@ import com.develop.traiscore.presentation.viewmodels.MyClientsViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
 import com.develop.traiscore.presentation.viewmodels.ThemeViewModel
+import com.develop.traiscore.utils.LocaleManager
 import java.io.File
+import java.util.Locale
 
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+
+    companion object {
+        private const val TAG = "MainActivity"
+    }
 
     lateinit var googleSignInClient: GoogleSignInClient
     private val importViewModel: ImportRoutineViewModel by viewModels()
@@ -79,6 +87,9 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3WindowSizeClassApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val savedLanguage = LocaleManager.getLanguage(this)
+        LocaleManager.applyLanguage(this, savedLanguage)
+
         enableEdgeToEdge()
 
         FirebaseApp.initializeApp(this)
@@ -113,15 +124,24 @@ class MainActivity : ComponentActivity() {
         }
         handleIncomingIntent(intent)
     }
+    override fun attachBaseContext(newBase: Context?) {
+        val savedLanguage = newBase?.let { LocaleManager.getLanguage(it) } ?: "es"
+        val locale = Locale(savedLanguage)
+        Locale.setDefault(locale)
 
-    // OBLIGATORIO: Manejar nuevos intents cuando la app ya está abierta
+        val config = Configuration(newBase?.resources?.configuration)
+        config.setLocale(locale)
+
+        super.attachBaseContext(newBase?.createConfigurationContext(config))
+    }
+
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         handleIncomingIntent(intent)
     }
 
-    // OBLIGATORIO: Detectar intents del sistema (VIEW/SEND)
+
     private fun handleIncomingIntent(intent: Intent?) {
         Log.d("MainActivity", "Handling intent: ${intent?.action}, data: ${intent?.data}")
 
@@ -307,6 +327,8 @@ fun AppNavigation(navController: NavHostController) {
     } else {
         NavigationRoutes.Login.route
     }
+    val context = LocalContext.current
+
     NavHost(
         navController = navController,
         startDestination = startRoute
@@ -347,12 +369,32 @@ fun AppNavigation(navController: NavHostController) {
                 }
             )
         }
+        composable(NavigationRoutes.Language.route) {
+            LanguageScreenUI(
+                onBack = {
+                    navController.popBackStack()
+                },
+                onLanguageChanged = { languageCode ->
+                    // Guardar idioma y reiniciar app
+                    LocaleManager.setLanguage(context, languageCode)
+
+                    // Reiniciar la app completamente
+                    val intent = Intent(context, MainActivity::class.java)
+                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
+                    context.startActivity(intent)
+                    (context as? ComponentActivity)?.finish()
+                }
+            )
+        }
         composable(NavigationRoutes.Settings.route) {
             SettingsScreen(
                 onBack = { navController.popBackStack() },
                 onNavigateToScreenMode = { navController.navigate("screen_mode") },
                 onNavigateToCreateCategory = {
                     navController.navigate("createCategory") // ✅ O tu ruta
+                },
+                onNavigateToLanguage = {
+                    navController.navigate(NavigationRoutes.Language.route)
                 }
 
             )

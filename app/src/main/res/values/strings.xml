@@ -1,4 +1,20 @@
 <resources>
+
+    <!-- Navigation Labels -->
+    <string name="nav_exercises">Ejercicios</string>
+    <string name="nav_stats">Stats</string>
+    <string name="nav_add">Añadir</string>
+    <string name="nav_routines">Rutinas</string>
+    <string name="nav_profile">Perfil</string>
+    <string name="nav_clients">Mis Clientes</string>
+
+    <!-- Language Screen -->
+    <string name="language_title">Idioma</string>
+    <string name="language_description">Selecciona tu idioma preferido</string>
+    <string name="language_selected">Seleccionado</string>
+    <string name="back_button">Volver</string>
+
+
     <string name="app_name">TraiScore</string>
     <string name="trai_Score">TraiScore</string>
     <string name="s_logan">Track your trainings</string>
@@ -54,6 +70,7 @@
     <string name="filter_no_main_exercise">Sin entrenamientos</string>
     <string name="filter_max_reps">Repeticiones máximas</string>
     <string name="filter_no_max_reps">Sin registros</string>
+    <string name="filter_total_weight_today">Peso total levantado hoy</string>
     <string name="filter_total_sessions_month">sesiones de entrenamiento este mes</string>
 
 

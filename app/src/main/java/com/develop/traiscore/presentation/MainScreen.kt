@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation
 
-import androidx.compose.material3.Icon
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -18,12 +17,12 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.develop.traiscore.core.UserRole
-import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.presentation.components.NavItem
 import com.develop.traiscore.presentation.navigation.BottomNavigationBar
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
@@ -53,14 +52,30 @@ fun MainScreen(
 ) {
     val navItemList = listOf(
         NavItem(
-            "Ejercicio",
+            stringResource(R.string.nav_exercises), // Instead of "Ejercicio"
             painter = painterResource(id = R.drawable.routine_icon),
             badgeCount = 0
         ),
-        NavItem("Stats", painter = painterResource(id = R.drawable.stats_icon), badgeCount = 0),
-        NavItem("Add", painter = painterResource(id = R.drawable.plus_icon), badgeCount = 0),
-        NavItem("Rutina", painter = painterResource(id = R.drawable.pesa_icon), badgeCount = 0),
-        NavItem("Profile", imageVector = Icons.Default.Person, badgeCount = 0)
+        NavItem(
+            stringResource(R.string.nav_stats), // Instead of "Stats"
+            painter = painterResource(id = R.drawable.stats_icon),
+            badgeCount = 0
+        ),
+        NavItem(
+            stringResource(R.string.nav_add), // Instead of "Add"
+            painter = painterResource(id = R.drawable.plus_icon),
+            badgeCount = 0
+        ),
+        NavItem(
+            stringResource(R.string.nav_routines), // Instead of "Rutina"
+            painter = painterResource(id = R.drawable.pesa_icon),
+            badgeCount = 0
+        ),
+        NavItem(
+            stringResource(R.string.nav_profile), // Instead of "Profile"
+            imageVector = Icons.Default.Person,
+            badgeCount = 0
+        )
     )
 
     var routineScreenState by remember { mutableStateOf<ScreenState>(ScreenState.MAIN_ROUTINE_MENU) }

@@ -58,7 +58,8 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit = {},
     onNavigateToScreenMode: () -> Unit = {},
-    onNavigateToCreateCategory: () -> Unit = {}
+    onNavigateToCreateCategory: () -> Unit = {},
+    onNavigateToLanguage: () -> Unit = {}
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
@@ -69,7 +70,6 @@ fun SettingsScreen(
         AddExerciseDialogToDB(
             onDismiss = { showDialog = false },
             onSave = { name, category ->
-                // ✅ CORRECCIÓN: Llamar desde coroutine y usar método del ViewModel
                 coroutineScope.launch {
                     viewModel.saveExerciseToDatabase(name, category)
                 }
@@ -80,7 +80,6 @@ fun SettingsScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    // Logo en lugar de texto
                     Image(
                         painter = painterResource(id = R.drawable.trailogoup),
                         contentDescription = "Logo cabecera",
@@ -97,13 +96,12 @@ fun SettingsScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.DarkGray, // Fondo de la barra
-                    titleContentColor = MaterialTheme.colorScheme.onSurface // Color del texto
+                    containerColor = Color.DarkGray,
+                    titleContentColor = MaterialTheme.colorScheme.onSurface
                 )
             )
         },
         content = { paddingValues ->
-            // Contenido principal
             Column(
                 modifier = Modifier
                     .background(Color.DarkGray)
@@ -135,7 +133,7 @@ fun SettingsScreen(
                 SettingsOptionRow(
                     icon = { Icon(Icons.Default.Star, contentDescription = "Cambiar idioma", tint = Color.Cyan) },
                     label = "Cambiar idioma",
-                    onClick = { /* TODO */ }
+                    onClick = { onNavigateToLanguage() }
                 )
 
                 SettingsOptionRow(

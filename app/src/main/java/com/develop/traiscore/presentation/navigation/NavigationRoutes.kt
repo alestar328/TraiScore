@@ -11,6 +11,7 @@ sealed class NavigationRoutes(val route: String) {
     object MeasurementsHistory : NavigationRoutes("measurements_history")
     object TrainerInvitations : NavigationRoutes("trainer_invitations")
     object EnterInvitation : NavigationRoutes("enter_invitation")
+    object Language : NavigationRoutes("language")
 
     object ClientProfile : NavigationRoutes("client_profile/{clientId}") {
         fun createRoute(clientId: String) = "client_profile/$clientId"
