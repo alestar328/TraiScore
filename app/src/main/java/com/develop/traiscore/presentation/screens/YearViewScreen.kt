@@ -64,7 +64,7 @@ fun YearViewScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = "Año $currentYear",
+            text = stringResource(id = R.string.calendar_year)  +" $currentYear",
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
@@ -175,7 +175,7 @@ private fun MonthCard(
 
                     // Contador
                     Text(
-                        text = "$totalWorkouts" + stringResource(id = R.string.calendar_year_no_data),
+                        text = "$totalWorkouts " + stringResource(id = R.string.calendar_year_days_with_data),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.tsColors.ledCyan,
                         fontWeight = FontWeight.Medium

@@ -9,8 +9,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.develop.traiscore.R
 import com.develop.traiscore.presentation.theme.*
 import java.util.*
 
@@ -34,14 +36,14 @@ fun EmptyContent() {
             )
             Spacer(modifier = Modifier.height(16.dp))
             Text(
-                "Sin registros",
+                stringResource(id = R.string.filter_no_max_reps),
                 style = MaterialTheme.typography.titleLarge,
                 color = Color.White,
                 textAlign = TextAlign.Center
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                "Aún no tienes medidas guardadas.\n¡Añade tu primera medida para comenzar!",
+                stringResource(id = R.string.no_data_start_to_add),
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color.Gray,
                 textAlign = TextAlign.Center

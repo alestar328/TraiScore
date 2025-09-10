@@ -1,8 +1,10 @@
 package com.develop.traiscore.presentation.viewmodels
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.develop.traiscore.R
 import com.develop.traiscore.core.TimeRange
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.domain.model.ExerciseProgressCalculator
@@ -39,7 +41,7 @@ data class SocialShareData(
 )
 
 @HiltViewModel
-class StatScreenViewModel @Inject constructor() : ViewModel() {
+class StatScreenViewModel @Inject constructor(private val context: Context) : ViewModel() {
     private val db = Firebase.firestore
 
     // NUEVO: Estado para el cliente que se está visualizando
@@ -163,11 +165,13 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                 Log.d("StatsVM", "📊 Entrenamientos de hoy: ${todaySnapshot.size()}")
 
                 if (todaySnapshot.documents.isEmpty()) {
+                    val defaultNoWorkouts = context.getString(R.string.filter_no_main_exercise)
+                    val defaultNoRecords = context.getString(R.string.filter_no_max_reps)
                     Log.d("StatsVM", "❌ No hay entrenamientos hoy")
                     callback(
                         SocialShareData(
-                            topExercise = "Sin entrenamientos",
-                            maxRepsExercise = "Sin registros",
+                            topExercise = defaultNoWorkouts, // ✅ USAR directamente el string localizado
+                            maxRepsExercise = defaultNoRecords,
                             topWeight = 0f,
                             maxReps = 0,
                             totalWeight = 0.0,
@@ -178,11 +182,11 @@ class StatScreenViewModel @Inject constructor() : ViewModel() {
                 }
 
                 // Procesar datos del día
-                var topExercise = "Ejercicio"
+                var topExercise = ""
                 var topWeight = 0f
                 var maxReps = 0
                 var totalWeight = 0.0
-                var maxRepsExercise = "Ejercicio"
+                var maxRepsExercise = ""
 
 
                 todaySnapshot.documents.forEach { doc ->

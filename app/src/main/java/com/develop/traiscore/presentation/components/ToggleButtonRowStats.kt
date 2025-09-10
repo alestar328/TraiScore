@@ -14,17 +14,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.develop.traiscore.presentation.theme.traiBlue
+import com.develop.traiscore.statics.StatTab
 
 @Composable
 fun ToggleButtonRowStats(
-    selectedTab: String,
-    onTabSelected: (String) -> Unit,
+    selectedTab: StatTab, // ✅ CAMBIAR de String a StatTab
+    onTabSelected: (StatTab) -> Unit, // ✅ CAMBIAR de String a StatTab
     modifier: Modifier = Modifier
 ) {
-    val tabs = listOf("Mis records", "Mis medidas")
+    val tabs = listOf(StatTab.RECORDS, StatTab.MEASUREMENTS) // ✅ USAR enum
 
     Row(
         modifier = modifier
@@ -50,7 +52,7 @@ fun ToggleButtonRowStats(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    text = tab,
+                    text = stringResource(tab.stringResId), // ✅ USAR stringResource
                     style = MaterialTheme.typography.bodyMedium.copy(
                         fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                     ),

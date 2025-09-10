@@ -31,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -39,6 +40,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import com.develop.traiscore.R
 import com.develop.traiscore.presentation.theme.traiBlue
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -332,7 +334,7 @@ private fun InstagramGalleryBar(
                 )
                 Spacer(modifier = Modifier.width(8.dp))
                 Text(
-                    text = "Galería",
+                    text = stringResource(id = R.string.camara_gallery),
                     color = Color.White,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Medium
@@ -385,7 +387,7 @@ private fun FullGalleryScreen(
                 }
 
                 Text(
-                    text = "Seleccionar foto",
+                    text = stringResource(id = R.string.camara_choose_photo),
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold
@@ -420,14 +422,14 @@ private fun FullGalleryScreen(
                         )
                         Spacer(modifier = Modifier.height(16.dp))
                         Text(
-                            text = "Acceso a Galería",
+                            text = stringResource(id = R.string.camara_access_gallery),
                             fontSize = 20.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.White
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "Permite acceso para ver tus fotos",
+                            text = stringResource(id = R.string.camara_permission),
                             color = Color.Gray,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center
                         )
@@ -436,7 +438,7 @@ private fun FullGalleryScreen(
                             onClick = onRequestPermission,
                             colors = ButtonDefaults.buttonColors(containerColor = traiBlue)
                         ) {
-                            Text("Permitir Acceso")
+                            Text(stringResource(id = R.string.camara_permission))
                         }
                     }
                 }
@@ -447,7 +449,7 @@ private fun FullGalleryScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No hay fotos",
+                            text = stringResource(id = R.string.camara_no_photo),
                             fontSize = 18.sp,
                             color = Color.Gray
                         )

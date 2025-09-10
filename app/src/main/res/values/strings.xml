@@ -83,6 +83,7 @@
     <string name="camara_permission">Permite acceso para ver tus fotos</string>
     <string name="camara_permission_button">Permitir Acceso</string>
     <string name="camara_choose_photo">Seleccionar foto</string>
+    <string name="camara_no_photo">No hay fotos</string>
 
     <string name="filter_main_exercise">Ejercicio principal</string>
     <string name="filter_no_main_exercise">Sin entrenamientos</string>
@@ -90,8 +91,8 @@
     <string name="filter_no_max_reps">Sin registros</string>
     <string name="filter_total_weight_today">Peso total levantado hoy</string>
     <string name="filter_total_sessions_month">sesiones de entrenamiento este mes</string>
-
-
+    <string name="filter_title">TRAINING SESSION</string>
+    <string name="no_data_start_to_add">Aún no tienes medidas guardadas.\n¡Añade tu primera medida para comenzar!</string>
     <!--STATS-->
 
     <string name="stats_my_sizes">Mis medidas</string>
@@ -109,14 +110,23 @@
     <string name="stats_top_3_exer">Top 3 ejercicios</string>
     <string name="stats_top_3_no_data">Sin datos suficientes</string>
 
-    <!--ADD EXERCISES-->
-    <string name="add_exer_new_activity">Top 3 ejercicios</string>
+    <string name="stats_size_select">Seleccionar medida:</string>
+    <string name="stats_size_progress">Progreso de</string>
+    <string name="stats_size_resume">Resumen de </string>
+    <string name="stats_size_placeholder">Medida corporal</string>
+    <string name="stats_actual_value">Valor actual:</string>
+    <string name="stats_total_change">Cambio total:</string>
+    <string name="stats_size_records">Registros:</string>
+
+    <!--ADD ACTIVITY-->
+    <string name="add_activity_title">Nueva actividad</string>
     <string name="add_exer_select_exer">Selecciona ejercicio</string>
     <string name="add_exer_weight">Peso</string>
     <string name="add_exer_reps">Repeticiones</string>
     <string name="add_exer_rir">RIR:</string>
     <string name="add_exer_save">Guardar</string>
     <string name="add_exer_cancel">Cancelar</string>
+    <string name="add_exer_saved">¡Guardado!</string>
 
     <!--New Session-->
 
@@ -141,6 +151,8 @@
     <!-- Session card -->
     <string name="session_card_touch">Toca para empezar</string>
     <string name="session_new_session">Nueva sesión</string>
+
+
 
     <!--PROFILE-->
     

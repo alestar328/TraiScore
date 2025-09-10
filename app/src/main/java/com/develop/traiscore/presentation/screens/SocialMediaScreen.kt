@@ -179,7 +179,12 @@ private fun CapturedContent(
 ) {
     val context = LocalContext.current
     val graphicsLayer = rememberGraphicsLayer()
-
+    val displayExerciseName = exerciseName.ifEmpty {
+        stringResource(R.string.filter_no_main_exercise)
+    }
+    val displayExerciseMaxReps = exerciseNameMaxReps.ifEmpty {
+        stringResource(R.string.filter_no_max_reps)
+    }
     // ✅ NOTIFICAR QUE LA CAPTURA ESTÁ LISTA
     LaunchedEffect(Unit) {
         onCaptureReady {
@@ -235,8 +240,8 @@ private fun CapturedContent(
         )
         // Overlay de datos centrado
         StatsOverlay(
-            exerciseName = exerciseName,
-            exerciseNameMaxReps = exerciseNameMaxReps,
+            exerciseName = displayExerciseName,
+            exerciseNameMaxReps = displayExerciseMaxReps,
             topWeight = topWeight,
             maxReps = maxReps,
             totalWeight = totalWeight,
@@ -257,7 +262,7 @@ private fun StatsOverlay(
 ) {
     Box(modifier = modifier) {
         Text(
-            text = "TRAINING SESSION",
+            text = stringResource(id = R.string.filter_title),
             style = MaterialTheme.typography.headlineLarge.copy(
                 fontWeight = FontWeight.Bold,
                 fontSize = 32.sp

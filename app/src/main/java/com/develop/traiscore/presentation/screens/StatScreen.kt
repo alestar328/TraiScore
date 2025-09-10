@@ -1,7 +1,5 @@
 package com.develop.traiscore.presentation.screens
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -42,18 +40,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat
-import androidx.core.content.FileProvider
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.develop.traiscore.R
@@ -73,6 +69,7 @@ import com.develop.traiscore.presentation.theme.traiOrange
 import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
+import com.develop.traiscore.statics.StatTab
 import java.io.File
 
 @Composable
@@ -83,12 +80,12 @@ fun StatScreen(
     clientId: String? = null,
     navController: NavController
 ) {
+    var selectedTab by remember { mutableStateOf(StatTab.RECORDS) }
     val exerOptions by viewModel.exerciseOptions.collectAsState()
     val weightData by viewModel.weightProgress.collectAsState()
     val repsData by viewModel.repsProgress.collectAsState()
     val circularData by viewModel.circularData.collectAsState()
     val selected by viewModel.selectedExercise.collectAsState()
-    var selectedTab by remember { mutableStateOf("Mis records") }
     var showChronoScreen by remember { mutableStateOf(false) }
 
 
@@ -140,7 +137,7 @@ fun StatScreen(
     }
 
     LaunchedEffect(selectedTab) {
-        if (selectedTab == "Mis medidas") {
+        if (selectedTab == StatTab.MEASUREMENTS) {
             isLoadingBodyData = true
             bodyStatsViewModel.getBodyMeasurementProgressData { success, data, error ->
                 isLoadingBodyData = false
@@ -255,7 +252,7 @@ fun StatScreen(
                         // TAB: Mis records
                         item {
                             AnimatedVisibility(
-                                visible = selectedTab == "Mis records",
+                                visible = selectedTab == StatTab.RECORDS,
                                 enter = fadeIn(tween(300)) + slideInHorizontally(
                                     initialOffsetX = { -it },
                                     animationSpec = tween(300)
@@ -269,7 +266,7 @@ fun StatScreen(
                                     // Filtros
                                     Column {
                                         Text(
-                                            text = "Filtrar por:",
+                                            text = stringResource(id = R.string.stats_filter),
                                             style = MaterialTheme.typography.titleLarge,
                                             color = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.padding(bottom = 8.dp)
@@ -277,7 +274,7 @@ fun StatScreen(
                                         FilterableDropdown(
                                             items = exerOptions,
                                             selectedValue = selected ?: "",
-                                            placeholder = "Ejercicio",
+                                            placeholder = stringResource(id = R.string.stats_exercises),
                                             onItemSelected = { viewModel.onExerciseSelected(it) },
                                             modifier = Modifier.fillMaxWidth(),
                                             textFieldHeight = 55.dp,
@@ -342,7 +339,7 @@ fun StatScreen(
                                             modifier = Modifier.padding(8.dp)
                                         ) {
                                             Text(
-                                                text = "Esfuerzo",
+                                                text = stringResource(id = R.string.stats_effort),
                                                 style = MaterialTheme.typography.bodyLarge,
                                                 color = traiBlue
                                             )
@@ -362,7 +359,7 @@ fun StatScreen(
                                     // Gráfica Por peso
                                     Column {
                                         Text(
-                                            text = "Por peso:",
+                                            text = stringResource(id = R.string.stats_by_weight),
                                             style = MaterialTheme.typography.titleLarge,
                                             color = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.padding(bottom = 8.dp)
@@ -381,7 +378,7 @@ fun StatScreen(
                                     // Gráfica Por repeticiones
                                     Column {
                                         Text(
-                                            text = "Por repeticiones:",
+                                            text = stringResource(id = R.string.stats_by_reps),
                                             style = MaterialTheme.typography.titleLarge,
                                             color = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.padding(bottom = 8.dp)
@@ -471,7 +468,7 @@ fun StatScreen(
                         // TAB: Mis medidas
                         item {
                             AnimatedVisibility(
-                                visible = selectedTab == "Mis medidas",
+                                visible = selectedTab == StatTab.MEASUREMENTS,
                                 enter = fadeIn(tween(300)) + slideInHorizontally(
                                     initialOffsetX = { it },
                                     animationSpec = tween(300)
@@ -525,7 +522,7 @@ fun StatScreen(
                                     } else {
                                         // Dropdown para seleccionar métrica corporal
                                         Text(
-                                            text = "Seleccionar medida:",
+                                            text = stringResource(id = R.string.stats_size_select),
                                             style = MaterialTheme.typography.titleLarge,
                                             color = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.padding(bottom = 8.dp)
@@ -533,7 +530,7 @@ fun StatScreen(
                                         FilterableDropdown(
                                             items = availableBodyMetrics.map { it.displayName },
                                             selectedValue = selectedBodyMetric?.displayName ?: "",
-                                            placeholder = "Medida corporal",
+                                            placeholder = stringResource(id = R.string.stats_size_placeholder),
                                             onItemSelected = { selectedName ->
                                                 selectedBodyMetric =
                                                     availableBodyMetrics.find { it.displayName == selectedName }
@@ -548,7 +545,7 @@ fun StatScreen(
                                         // Gráfico de progreso de medidas corporales
                                         selectedBodyMetric?.let { metric ->
                                             Text(
-                                                text = "Progreso de ${metric.displayName}:",
+                                                text = stringResource(id = R.string.stats_size_progress) + "${metric.displayName}:",
                                                 style = MaterialTheme.typography.titleLarge,
                                                 color = MaterialTheme.colorScheme.onBackground,
                                                 modifier = Modifier.padding(bottom = 8.dp)
@@ -595,7 +592,7 @@ fun StatScreen(
                                                             .padding(16.dp)
                                                     ) {
                                                         Text(
-                                                            text = "Resumen de ${metric.displayName}",
+                                                            text = stringResource(id = R.string.stats_size_resume) + "${metric.displayName}",
                                                             style = MaterialTheme.typography.titleMedium,
                                                             color = Color.White,
                                                             modifier = Modifier.padding(bottom = 8.dp)
@@ -607,7 +604,7 @@ fun StatScreen(
                                                         ) {
                                                             Column {
                                                                 Text(
-                                                                    "Valor actual:",
+                                                                    stringResource(id = R.string.stats_actual_value),
                                                                     color = Color.Gray,
                                                                     style = MaterialTheme.typography.bodySmall
                                                                 )
@@ -618,7 +615,7 @@ fun StatScreen(
                                                             }
                                                             Column {
                                                                 Text(
-                                                                    "Cambio total:",
+                                                                    stringResource(id = R.string.stats_total_change),
                                                                     color = Color.Gray,
                                                                     style = MaterialTheme.typography.bodySmall
                                                                 )
@@ -629,7 +626,8 @@ fun StatScreen(
                                                             }
                                                             Column {
                                                                 Text(
-                                                                    "Registros:",
+                                                                    stringResource(id = R.string.stats_size_records)
+                                                                    ,
                                                                     color = Color.Gray,
                                                                     style = MaterialTheme.typography.bodySmall
                                                                 )

@@ -27,11 +27,13 @@ import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.develop.traiscore.R
 import com.develop.traiscore.domain.model.ExerciseProgressData
 import com.develop.traiscore.domain.model.RadarChartData
 import com.develop.traiscore.presentation.theme.traiBlue
@@ -45,7 +47,7 @@ import kotlin.math.sin
 fun ProgressRadarChart(
     radarData: RadarChartData,
     modifier: Modifier = Modifier,
-    title: String = "Top 5 Ejercicios - Progreso"
+    title: String = stringResource(id = R.string.stats_top_5_exer)
 ) {
     Column(
         modifier = modifier,
@@ -292,7 +294,7 @@ private fun ProgressLegend(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
-            text = "🏆 Top 3 Ejercicios",
+            text = stringResource(id = R.string.stats_top_3_exer),
             style = MaterialTheme.typography.bodyMedium,
             color = traiOrange,
             fontWeight = FontWeight.Bold
@@ -305,7 +307,7 @@ private fun ProgressLegend(
 
         if (exercisesToShow.isEmpty()) {
             Text(
-                text = "Sin datos suficientes",
+                text = stringResource(id = R.string.stats_top_3_no_data),
                 style = MaterialTheme.typography.bodySmall,
                 color = Color.Gray,
                 modifier = Modifier.padding(vertical = 4.dp)

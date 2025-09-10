@@ -50,11 +50,11 @@
 
     <!--Today view Screen-->
 
-    <string name="today_session_active">Sesión activa</string>
-    <string name="today_close_session">Terminar sesión</string>
-    <string name="today_today">Hoy</string>
-    <string name="today_no_data_start">No tienes entrenamientos registrados para hoy. ¡Agrega tu primer ejercicio!</string>
-    <string name="today_limit_data">Has alcanzado el límite de 6 sesiones. Selecciona una existente para entrenar.</string>
+    <string name="today_session_active">Aktive Sitzung</string>
+    <string name="today_close_session">Sitzung beenden</string>
+    <string name="today_today">Heute</string>
+    <string name="today_no_data_start">Du hast heute keine Workouts eingetragen. Füge deine erste Übung hinzu!</string>
+    <string name="today_limit_data">Du hast das Limit von 6 Sitzungen erreicht. Wähle eine bestehende aus, um zu trainieren.</string>
     <string name="today_end_session">Sitzung beenden</string>
     <string name="today_end">Beenden</string>
     <string name="today_cancel">Abbrechen</string>
@@ -83,6 +83,7 @@
     <string name="camara_permission">Erlaube den Zugriff, um deine Fotos anzusehen</string>
     <string name="camara_permission_button">Zugriff erlauben</string>
     <string name="camara_choose_photo">Foto auswählen</string>
+    <string name="camara_no_photo">Keine Fotos</string>
 
     <string name="filter_main_exercise">Hauptübung</string>
     <string name="filter_no_main_exercise">Keine Trainings</string>
@@ -90,6 +91,8 @@
     <string name="filter_no_max_reps">Keine Einträge</string>
     <string name="filter_total_weight_today">Gesamtgewicht, das heute gehoben wurde</string>
     <string name="filter_total_sessions_month">Trainingseinheiten in diesem Monat</string>
+    <string name="filter_title">TRAININGSEINHEIT</string>
+    <string name="no_data_start_to_add">Du hast noch keine Maße gespeichert.\nFüge dein erstes Maß hinzu, um zu starten!</string>
 
 
     <!--STATS-->
@@ -109,15 +112,24 @@
     <string name="stats_top_3_exer">Top 3 Übungen</string>
     <string name="stats_top_3_no_data">Nicht genügend Daten</string>
 
-    <!--ADD EXERCISES-->
+    <string name="stats_size_select">Maß auswählen:</string>
+    <string name="stats_size_progress">Maß auswählen:</string>
+    <string name="stats_size_resume">Zusammenfassung von </string>
+    <string name="stats_size_placeholder">Körpermaß</string>
+    <string name="stats_actual_value">Aktueller Wert:</string>
+    <string name="stats_total_change">Gesamtänderung:</string>
+    <string name="stats_size_records">Messungen:</string>
 
-    <string name="add_exer_new_activity">Top 3 Übungen</string>
+
+    <!--ADD EXERCISES-->
+    <string name="add_activity_title">Neue Aktivität</string>
     <string name="add_exer_select_exer">Übung auswählen</string>
     <string name="add_exer_weight">Gewicht</string>
     <string name="add_exer_reps">Wiederholungen</string>
     <string name="add_exer_rir">RIR:</string>
     <string name="add_exer_save">Speichern</string>
     <string name="add_exer_cancel">Abbrechen</string>
+    <string name="add_exer_saved">Gespeichert!</string>
 
     <!--New Session-->
 
