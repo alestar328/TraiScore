@@ -50,7 +50,6 @@ data class TrainerInfo(
     val photoUrl: String? = null
 )
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(
     navController: NavHostController,
@@ -358,7 +357,7 @@ fun ProfileScreen(
                             containerColor = traiOrange,
                             contentColor = Color.Black,
                             painter = painterResource(id = R.drawable.exercises_icon),
-                            onClick = { }
+                            onClick = {navController.navigate(NavigationRoutes.MyExercises.route)}
                         )
                     }
                 }

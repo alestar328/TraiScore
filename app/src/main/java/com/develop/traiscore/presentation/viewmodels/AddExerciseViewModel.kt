@@ -32,6 +32,10 @@ class AddExerciseViewModel @Inject constructor(
     private val userId = FirebaseAuth.getInstance().currentUser!!.uid
     private val firestore = Firebase.firestore
 
+    var exercisesWithCategory by mutableStateOf<List<Pair<String, String>>>(emptyList())
+        private set
+
+
     private val routinesRef = Firebase.firestore
         .collection("users")
         .document(userId)
@@ -62,6 +66,54 @@ class AddExerciseViewModel @Inject constructor(
         // Y de la subcolección del usuario (ejercicios personalizados)
         loadAllExercises()
     }
+    fun loadAllExercisesWithCategory() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            println("❌ Usuario no autenticado")
+            return
+        }
+
+        val userId = currentUser.uid
+        val allExercisesWithCategory = mutableListOf<Pair<String, String>>()
+
+        // Primero cargar ejercicios por defecto de la colección global
+        Firebase.firestore.collection("exercises")
+            .get()
+            .addOnSuccessListener { globalSnapshot ->
+                val defaultExercises = globalSnapshot.documents.mapNotNull { doc ->
+                    val name = doc.getString("name")
+                    val category = doc.getString("category")
+                    if (name != null && category != null) Pair(name, category) else null
+                }
+                allExercisesWithCategory.addAll(defaultExercises)
+
+                // Luego cargar ejercicios personalizados de la subcolección del usuario
+                Firebase.firestore.collection("users")
+                    .document(userId)
+                    .collection("exercises")
+                    .get()
+                    .addOnSuccessListener { userSnapshot ->
+                        val userExercises = userSnapshot.documents.mapNotNull { doc ->
+                            val name = doc.getString("name")
+                            val category = doc.getString("category")
+                            if (name != null && category != null) Pair(name, category) else null
+                        }
+                        allExercisesWithCategory.addAll(userExercises)
+
+                        // Actualizar la lista combinada sin duplicados (por nombre)
+                        exercisesWithCategory = allExercisesWithCategory.distinctBy { it.first }
+                    }
+                    .addOnFailureListener { exception ->
+                        println("❌ Error al cargar ejercicios del usuario: ${exception.message}")
+                        // Si falla, al menos usar los ejercicios por defecto
+                        exercisesWithCategory = defaultExercises
+                    }
+            }
+            .addOnFailureListener { exception ->
+                println("❌ Error al cargar ejercicios por defecto: ${exception.message}")
+            }
+    }
+
     private fun loadAllExercises() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser == null) {

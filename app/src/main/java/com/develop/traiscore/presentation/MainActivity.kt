@@ -59,6 +59,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import com.develop.traiscore.presentation.screens.LoginScreenRoute
+import com.develop.traiscore.presentation.screens.MyExercisesUI
 import com.develop.traiscore.presentation.screens.RoutineMenuScreen
 import com.develop.traiscore.presentation.screens.RoutineScreen
 import com.develop.traiscore.presentation.screens.ScreenModeUI
@@ -333,6 +334,10 @@ fun AppNavigation(navController: NavHostController) {
         navController = navController,
         startDestination = startRoute
     ) {
+        composable(NavigationRoutes.MyExercises.route) {
+            MyExercisesUI(navController = navController)
+        }
+
         composable(NavigationRoutes.Login.route) {
             LoginScreenRoute(
                 onLoginSuccess = {
