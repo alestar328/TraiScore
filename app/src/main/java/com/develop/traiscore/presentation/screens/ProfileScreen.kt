@@ -18,6 +18,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -329,7 +331,8 @@ fun ProfileScreen(
                         text = "Gestionar Invitaciones",
                         containerColor = traiBlue,
                         contentColor = Color.White,
-                        icon = Icons.Default.AddCircle,
+
+                        painter = rememberVectorPainter(image = Icons.Default.AddCircle),
                         onClick = {
                             navController.navigate(NavigationRoutes.TrainerInvitations.route)
                         }
@@ -339,21 +342,32 @@ fun ProfileScreen(
 
                 // Botones principales
                 if (currentUserRole == UserRole.CLIENT) {
-                    ProfileButton(
-                        text = "Mis medidas",
-                        containerColor = traiBlue,
-                        contentColor = Color.Black,
-                        icon = Icons.Default.Home,
-                        onClick = onMeasurementsClick
-                    )
-                    Spacer(Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween  // Espacio entre botones
+                    ) {
+                        ProfileButton(
+                            text = "Mis medidas",
+                            containerColor = traiBlue,
+                            contentColor = Color.Black,
+                            painter = rememberVectorPainter(image = Icons.Default.Home),
+                            onClick = onMeasurementsClick
+                        )
+                        ProfileButton(
+                            text = "Mis ejercicios",
+                            containerColor = traiOrange,
+                            contentColor = Color.Black,
+                            painter = painterResource(id = R.drawable.exercises_icon),
+                            onClick = { }
+                        )
+                    }
                 }
-
+                Spacer(Modifier.height(12.dp))
                 ProfileButton(
                     text = "Cerrar sesión",
                     containerColor = Color.Red,
                     contentColor = Color.White,
-                    icon = Icons.Default.Clear,
+                    painter = rememberVectorPainter(image = Icons.Default.Clear),
                     onClick = {
                         scope.launch {
                             // Limpiar listener antes de cerrar sesión
@@ -549,26 +563,26 @@ fun ProfileButton(
     modifier: Modifier = Modifier,
     containerColor: Color = Color(0xFFE0E0E0),
     contentColor: Color = Color.Black,
-    icon: androidx.compose.ui.graphics.vector.ImageVector? = null,
+    painter: Painter? = null, // Cambio de ImageVector a Painter
     onClick: () -> Unit
 ) {
     Button(
         onClick = onClick,
         modifier = modifier
-            .fillMaxWidth()
-            .height(56.dp),
+            .widthIn(min = 80.dp)
+            .height(80.dp),
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = containerColor,
             contentColor = contentColor
         ),
-        contentPadding = PaddingValues(horizontal = 24.dp)
+        contentPadding = PaddingValues(horizontal = 12.dp)
     ) {
-        if (icon != null) {
+        if (painter != null) {
             Icon(
-                imageVector = icon,
+                painter = painter, // Usamos el Painter aquí
                 contentDescription = null,
-                modifier = Modifier.size(20.dp)
+                modifier = Modifier.size(28.dp)
             )
             Spacer(modifier = Modifier.width(12.dp))
         }

@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -21,6 +22,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -63,7 +65,7 @@ fun LanguageScreenUI(
 ) {
     val currentLanguage by viewModel.currentLanguage.collectAsState()
 
-    // For now, only enable Spanish and German as you mentioned
+    // Para ahora, solo habilitamos español y alemán como mencionaste
     val languages = listOf(
         Language("es", "Español", "🇪🇸"),
         Language("de", "Deutsch", "🇩🇪"),
@@ -111,31 +113,40 @@ fun LanguageScreenUI(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
-                .padding(TraiScoreTheme.dimens.paddingMedium)
-                .verticalScroll(rememberScrollState()),
-            horizontalAlignment = Alignment.CenterHorizontally
+                .verticalScroll(rememberScrollState())
         ) {
             // Título descriptivo
             Text(
                 text = stringResource(R.string.language_description), // "Selecciona tu idioma preferido"
-                style = MaterialTheme.typography.bodyLarge.copy(
+                style = MaterialTheme.typography.bodyMedium.copy(
                     color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Start
                 ),
-                modifier = Modifier.padding(bottom = 32.dp)
+                modifier = Modifier.padding(
+                    horizontal = 16.dp,
+                    vertical = 16.dp
+                )
             )
 
             // Lista de idiomas
-            languages.forEach { language ->
+            languages.forEachIndexed { index, language ->
                 LanguageCard(
                     language = language,
                     isSelected = currentLanguage == language.code,
                     onClick = {
                         viewModel.setLanguage(language.code)
-                        onLanguageChanged(language.code) // Notify parent
+                        onLanguageChanged(language.code) // Notificar al padre
                     }
                 )
-                Spacer(modifier = Modifier.height(12.dp))
+
+                // Añadir divisor excepto después del último elemento
+                if (index < languages.lastIndex) {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        thickness = 0.5.dp,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.1f)
+                    )
+                }
             }
         }
     }
@@ -148,71 +159,63 @@ fun LanguageCard(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(TraiScoreTheme.dimens.roundedShapeNormal))
-            .clickable { onClick() },
-        colors = CardDefaults.cardColors(
-            containerColor = if (isSelected) {
-                MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        ),
-        elevation = CardDefaults.cardElevation(
-            defaultElevation = if (isSelected) 8.dp else 2.dp
-        )
+            .clickable { onClick() }
+            .background(
+                if (isSelected) {
+                    MaterialTheme.colorScheme.primary.copy(alpha = 0.05f)
+                } else {
+                    Color.Transparent
+                }
+            )
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(20.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            modifier = Modifier.weight(1f)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically
+            // Bandera emoji
+            Text(
+                text = language.flag,
+                fontSize = 24.sp,
+                modifier = Modifier.padding(end = 16.dp)
+            )
+
+            // Nombre del idioma
+            Text(
+                text = language.name,
+                style = MaterialTheme.typography.bodyLarge.copy(
+                    fontWeight = FontWeight.Normal,
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.primary
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    }
+                )
+            )
+        }
+
+        // Icono de verificación para idioma seleccionado
+        if (isSelected) {
+            Box(
+                modifier = Modifier
+                    .size(20.dp)
+                    .background(
+                        MaterialTheme.colorScheme.primary,
+                        CircleShape
+                    ),
+                contentAlignment = Alignment.Center
             ) {
-                // Flag emoji
-                Text(
-                    text = language.flag,
-                    fontSize = 32.sp,
-                    modifier = Modifier.padding(end = 16.dp)
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    contentDescription = stringResource(R.string.language_selected), // "Seleccionado"
+                    tint = Color.White,
+                    modifier = Modifier.size(12.dp)
                 )
-
-                // Language name
-                Text(
-                    text = language.name,
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                        color = if (isSelected) {
-                            MaterialTheme.colorScheme.primary
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
-                    )
-                )
-            }
-
-            // Check icon for selected language
-            if (isSelected) {
-                Box(
-                    modifier = Modifier
-                        .size(24.dp)
-                        .background(
-                            MaterialTheme.colorScheme.primary,
-                            RoundedCornerShape(12.dp)
-                        ),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Check,
-                        contentDescription = stringResource(R.string.language_selected), // "Seleccionado"
-                        tint = Color.White,
-                        modifier = Modifier.size(16.dp)
-                    )
-                }
             }
         }
     }

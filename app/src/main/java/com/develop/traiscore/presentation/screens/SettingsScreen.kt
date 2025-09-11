@@ -19,7 +19,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Star
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.R
-import com.develop.traiscore.data.firebaseData.saveExerciseToFirebase
 import com.develop.traiscore.presentation.components.AddExerciseDialogToDB
 import com.develop.traiscore.presentation.components.AutoResizedText
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
@@ -131,7 +130,7 @@ fun SettingsScreen(
                     onClick = { onNavigateToCreateCategory() }
                 )
                 SettingsOptionRow(
-                    icon = { Icon(Icons.Default.Star, contentDescription = "Cambiar idioma", tint = Color.Cyan) },
+                    icon = { Icon(painter = painterResource(R.drawable.language_icon), contentDescription = "Cambiar idioma", tint = Color.Cyan, modifier = Modifier.size(24.dp)) },
                     label = "Cambiar idioma",
                     onClick = { onNavigateToLanguage() }
                 )

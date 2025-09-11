@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Navigation Labels -->
+    <string name="nav_exercises">エクササイズ</string>
+    <string name="nav_stats">統計</string>
+    <string name="nav_add">追加</string>
+    <string name="nav_routines">ルーティン</string>
+    <string name="nav_profile">プロフィール</string>
+    <string name="nav_clients">マイ クライアント</string>
+
+    <!-- Language Screen -->
+    <string name="language_title">言語</string>
+    <string name="language_description">希望する言語を選択してください</string>
+    <string name="language_selected">選択済み</string>
+    <string name="back_button">戻る</string>
+
+    <string name="app_name">TraiScore</string>
+    <string name="trai_Score">TraiScore</string>
+    <string name="s_logan">トレーニングを記録しよう</string>
+    <string name="app_logo">アプリのロゴ</string>
+    <string name="login">ログイン</string>
+
+    <string name="category_chest">胸</string>
+    <string name="category_back">背中</string>
+    <string name="category_glutes">臀部</string>
+    <string name="category_legs">脚</string>
+    <string name="category_arms">腕</string>
+    <string name="category_shoulders">肩</string>
+    <string name="category_core">腹筋</string>
+
+    <!--Navbar-->
+    <string name="navbar_exercises">エクササイズ</string>
+    <string name="navbar_stats">グラフ</string>
+    <string name="navbar_routines">ルーティン</string>
+    <string name="navbar_profile">プロフィール</string>
+
+    <!--Exercise Screen-->
+    <string name="exer_screen_welcome_phrase">さあ、トレーニングの時間だ！</string>
+    <string name="exer_screen_my_sessions">マイ セッション</string>
+    <string name="exer_screen_cancel">キャンセル</string>
+    <string name="exer_new_session">新しいセッション</string>
+    <string name="exer_name_it">名前を付けて</string>
+    <string name="exer_no_data_session">今日は登録されたトレーニングがありません。</string>
+    <string name="exer_add_first_session">最初のエクササイズを追加しよう！</string>
+    <string name="exer_no_trainings">トレーニングなし</string>
+
+    <!--Today view Screen-->
+    <string name="today_session_active">アクティブ セッション</string>
+    <string name="today_close_session">セッションを終了</string>
+    <string name="today_today">今日</string>
+    <string name="today_no_data_start">今日は登録されたトレーニングがありません。最初のエクササイズを追加しよう！</string>
+    <string name="today_limit_data">セッション数の上限 (6) に達しました。既存のものを選択してください。</string>
+    <string name="today_end_session">セッションを終了</string>
+    <string name="today_end">終了</string>
+    <string name="today_cancel">キャンセル</string>
+    <string name="today_closing_message">セッションを終了してもよろしいですか？</string>
+    <string name="today_closing_message2">実行したエクササイズは履歴に保存されます。</string>
+
+    <!--Calendar-->
+    <string name="calendar_year">年</string>
+    <string name="calendar_year_no_data">トレーニングなし</string>
+    <string name="calendar_year_days_with_data">トレーニングした日数</string>
+    <string name="calendar_month">月</string>
+    <string name="calendar_month_no_data">今日は登録されたエクササイズがありません</string>
+    <string name="calendar_month_no_data_that_day">その日には登録されたエクササイズがありません</string>
+    <string name="calendar_month_exercises">エクササイズ</string>
+    <string name="calendar_month_series">セット</string>
+    <string name="calendar_month_reps">回数</string>
+    <string name="calendar_month_summation">合計</string>
+    <string name="calendar_today">今日</string>
+
+    <!--Camera & filter-->
+    <string name="camara_gallery">ギャラリー</string>
+    <string name="camara_access_gallery">ギャラリーへのアクセス</string>
+    <string name="camara_permission">写真を見るためにアクセスを許可してください</string>
+    <string name="camara_permission_button">アクセスを許可</string>
+    <string name="camara_choose_photo">写真を選択</string>
+    <string name="camara_no_photo">写真なし</string>
+
+    <string name="filter_main_exercise">メイン エクササイズ</string>
+    <string name="filter_no_main_exercise">トレーニングなし</string>
+    <string name="filter_max_reps">最大回数</string>
+    <string name="filter_no_max_reps">記録なし</string>
+    <string name="filter_total_weight_today">今日の総挙上重量</string>
+    <string name="filter_total_sessions_month">今月のセッション数</string>
+    <string name="filter_title">トレーニング セッション</string>
+    <string name="no_data_start_to_add">まだ測定値が保存されていません。\n最初の測定を追加して始めましょう！</string>
+
+    <!--STATS-->
+    <string name="stats_my_sizes">自分の測定</string>
+    <string name="stats_my_sizes_no_data">データ不足</string>
+    <string name="stats_my_sizes_no_data_message">進捗を見るには少なくとも 2 件の測定が必要です</string>
+
+    <string name="stats_my_records">自分の記録</string>
+    <string name="stats_filter">フィルター:</string>
+    <string name="stats_exercises">エクササイズ</string>
+    <string name="stats_effort">負荷</string>
+    <string name="stats_by_weight">重量別:</string>
+    <string name="stats_by_reps">回数別:</string>
+    <string name="stats_top_5_exer">トップ5エクササイズ – 進捗</string>
+
+    <string name="stats_top_3_exer">トップ3エクササイズ</string>
+    <string name="stats_top_3_no_data">データ不足</string>
+
+    <string name="stats_size_select">測定を選択:</string>
+    <string name="stats_size_progress">進捗：</string>
+    <string name="stats_size_resume">概要：</string>
+    <string name="stats_size_placeholder">身体測定</string>
+    <string name="stats_actual_value">現在の値：</string>
+    <string name="stats_total_change">総変化：</string>
+    <string name="stats_size_records">記録：</string>
+
+    <!--ADD ACTIVITY-->
+    <string name="add_activity_title">新しいアクティビティ</string>
+    <string name="add_exer_select_exer">エクササイズを選択</string>
+    <string name="add_exer_weight">重量</string>
+    <string name="add_exer_reps">回数</string>
+    <string name="add_exer_rir">RIR:</string>
+    <string name="add_exer_save">保存</string>
+    <string name="add_exer_cancel">キャンセル</string>
+    <string name="add_exer_saved">保存しました！</string>
+
+    <!--New Session-->
+    <string name="new_session">新しいセッション</string>
+    <string name="new_session_name_it">名前を付けて</string>
+    <string name="new_session_placeholder">フルボディ</string>
+    <string name="new_session_confirm">作成を確認</string>
+    <string name="new_session_cancel">キャンセル</string>
+
+    <!--QuickStats-->
+    <string name="quickstats_exer">エクササイズ</string>
+    <string name="quickstats_series">セット</string>
+    <string name="quickstats_reps">回数</string>
+    <string name="quickstats_sumatory">合計</string>
+
+    <!--ROUTINE-->
+    <string name="routines_no_data">ルーティンなし</string>
+    <string name="routines_no_data_message">保存されたルーティンがありません</string>
+    <string name="routines_accept">OK</string>
+
+    <!-- Session card -->
+    <string name="session_card_touch">タップして開始</string>
+    <string name="session_new_session">新しいセッション</string>
+
+    <!--PROFILE-->
+    <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
+</resources>
