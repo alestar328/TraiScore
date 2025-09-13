@@ -85,9 +85,9 @@
     <string name="camara_choose_photo">Seleccionar foto</string>
     <string name="camara_no_photo">No hay fotos</string>
 
-    <string name="filter_main_exercise">Ejercicio principal</string>
+    <string name="filter_main_exercise">PR de hoy</string>
     <string name="filter_no_main_exercise">Sin entrenamientos</string>
-    <string name="filter_max_reps">Repeticiones máximas</string>
+    <string name="filter_max_reps">Top reps</string>
     <string name="filter_no_max_reps">Sin registros</string>
     <string name="filter_total_weight_today">Peso total levantado hoy</string>
     <string name="filter_total_sessions_month">sesiones de entrenamiento este mes</string>
