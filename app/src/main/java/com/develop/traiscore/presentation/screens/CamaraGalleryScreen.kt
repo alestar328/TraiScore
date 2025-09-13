@@ -178,7 +178,8 @@ fun CameraGalleryScreen(
             maxReps = maxReps,
             trainingDays = trainingDays,
             onDismiss = {
-                navController.popBackStack()
+                showSocialShare = false
+                selectedPhoto = null
             },
             onShare = { bitmap ->
                 Log.d("CameraGallery", "📤 Compartir bitmap")

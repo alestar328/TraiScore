@@ -2,7 +2,6 @@ package com.develop.traiscore.presentation.screens
 
 import android.util.Log
 import android.widget.Toast
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -19,13 +18,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.ThumbUp
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -55,10 +54,12 @@ import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.ui.res.painterResource
+import com.develop.traiscore.R
 import com.develop.traiscore.data.local.entity.SubscriptionLimits
 import com.develop.traiscore.presentation.components.SubscriptionInfoCard
 import com.develop.traiscore.presentation.components.UpgradeDialog
+import com.develop.traiscore.presentation.theme.traiOrange
 import com.develop.traiscore.presentation.viewmodels.SubscriptionViewModel
 
 
@@ -246,125 +247,117 @@ fun BodyMeasurementsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Body Measurements", color = traiBlue) },
+                title = { Text("Medidas corporales", color = traiBlue) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
                         Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = navbarDay
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
         bottomBar = {
             Column {
-                // Fila de botones superiores (solo mostrar si las funciones no son vacías)
+                // Fila con ambos botones lado a lado
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 8.dp),
+                        .navigationBarsPadding()
+                        .padding(bottom = 25.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-
                     // Botón de historial
                     ExtendedFloatingActionButton(
                         onClick = onMeasurementsHistoryClick,
                         modifier = Modifier.weight(1f),
-                        containerColor = Color.Yellow,
+                        containerColor = traiOrange,
                         contentColor = Color.Black
                     ) {
                         Icon(
-                            Icons.Default.ThumbUp,
+                            painter = painterResource(id = R.drawable.history_logo),
                             contentDescription = "Historial",
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text("Ver Historial")
                     }
-                }
 
-                // Botón principal de guardar
-                ExtendedFloatingActionButton(
-                    onClick = {
-                        if (!bodyStatsViewModel.isLoading) {
-                            saveData()
-                        }
-                    },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(16.dp),
-                    text = {
-                        if (bodyStatsViewModel.isLoading) {
-                            Text("Guardando...")
-                        } else {
-                            Text("Save")
-                        }
-                    },
-                    icon = {
-                        if (bodyStatsViewModel.isLoading) {
-                            CircularProgressIndicator(
-                                modifier = Modifier.width(24.dp).height(24.dp),
-                                color = Color.White
-                            )
-                        } else {
-                            Icon(
-                                imageVector = Icons.Default.Check,
-                                contentDescription = "Save"
-                            )
-                        }
-                    },
-                    containerColor = traiBlue,
-                    contentColor = Color.White
-                )
+                    // Botón de guardar
+                    ExtendedFloatingActionButton(
+                        onClick = {
+                            if (!bodyStatsViewModel.isLoading) {
+                                saveData()
+                            }
+                        },
+                        modifier = Modifier.weight(1f),
+                        text = {
+                            if (bodyStatsViewModel.isLoading) {
+                                Text("Guardando...")
+                            } else {
+                                Text("Guardar")
+                            }
+                        },
+                        icon = {
+                            if (bodyStatsViewModel.isLoading) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.width(24.dp).height(24.dp),
+                                    color = Color.White
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Save"
+                                )
+                            }
+                        },
+                        containerColor = traiBlue,
+                        contentColor = Color.White
+                    )
+                }
             }
         },
         content = { inner ->
             Box(modifier = Modifier.fillMaxSize()) {
-                LazyColumn(
+                Column(
                     modifier = modifier
                         .fillMaxSize()
                         .navigationBarsPadding()
-                        .background(Color.LightGray)
-                        .padding(inner),
-                    verticalArrangement = Arrangement.spacedBy(24.dp),
-                    contentPadding = PaddingValues(16.dp)
+                        .background(MaterialTheme.colorScheme.background)
+                        .padding(inner)
+                        .padding(16.dp), // ✅ MOVIDO: padding del contenido
+                    verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     // Mostrar información de suscripción
                     subscriptionLimits?.let { limits ->
-                        item {
-                            SubscriptionInfoCard(limits = limits)
-                        }
+                        SubscriptionInfoCard(limits = limits)
                     }
+
                     // 1) Selector de género
-                    item {
-                        Text("Gender", style = MaterialTheme.typography.titleLarge)
-                        Spacer(Modifier.height(8.dp))
-                        Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                            genders.forEach { gender ->
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    RadioButton(
-                                        selected = (selectedGender == gender),
-                                        onClick = { selectedGender = gender },
-                                        colors = androidx.compose.material3.RadioButtonDefaults.colors(
-                                            selectedColor = traiBlue
-                                        ),
-                                        enabled = !bodyStatsViewModel.isLoading
-                                    )
-                                    Spacer(Modifier.width(4.dp))
-                                    Text(
-                                        text = gender,
-                                        color = if (bodyStatsViewModel.isLoading) Color.Gray else Color.Black
-                                    )
-                                }
+                    Text("Genero", style = MaterialTheme.typography.titleLarge)
+                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                        genders.forEach { gender ->
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                RadioButton(
+                                    selected = (selectedGender == gender),
+                                    onClick = { selectedGender = gender },
+                                    colors = androidx.compose.material3.RadioButtonDefaults.colors(
+                                        selectedColor = traiBlue
+                                    ),
+                                    enabled = !bodyStatsViewModel.isLoading
+                                )
+                                Text(
+                                    text = gender,
+                                    color = if (bodyStatsViewModel.isLoading) Color.Gray else Color.White
+                                )
                             }
                         }
                     }
 
                     // 2) Campos de medida en dos columnas
                     val entries = measurements.entries.toList()
-                    items(entries.chunked(2)) { pair ->
+                    entries.chunked(2).forEach { pair ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -382,19 +375,20 @@ fun BodyMeasurementsScreen(
                                         trailingIcon = {
                                             Text(
                                                 text = if (label == "Weight") "kg" else "cm",
-                                                color = Color.Gray
+                                                color = Color.White
                                             )
                                         },
                                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                                         colors = androidx.compose.material3.OutlinedTextFieldDefaults.colors(
                                             focusedBorderColor = traiBlue,
                                             focusedLabelColor = traiBlue,
-                                            cursorColor = traiBlue
+                                            cursorColor = traiBlue,
+                                            unfocusedBorderColor = Color.White,
+                                            unfocusedLabelColor = Color.White
                                         ),
                                         enabled = !bodyStatsViewModel.isLoading,
                                         modifier = Modifier
                                             .fillMaxWidth()
-                                            .height(56.dp)
                                     )
                                 }
                             }
@@ -404,7 +398,7 @@ fun BodyMeasurementsScreen(
                         }
                     }
                     // Espacio extra abajo para que no tape la bottom bar
-                    item { Spacer(Modifier.height(80.dp)) }
+                    Spacer(Modifier.height(80.dp))
                 }
 
                 // Indicador de carga inicial
