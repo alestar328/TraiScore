@@ -144,5 +144,37 @@
     <string name="session_new_session">New session</string>
 
     <!--PROFILE-->
+    <string name="profile_friends_count">Friends</string>
+    <string name="profile_my_sizes">My Measurements</string>
+    <string name="profile_my_exercises">My Exercises</string>
+    <string name="profile_close_session">Log Out</string>
+
+    <!--BODY MEASUREMENTS-->
+    <string name="measurement_chest">Chest</string>
+    <string name="measurement_waist">Waist</string>
+    <string name="measurement_height">Height</string>
+    <string name="measurement_thigh">Thigh</string>
+    <string name="measurement_arms">Arms</string>
+    <string name="measurement_neck">Neck</string>
+    <string name="measurement_calf">Calves</string>
+    <string name="measurement_weight">Weight</string>
+
+    <string name="unit_cm">cm</string>
+    <string name="unit_kg">kg</string>
+
+    <string name="measures_genre">Gender</string>
+    <string name="gender_male">Male</string>
+    <string name="gender_female">Female</string>
+    <string name="gender_other">Other</string>
+
+    <string name="save_measurements">Save</string>
+    <string name="view_history">View History</string>
+    <string name="measurements_title">Measurements History</string>
+    <string name="measures_actual">CURRENT</string>
+    <string name="measures_progress_now">Recent Progress</string>
+    <string name="measures_weight_change">Weight Change</string>
+    <string name="measures_since">Since</string>
+    <string name="measures_total_measure">Total Records</string>
+
     <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
 </resources>

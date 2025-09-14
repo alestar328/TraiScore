@@ -11,9 +11,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.develop.traiscore.R
 import com.develop.traiscore.data.local.entity.UserMeasurements
 import com.develop.traiscore.presentation.components.bodyMeasurements.EmptyContent
 import com.develop.traiscore.presentation.components.bodyMeasurements.ErrorContent
@@ -21,13 +23,11 @@ import com.develop.traiscore.presentation.components.bodyMeasurements.LoadingCon
 import com.develop.traiscore.presentation.components.bodyMeasurements.MeasurementHistoryCard
 import com.develop.traiscore.presentation.components.bodyMeasurements.NoResultsContent
 import com.develop.traiscore.presentation.components.bodyMeasurements.QuickStatsCard
-import com.develop.traiscore.presentation.components.bodyMeasurements.SearcherBar
 import com.develop.traiscore.presentation.components.bodyMeasurements.formatDate
 import com.develop.traiscore.presentation.components.bodyMeasurements.loadHistoryData
 import com.develop.traiscore.presentation.theme.*
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import com.google.firebase.Timestamp
-import java.util.*
 
 data class MeasurementHistoryItem(
     val id: String,
@@ -101,7 +101,7 @@ fun BodyMeasurementsHistoryScreen(
                 title = {
                     Text(
                         if (showCompareMode) "Comparando (${selectedForComparison.size})"
-                        else "Historial de Medidas",
+                        else stringResource(R.string.measurements_title),
                         color = traiBlue
                     )
                 },
@@ -178,14 +178,14 @@ fun BodyMeasurementsHistoryScreen(
                         }
                     }
                 },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = navbarDay)
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
             )
         }
     ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
-                .background(traiBackgroundDay)
+                .background(MaterialTheme.colorScheme.background)
                 .padding(paddingValues)
         ) {
             when {

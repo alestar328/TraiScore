@@ -144,5 +144,37 @@
     <string name="session_new_session">新しいセッション</string>
 
     <!--PROFILE-->
+    <string name="profile_friends_count">友達</string>
+    <string name="profile_my_sizes">自分のサイズ</string>
+    <string name="profile_my_exercises">自分のエクササイズ</string>
+    <string name="profile_close_session">ログアウト</string>
+
+    <!--体の測定-->
+    <string name="measurement_chest">胸囲</string>
+    <string name="measurement_waist">ウエスト</string>
+    <string name="measurement_height">身長</string>
+    <string name="measurement_thigh">太もも</string>
+    <string name="measurement_arms">腕</string>
+    <string name="measurement_neck">首</string>
+    <string name="measurement_calf">ふくらはぎ</string>
+    <string name="measurement_weight">体重</string>
+
+    <string name="unit_cm">cm</string>
+    <string name="unit_kg">kg</string>
+
+    <string name="measures_genre">性別</string>
+    <string name="gender_male">男性</string>
+    <string name="gender_female">女性</string>
+    <string name="gender_other">その他</string>
+
+    <string name="save_measurements">保存</string>
+    <string name="view_history">履歴を見る</string>
+    <string name="measurements_title">測定履歴</string>
+    <string name="measures_actual">現在</string>
+    <string name="measures_progress_now">最近の進捗</string>
+    <string name="measures_weight_change">体重の変化</string>
+    <string name="measures_since">以来</string>
+    <string name="measures_total_measure">総記録</string>
+
     <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
 </resources>

@@ -11,6 +11,7 @@ import com.develop.traiscore.domain.model.BodyMeasurementProgressBuilder
 import com.develop.traiscore.domain.model.BodyMeasurementProgressData
 import com.develop.traiscore.domain.model.BodyMeasurementType
 import com.develop.traiscore.domain.model.MeasurementSummary
+import com.develop.traiscore.domain.model.MeasurementType
 import com.develop.traiscore.presentation.screens.MeasurementHistoryItem
 import com.google.firebase.Firebase
 import com.google.firebase.Timestamp
@@ -297,8 +298,12 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
         isLoading = true
         errorMessage = null
 
+        // Generar ID único para el documento
+        val documentId = generateUniqueId()
+
         // Crear documento con estructura consistente
         val bodyStatsDocument = mapOf(
+            "id" to documentId,  // ✅ ID único agregado
             "userId" to userId,
             "gender" to gender,
             "measurements" to measurements,
@@ -306,15 +311,15 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
             "updatedAt" to FieldValue.serverTimestamp()
         )
 
-        // Guardar en subcolección del usuario
-        userStatsRef?.add(bodyStatsDocument)
-            ?.addOnSuccessListener { documentReference ->
+        // Guardar en subcolección del usuario con ID específico
+        userStatsRef?.document(documentId)?.set(bodyStatsDocument)
+            ?.addOnSuccessListener {
                 isLoading = false
                 // Actualizar el estado local
                 selectedGender = gender
                 bodyMeasurements = measurements
 
-                Log.d("BodyStatsVM", "✅ Medidas guardadas con ID: ${documentReference.id}")
+                Log.d("BodyStatsVM", "✅ Medidas guardadas con ID: $documentId")
                 onComplete(true, null)
             }
             ?.addOnFailureListener { exception ->
@@ -325,7 +330,54 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
                 onComplete(false, errorMsg)
             }
     }
+    private fun generateUniqueId(): String {
+        val timestamp = System.currentTimeMillis()
+        val random = (1000..9999).random()
+        return "measurement_${timestamp}_$random"
+    }
+    fun updateBodyStatsById(
+        documentId: String,
+        gender: String,
+        measurements: Map<String, String>,
+        onComplete: (success: Boolean, error: String?) -> Unit
+    ) {
+        val userId = getCurrentUserId()
+        if (userId.isEmpty()) {
+            onComplete(false, "Usuario no autenticado")
+            return
+        }
 
+        isLoading = true
+        errorMessage = null
+
+        val updateData = mapOf(
+            "gender" to gender,
+            "measurements" to measurements,
+            "updatedAt" to FieldValue.serverTimestamp()
+        )
+
+        val targetUserStatsRef = db
+            .collection("users")
+            .document(userId)
+            .collection("bodyStats")
+
+        targetUserStatsRef.document(documentId)
+            .update(updateData)
+            .addOnSuccessListener {
+                isLoading = false
+                selectedGender = gender
+                bodyMeasurements = measurements
+                Log.d("BodyStatsVM", "✅ Medidas actualizadas para ID: $documentId")
+                onComplete(true, null)
+            }
+            .addOnFailureListener { exception ->
+                isLoading = false
+                val errorMsg = "Error al actualizar: ${exception.message}"
+                errorMessage = errorMsg
+                Log.e("BodyStatsVM", "Error actualizando medidas", exception)
+                onComplete(false, errorMsg)
+            }
+    }
     /**
      * Actualiza las medidas existentes más recientes
      */
@@ -440,16 +492,8 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
     /**
      * Obtiene las medidas por defecto
      */
-    private fun getDefaultMeasurements(): Map<String, String> = mapOf(
-        "Height" to "",
-        "Weight" to "",
-        "Neck" to "",
-        "Chest" to "",
-        "Arms" to "",
-        "Waist" to "",
-        "Thigh" to "",
-        "Calf" to ""
-    )
+    private fun getDefaultMeasurements(): Map<String, String> =
+        MeasurementType.getDefaultMeasurements()
 
     /**
      * Resetea el estado del ViewModel

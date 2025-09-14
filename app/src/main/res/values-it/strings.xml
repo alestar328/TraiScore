@@ -144,5 +144,39 @@
     <string name="session_new_session">Nuova sessione</string>
 
     <!--PROFILE-->
+
+    <string name="profile_friends_count">Amici</string>
+    <string name="profile_my_sizes">Le mie misure</string>
+    <string name="profile_my_exercises">I miei esercizi</string>
+    <string name="profile_close_session">Disconnetti</string>
+
+    <!--MISURE CORPOREE-->
+    <string name="measurement_chest">Petto</string>
+    <string name="measurement_waist">Vita</string>
+    <string name="measurement_height">Altezza</string>
+    <string name="measurement_thigh">Coscia</string>
+    <string name="measurement_arms">Braccia</string>
+    <string name="measurement_neck">Collo</string>
+    <string name="measurement_calf">Polpacci</string>
+    <string name="measurement_weight">Peso</string>
+
+    <string name="unit_cm">cm</string>
+    <string name="unit_kg">kg</string>
+
+    <string name="measures_genre">Genere</string>
+    <string name="gender_male">Uomo</string>
+    <string name="gender_female">Donna</string>
+    <string name="gender_other">Altro</string>
+
+    <string name="save_measurements">Salva</string>
+    <string name="view_history">Vedi cronologia</string>
+    <string name="measurements_title">Storico misure</string>
+    <string name="measures_actual">ATTUALE</string>
+    <string name="measures_progress_now">Progressi recenti</string>
+    <string name="measures_weight_change">Variazione di peso</string>
+    <string name="measures_since">Da</string>
+    <string name="measures_total_measure">Totale registrazioni</string>
+
+
     <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
 </resources>

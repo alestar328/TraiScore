@@ -144,5 +144,38 @@
     <string name="session_new_session">Нова сесія</string>
 
     <!--PROFILE-->
+    <string name="profile_friends_count">Друзі</string>
+    <string name="profile_my_sizes">Мої вимірювання</string>
+    <string name="profile_my_exercises">Мої вправи</string>
+    <string name="profile_close_session">Вийти</string>
+
+    <!--MEDIDAS CORPORALES-->
+    <string name="measurement_chest">Груди</string>
+    <string name="measurement_waist">Талія</string>
+    <string name="measurement_height">Зріст</string>
+    <string name="measurement_thigh">Стегно</string>
+    <string name="measurement_arms">Руки</string>
+    <string name="measurement_neck">Шия</string>
+    <string name="measurement_calf">Ікри</string>
+    <string name="measurement_weight">Вага</string>
+
+    <string name="unit_cm">см</string>
+    <string name="unit_kg">кг</string>
+
+    <string name="measures_genre">Стать</string>
+    <string name="gender_male">Чоловік</string>
+    <string name="gender_female">Жінка</string>
+    <string name="gender_other">Інше</string>
+
+    <string name="save_measurements">Зберегти</string>
+    <string name="view_history">Переглянути історію</string>
+    <string name="measurements_title">Історія вимірювань</string>
+    <string name="measures_actual">ПОТОЧНЕ</string>
+    <string name="measures_progress_now">Останній прогрес</string>
+    <string name="measures_weight_change">Зміна ваги</string>
+    <string name="measures_since">З</string>
+    <string name="measures_total_measure">Загалом записів</string>
+
+
     <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
 </resources>

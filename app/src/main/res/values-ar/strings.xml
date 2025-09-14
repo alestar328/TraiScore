@@ -144,5 +144,37 @@
     <string name="session_new_session">جلسة جديدة</string>
 
     <!--PROFILE-->
+    <string name="profile_friends_count">الأصدقاء</string>
+    <string name="profile_my_sizes">قياساتي</string>
+    <string name="profile_my_exercises">تماريني</string>
+    <string name="profile_close_session">تسجيل الخروج</string>
+
+    <!--MEDIDAS CORPORALES-->
+    <string name="measurement_chest">الصدر</string>
+    <string name="measurement_waist">الخصر</string>
+    <string name="measurement_height">الطول</string>
+    <string name="measurement_thigh">الفخذ</string>
+    <string name="measurement_arms">الذراعين</string>
+    <string name="measurement_neck">العنق</string>
+    <string name="measurement_calf">الساق</string>
+    <string name="measurement_weight">الوزن</string>
+
+    <string name="unit_cm">سم</string>
+    <string name="unit_kg">كغ</string>
+
+    <string name="measures_genre">الجنس</string>
+    <string name="gender_male">رجل</string>
+    <string name="gender_female">امرأة</string>
+    <string name="gender_other">آخر</string>
+
+    <string name="save_measurements">احفظ</string>
+    <string name="view_history">عرض السجل</string>
+    <string name="measurements_title">سجل القياسات</string>
+    <string name="measures_actual">الحالي</string>
+    <string name="measures_progress_now">التقدم الحالي</string>
+    <string name="measures_weight_change">تغير الوزن</string>
+    <string name="measures_since">منذ</string>
+    <string name="measures_total_measure">إجمالي السجلات</string>
+
     <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
 </resources>

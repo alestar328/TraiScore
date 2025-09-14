@@ -18,8 +18,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.develop.traiscore.R
 import com.develop.traiscore.presentation.screens.MeasurementHistoryItem
 import com.develop.traiscore.presentation.theme.*
 import java.util.*
@@ -138,7 +140,7 @@ fun MeasurementHistoryCard(
                                         shape = RoundedCornerShape(4.dp)
                                     ) {
                                         Text(
-                                            "ACTUAL",
+                                            stringResource(R.string.measures_actual),
                                             modifier = Modifier.padding(
                                                 horizontal = 8.dp,
                                                 vertical = 2.dp

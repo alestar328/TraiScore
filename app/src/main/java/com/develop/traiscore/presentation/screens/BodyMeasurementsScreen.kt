@@ -6,7 +6,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,15 +15,10 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.ThumbUp
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -50,13 +44,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.develop.traiscore.presentation.theme.navbarDay
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import com.develop.traiscore.R
 import com.develop.traiscore.data.local.entity.SubscriptionLimits
+import com.develop.traiscore.domain.model.MeasurementType
 import com.develop.traiscore.presentation.components.SubscriptionInfoCard
 import com.develop.traiscore.presentation.components.UpgradeDialog
 import com.develop.traiscore.presentation.theme.traiOrange
@@ -73,35 +68,26 @@ fun BodyMeasurementsScreen(
     bodyStatsViewModel: BodyStatsViewModel = hiltViewModel(),
     subscriptionViewModel: SubscriptionViewModel = hiltViewModel(),
     onMeasurementsClick: () -> Unit,
-    onMeasurementsHistoryClick: () -> Unit // ← NUEVO PARÁMETRO
-
-
+    onMeasurementsHistoryClick: () -> Unit
 ) {
     val context = LocalContext.current
 
     // Estados locales para la UI
     var selectedGender by remember { mutableStateOf("Male") }
-    val genders = listOf("Male", "Female", "Other")
+    val genders = listOf(
+        "Male" to stringResource(R.string.gender_male),
+        "Female" to stringResource(R.string.gender_female),
+        "Other" to stringResource(R.string.gender_other)
+    )
     var showUpgradeDialog by remember { mutableStateOf(false) }
     var subscriptionLimits by remember { mutableStateOf<SubscriptionLimits?>(null) }
 
     // Estados de medidas - inicializar con datos del ViewModel o initialData
     val measurements = remember {
         mutableStateMapOf<String, String>().apply {
-            // Usar datos del ViewModel si están disponibles, sino usar initialData
-            val defaultMeasurements = mapOf(
-                "Height" to "",
-                "Weight" to "",
-                "Neck" to "",
-                "Chest" to "",
-                "Arms" to "",
-                "Waist" to "",
-                "Thigh" to "",
-                "Calf" to ""
-            )
-
-            defaultMeasurements.forEach { (key, defaultValue) ->
-                put(key, initialData[key] ?: defaultValue)
+            // Usar enum para obtener medidas por defecto
+            MeasurementType.getAllMeasurements().forEach { measurementType ->
+                put(measurementType.key, initialData[measurementType.key] ?: "")
             }
         }
     }
@@ -247,10 +233,13 @@ fun BodyMeasurementsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Medidas corporales", color = traiBlue) },
+                title = { Text(
+                    stringResource(R.string.measurements_title),
+                    color = traiBlue
+                ) },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -296,7 +285,7 @@ fun BodyMeasurementsScreen(
                             if (bodyStatsViewModel.isLoading) {
                                 Text("Guardando...")
                             } else {
-                                Text("Guardar")
+                                Text(stringResource(R.string.save_measurements))
                             }
                         },
                         icon = {
@@ -337,44 +326,46 @@ fun BodyMeasurementsScreen(
                     // 1) Selector de género
                     Text("Genero", style = MaterialTheme.typography.titleLarge)
                     Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
-                        genders.forEach { gender ->
+                        genders.forEach { (genderKey, genderDisplayName) ->
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 RadioButton(
-                                    selected = (selectedGender == gender),
-                                    onClick = { selectedGender = gender },
+                                    selected = (selectedGender == genderKey),
+                                    onClick = { selectedGender = genderKey },
                                     colors = androidx.compose.material3.RadioButtonDefaults.colors(
                                         selectedColor = traiBlue
                                     ),
                                     enabled = !bodyStatsViewModel.isLoading
                                 )
                                 Text(
-                                    text = gender,
+                                    text = genderDisplayName,
                                     color = if (bodyStatsViewModel.isLoading) Color.Gray else Color.White
                                 )
                             }
                         }
                     }
 
-                    // 2) Campos de medida en dos columnas
-                    val entries = measurements.entries.toList()
-                    entries.chunked(2).forEach { pair ->
+                    // ✅ CAMBIO: Campos de medida usando enum y strings resources
+                    val measurementTypes = MeasurementType.getAllMeasurements()
+                    measurementTypes.chunked(2).forEach { pair ->
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.spacedBy(16.dp)
                         ) {
-                            pair.forEach { (label, value) ->
+                            pair.forEach { measurementType ->
                                 Column(modifier = Modifier.weight(1f)) {
                                     OutlinedTextField(
-                                        value = value,
+                                        value = measurements[measurementType.key] ?: "",
                                         onValueChange = { newValue ->
                                             val validatedValue = validateMeasurementInput(newValue)
-                                            measurements[label] = validatedValue
+                                            measurements[measurementType.key] = validatedValue
                                         },
                                         singleLine = true,
-                                        label = { Text(label) },
+                                        label = {
+                                            Text(stringResource(measurementType.displayNameRes))
+                                        },
                                         trailingIcon = {
                                             Text(
-                                                text = if (label == "Weight") "kg" else "cm",
+                                                text = stringResource(measurementType.unitRes),
                                                 color = Color.White
                                             )
                                         },
@@ -387,8 +378,7 @@ fun BodyMeasurementsScreen(
                                             unfocusedLabelColor = Color.White
                                         ),
                                         enabled = !bodyStatsViewModel.isLoading,
-                                        modifier = Modifier
-                                            .fillMaxWidth()
+                                        modifier = Modifier.fillMaxWidth()
                                     )
                                 }
                             }

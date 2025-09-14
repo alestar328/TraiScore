@@ -144,5 +144,37 @@
     <string name="session_new_session">新增課程</string>
 
     <!--PROFILE-->
+    <string name="profile_friends_count">朋友</string>
+    <string name="profile_my_sizes">我的尺寸</string>
+    <string name="profile_my_exercises">我的锻炼</string>
+    <string name="profile_close_session">退出登录</string>
+
+    <!--MEDIDAS CORPORALES-->
+    <string name="measurement_chest">胸围</string>
+    <string name="measurement_waist">腰围</string>
+    <string name="measurement_height">身高</string>
+    <string name="measurement_thigh">大腿</string>
+    <string name="measurement_arms">手臂</string>
+    <string name="measurement_neck">颈围</string>
+    <string name="measurement_calf">小腿</string>
+    <string name="measurement_weight">体重</string>
+
+    <string name="unit_cm">厘米</string>
+    <string name="unit_kg">千克</string>
+
+    <string name="measures_genre">性别</string>
+    <string name="gender_male">男</string>
+    <string name="gender_female">女</string>
+    <string name="gender_other">其他</string>
+
+    <string name="save_measurements">保存</string>
+    <string name="view_history">查看历史</string>
+    <string name="measurements_title">测量历史</string>
+    <string name="measures_actual">当前</string>
+    <string name="measures_progress_now">最近进展</string>
+    <string name="measures_weight_change">体重变化</string>
+    <string name="measures_since">自</string>
+    <string name="measures_total_measure">总记录</string>
+
     <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
 </resources>

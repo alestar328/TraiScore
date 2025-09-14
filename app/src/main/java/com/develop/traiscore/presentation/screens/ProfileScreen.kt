@@ -22,6 +22,7 @@ import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -292,21 +293,9 @@ fun ProfileScreen(
                         .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    ProfileStat(count = "0", label = "Piques")
-                    Divider(
-                        modifier = Modifier
-                            .height(32.dp)
-                            .width(1.dp)
-                            .background(Color.LightGray)
-                    )
-                    ProfileStat(count = "0", label = "Amigos")
-                    Divider(
-                        modifier = Modifier
-                            .height(32.dp)
-                            .width(1.dp)
-                            .background(Color.LightGray)
-                    )
-                    ProfileStat(count = "0", label = "SEGUIDOS")
+
+                    ProfileStat(count = "0", label = stringResource(R.string.profile_friends_count))
+
                 }
 
                 Spacer(Modifier.height(24.dp))
@@ -346,14 +335,14 @@ fun ProfileScreen(
                         horizontalArrangement = Arrangement.SpaceBetween  // Espacio entre botones
                     ) {
                         ProfileButton(
-                            text = "Mis medidas",
+                            text = stringResource(R.string.profile_my_sizes),
                             containerColor = traiBlue,
                             contentColor = Color.Black,
                             painter = rememberVectorPainter(image = Icons.Default.Home),
                             onClick = onMeasurementsClick
                         )
                         ProfileButton(
-                            text = "Mis ejercicios",
+                            text = stringResource(R.string.profile_my_exercises),
                             containerColor = traiOrange,
                             contentColor = Color.Black,
                             painter = painterResource(id = R.drawable.exercises_icon),
@@ -363,7 +352,7 @@ fun ProfileScreen(
                 }
                 Spacer(Modifier.height(12.dp))
                 ProfileButton(
-                    text = "Cerrar sesión",
+                    text = stringResource(R.string.profile_close_session),
                     containerColor = Color.Red,
                     contentColor = Color.White,
                     painter = rememberVectorPainter(image = Icons.Default.Clear),
