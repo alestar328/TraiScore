@@ -60,6 +60,7 @@ import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import com.develop.traiscore.presentation.screens.LoginScreenRoute
 import com.develop.traiscore.presentation.screens.MyExercisesUI
+import com.develop.traiscore.presentation.screens.ProfileScreen
 import com.develop.traiscore.presentation.screens.RoutineMenuScreen
 import com.develop.traiscore.presentation.screens.RoutineScreen
 import com.develop.traiscore.presentation.screens.ScreenModeUI
@@ -409,11 +410,15 @@ fun AppNavigation(navController: NavHostController) {
         }
 
         composable(NavigationRoutes.MeasurementsHistory.route) {
+            val bodyStatsViewModel: BodyStatsViewModel = hiltViewModel()
+
             BodyMeasurementsHistoryScreen(
                 onBack = { navController.popBackStack() },
-                onEditMeasurement = { historyItem ->
-                    navController.navigate(NavigationRoutes.Measurements.route)
-                }
+                onEditMeasurement = { documentId ->
+                    // Handle navigation here where navController is available
+                    navController.navigate(NavigationRoutes.MeasurementsEdit.createRoute(documentId))
+                },
+                bodyStatsViewModel = bodyStatsViewModel
             )
         }
 
@@ -474,8 +479,15 @@ fun AppNavigation(navController: NavHostController) {
         }
 
         composable(NavigationRoutes.Measurements.route) {
+            val bodyStatsViewModel: BodyStatsViewModel = hiltViewModel()
+
             BodyMeasurementsScreen(
-                onBack = { navController.popBackStack() },
+                onBack = {
+                    // Navigate to Main screen instead of popBackStack
+                    navController.navigate(NavigationRoutes.Main.route) {
+                        popUpTo(NavigationRoutes.Measurements.route) { inclusive = true }
+                    }
+                },
                 onSave = { gender, data ->
                     navController.popBackStack()
                 },
@@ -483,7 +495,36 @@ fun AppNavigation(navController: NavHostController) {
                 onMeasurementsClick = { },
                 onMeasurementsHistoryClick = {
                     navController.navigate(NavigationRoutes.MeasurementsHistory.route)
-                }
+                },
+                bodyStatsViewModel = bodyStatsViewModel
+            )
+        }
+        composable(
+            route = NavigationRoutes.MeasurementsEdit.route,
+            arguments = listOf(navArgument("documentId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val documentId = backStackEntry.arguments?.getString("documentId") ?: return@composable
+            val bodyStatsViewModel: BodyStatsViewModel = hiltViewModel()
+
+            // Load the measurement for editing
+            LaunchedEffect(documentId) {
+                bodyStatsViewModel.loadMeasurementForEditById(documentId)
+            }
+
+            BodyMeasurementsScreen(
+                onBack = {
+                    bodyStatsViewModel.clearEditMode()
+                    navController.popBackStack()
+                },
+                onSave = { gender, data ->
+                    navController.popBackStack()
+                },
+                initialData = emptyMap(),
+                onMeasurementsClick = { },
+                onMeasurementsHistoryClick = {
+                    navController.navigate(NavigationRoutes.MeasurementsHistory.route)
+                },
+                bodyStatsViewModel = bodyStatsViewModel
             )
         }
         composable(NavigationRoutes.TrainerInvitations.route) {
@@ -661,16 +702,13 @@ fun AppNavigation(navController: NavHostController) {
         ) { backStackEntry ->
             val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
 
-            // Configurar BodyMeasurementsHistoryScreen para mostrar datos del cliente específico
             BodyMeasurementsHistoryScreen(
                 onBack = { navController.popBackStack() },
-                onEditMeasurement = { historyItem ->
-                    // Optionalmente navegar a editar medidas del cliente
-                    navController.navigate(NavigationRoutes.Measurements.route)
+                onEditMeasurement = { documentId ->
+                    // Navigate to edit screen with document ID
+                    navController.navigate(NavigationRoutes.MeasurementsEdit.createRoute(documentId))
                 },
                 bodyStatsViewModel = hiltViewModel<BodyStatsViewModel>().apply {
-                    // ✅ IMPORTANTE: Configurar el ViewModel para cargar datos del cliente específico
-                    // Necesitarás agregar un método setTargetUser en BodyStatsViewModel
                     setTargetUser(clientId)
                 }
             )

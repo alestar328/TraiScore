@@ -25,6 +25,7 @@ import com.develop.traiscore.presentation.components.bodyMeasurements.NoResultsC
 import com.develop.traiscore.presentation.components.bodyMeasurements.QuickStatsCard
 import com.develop.traiscore.presentation.components.bodyMeasurements.formatDate
 import com.develop.traiscore.presentation.components.bodyMeasurements.loadHistoryData
+import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.theme.*
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import com.google.firebase.Timestamp
@@ -42,7 +43,7 @@ data class MeasurementHistoryItem(
 fun BodyMeasurementsHistoryScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit,
-    onEditMeasurement: (MeasurementHistoryItem) -> Unit = {},
+    onEditMeasurement: (String) -> Unit = {},
     bodyStatsViewModel: BodyStatsViewModel = hiltViewModel()
 ) {
     var historyItems by remember { mutableStateOf<List<MeasurementHistoryItem>>(emptyList()) }
@@ -246,38 +247,32 @@ fun BodyMeasurementsHistoryScreen(
                                         item = item,
                                         isExpanded = expandedItemId == item.id,
                                         isCompareMode = showCompareMode,
-                                        isSelectedForComparison = selectedForComparison.contains(
-                                            item.id
-                                        ),
+                                        isSelectedForComparison = selectedForComparison.contains(item.id),
                                         onExpandToggle = {
-                                            expandedItemId =
-                                                if (expandedItemId == item.id) null else item.id
+                                            expandedItemId = if (expandedItemId == item.id) null else item.id
                                         },
-                                        onEdit = { onEditMeasurement(item) },
+                                        // ✅ CAMBIO: Pasar el item completo en lugar de solo ejecutar callback
+                                        onEdit = {
+                                            Log.d("HistoryScreen", "Editando item: ${item.id}")
+                                            onEditMeasurement(item.id) // Pass just the document ID to the callback
+                                        },
                                         onCompareToggle = { itemId ->
-                                            selectedForComparison =
-                                                if (selectedForComparison.contains(itemId)) {
-                                                    selectedForComparison - itemId
-                                                } else if (selectedForComparison.size < 3) {
-                                                    selectedForComparison + itemId
-                                                } else {
-                                                    selectedForComparison // No permitir más de 3
-                                                }
+                                            selectedForComparison = if (selectedForComparison.contains(itemId)) {
+                                                selectedForComparison - itemId
+                                            } else if (selectedForComparison.size < 3) {
+                                                selectedForComparison + itemId
+                                            } else {
+                                                selectedForComparison
+                                            }
                                         },
-                                        onDelete = { // ✅ AÑADIR callback de eliminación
-                                            // Eliminar de Firebase y actualizar lista local
+                                        onDelete = {
                                             bodyStatsViewModel.deleteBodyStatsRecord(item.id) { success, error ->
                                                 if (success) {
-                                                    // Actualizar lista local
-                                                    historyItems =
-                                                        historyItems.filter { it.id != item.id }
-                                                    // Limpiar selecciones si está en modo comparación
+                                                    historyItems = historyItems.filter { it.id != item.id }
                                                     if (selectedForComparison.contains(item.id)) {
-                                                        selectedForComparison =
-                                                            selectedForComparison - item.id
+                                                        selectedForComparison = selectedForComparison - item.id
                                                     }
                                                 } else {
-                                                    // Mostrar error (opcional: usar SnackBar)
                                                     errorMessage = error
                                                 }
                                             }

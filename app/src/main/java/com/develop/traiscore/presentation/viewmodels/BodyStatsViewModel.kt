@@ -33,6 +33,12 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
     var isLoading by mutableStateOf(false)
         private set
 
+    var isEditMode by mutableStateOf(false)
+        private set
+
+    var editingDocumentId by mutableStateOf<String?>(null)
+        private set
+
     var errorMessage by mutableStateOf<String?>(null)
         private set
 
@@ -65,6 +71,30 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
         loadBodyStatsForUser(userId)
     }
 
+    fun loadMeasurementForEdit(item: MeasurementHistoryItem) {
+        isEditMode = true
+        editingDocumentId = item.id
+
+        // Cargar los datos del item en el estado del ViewModel
+        selectedGender = item.gender
+        bodyMeasurements = mapOf(
+            "Height" to if (item.measurements.height > 0) item.measurements.height.toString() else "",
+            "Weight" to if (item.measurements.weight > 0) item.measurements.weight.toString() else "",
+            "Neck" to if (item.measurements.neck > 0) item.measurements.neck.toString() else "",
+            "Chest" to if (item.measurements.chest > 0) item.measurements.chest.toString() else "",
+            "Arms" to if (item.measurements.arms > 0) item.measurements.arms.toString() else "",
+            "Waist" to if (item.measurements.waist > 0) item.measurements.waist.toString() else "",
+            "Thigh" to if (item.measurements.thigh > 0) item.measurements.thigh.toString() else "",
+            "Calf" to if (item.measurements.calf > 0) item.measurements.calf.toString() else ""
+        )
+
+        Log.d("BodyStatsVM", "✅ Datos cargados para editar documento: ${item.id}")
+    }
+    fun clearEditMode() {
+        isEditMode = false
+        editingDocumentId = null
+        Log.d("BodyStatsVM", "✅ Modo edición limpiado")
+    }
 
     private fun getCurrentUserId(): String {
         val userId = targetUserId ?: FirebaseAuth.getInstance().currentUser?.uid ?: ""
@@ -154,6 +184,72 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
                 Log.e("BodyStatsVM", "Error eliminando registro para usuario $userId", exception)
                 onComplete(false, errorMsg)
             }
+    }
+    fun loadMeasurementForEditById(documentId: String) {
+        val userId = getCurrentUserId()
+        if (userId.isEmpty()) {
+            errorMessage = "Usuario no autenticado"
+            return
+        }
+
+        isLoading = true
+        isEditMode = true
+        editingDocumentId = documentId
+
+        val targetUserStatsRef = db
+            .collection("users")
+            .document(userId)
+            .collection("bodyStats")
+
+        targetUserStatsRef.document(documentId)
+            .get()
+            .addOnSuccessListener { document ->
+                isLoading = false
+                if (document.exists()) {
+                    val data = document.data ?: return@addOnSuccessListener
+
+                    // Load gender
+                    selectedGender = data["gender"] as? String ?: "Male"
+
+                    // Load measurements
+                    val measurements = data["measurements"] as? Map<String, Any> ?: emptyMap()
+                    bodyMeasurements = measurements.mapValues { (_, value) ->
+                        value.toString()
+                    }
+
+                    Log.d("BodyStatsVM", "✅ Medidas cargadas para editar documento: $documentId")
+                } else {
+                    errorMessage = "Registro no encontrado"
+                    clearEditMode()
+                }
+            }
+            .addOnFailureListener { exception ->
+                isLoading = false
+                errorMessage = "Error al cargar registro: ${exception.message}"
+                clearEditMode()
+                Log.e("BodyStatsVM", "Error cargando registro para editar", exception)
+            }
+    }
+    fun saveOrUpdateBodyStats(
+        gender: String,
+        measurements: Map<String, String>,
+        subscriptionViewModel: SubscriptionViewModel,
+        onComplete: (success: Boolean, error: String?, requiresUpgrade: Boolean) -> Unit
+    ) {
+        Log.d("BodyStatsVM", "Iniciando guardado/actualización. EditMode: $isEditMode, DocumentId: $editingDocumentId")
+
+        if (isEditMode && editingDocumentId != null) {
+            // Modo edición: actualizar registro existente
+            updateBodyStatsById(editingDocumentId!!, gender, measurements) { success, error ->
+                if (success) {
+                    clearEditMode() // Limpiar modo edición después de éxito
+                }
+                onComplete(success, error, false) // No requiere upgrade en edición
+            }
+        } else {
+            // Modo creación: usar la función existente con verificación de límites
+            saveBodyStatsWithLimits(gender, measurements, subscriptionViewModel, onComplete)
+        }
     }
     /**
      * Carga las medidas corporales más recientes del usuario
@@ -354,6 +450,7 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
             "gender" to gender,
             "measurements" to measurements,
             "updatedAt" to FieldValue.serverTimestamp()
+            // Note: We're NOT updating createdAt to preserve the original date
         )
 
         val targetUserStatsRef = db
@@ -378,6 +475,7 @@ class BodyStatsViewModel @Inject constructor() : ViewModel() {
                 onComplete(false, errorMsg)
             }
     }
+
     /**
      * Actualiza las medidas existentes más recientes
      */

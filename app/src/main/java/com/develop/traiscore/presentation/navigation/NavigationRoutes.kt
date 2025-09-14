@@ -4,6 +4,7 @@ sealed class NavigationRoutes(val route: String) {
     object Login : NavigationRoutes("login")
     object Settings : NavigationRoutes("settings")
     object Main : NavigationRoutes("main")
+    object Profile : NavigationRoutes("profile")
     object Routines : NavigationRoutes("routines")
     object CreateRoutine : NavigationRoutes("createroutine")
     object Register : NavigationRoutes("register")
@@ -15,6 +16,9 @@ sealed class NavigationRoutes(val route: String) {
     object MyExercises : NavigationRoutes("my_exercises")
     object ClientProfile : NavigationRoutes("client_profile/{clientId}") {
         fun createRoute(clientId: String) = "client_profile/$clientId"
+    }
+    object MeasurementsEdit : NavigationRoutes("measurements_edit/{documentId}") {
+        fun createRoute(documentId: String) = "measurements_edit/$documentId"
     }
 
     object ClientStats : NavigationRoutes("client_stats/{clientId}") {

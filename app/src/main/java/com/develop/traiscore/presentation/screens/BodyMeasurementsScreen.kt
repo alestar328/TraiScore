@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -47,6 +48,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import com.develop.traiscore.R
@@ -92,17 +94,15 @@ fun BodyMeasurementsScreen(
         }
     }
 
-    // Cargar datos existentes al inicializar
-    LaunchedEffect(Unit) {
-        bodyStatsViewModel.loadLatestBodyStats()
-        subscriptionViewModel.loadUserSubscription { subscription ->
-            // USAR LA NUEVA FUNCIÓN que cuenta primero
-            subscriptionViewModel.checkBodyStatsLimitsWithCount { limits ->
-                subscriptionLimits = limits
-                Log.d("BodyMeasurementsScreen", "Límites cargados: $limits")
+    DisposableEffect(Unit) {
+        onDispose {
+            if (bodyStatsViewModel.isEditMode) {
+                bodyStatsViewModel.clearEditMode()
             }
         }
     }
+
+
 
     // Actualizar límites cuando cambie la suscripción
     LaunchedEffect(subscriptionViewModel.userSubscription, subscriptionViewModel.actualDocumentsCount) {
@@ -124,6 +124,7 @@ fun BodyMeasurementsScreen(
         }
     }
 
+
     // Mostrar mensajes de error
     LaunchedEffect(bodyStatsViewModel.errorMessage) {
         bodyStatsViewModel.errorMessage?.let { error ->
@@ -143,23 +144,20 @@ fun BodyMeasurementsScreen(
             return
         }
 
-        // Verificar límites de suscripción
-        val limits = subscriptionViewModel.checkBodyStatsLimits()
-        if (!limits.canCreateBodyStats) {
-            showUpgradeDialog = true
-            return
-        }
-
-        // Guardar en Firebase con límites
-        bodyStatsViewModel.saveBodyStatsWithLimits(
+        // ✅ CAMBIO: Usar la nueva función que detecta si es edición o creación
+        bodyStatsViewModel.saveOrUpdateBodyStats(
             gender = selectedGender,
             measurements = currentMeasurements,
             subscriptionViewModel = subscriptionViewModel
         ) { success, error, requiresUpgrade ->
             when {
                 success -> {
-                    Toast.makeText(context, "Medidas guardadas exitosamente", Toast.LENGTH_SHORT).show()
-                    // Actualizar límites después de guardar
+                    val message = if (bodyStatsViewModel.isEditMode) {
+                        "Medidas actualizadas exitosamente"
+                    } else {
+                        "Medidas guardadas exitosamente"
+                    }
+                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
                     subscriptionLimits = subscriptionViewModel.checkBodyStatsLimits()
                     onSave(selectedGender, currentMeasurements)
                 }
@@ -233,12 +231,22 @@ fun BodyMeasurementsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text(
-                    stringResource(R.string.measurements_title),
-                    color = traiBlue
-                ) },
+                title = {
+                    Text(
+                        // ✅ CAMBIO: Título dinámico según modo
+                        if (bodyStatsViewModel.isEditMode) "Editar medidas"
+                        else stringResource(R.string.measurements_title),
+                        color = traiBlue
+                    )
+                },
                 navigationIcon = {
-                    IconButton(onClick = onBack) {
+                    IconButton(onClick = {
+                        // ✅ CAMBIO: Limpiar modo edición al volver
+                        if (bodyStatsViewModel.isEditMode) {
+                            bodyStatsViewModel.clearEditMode()
+                        }
+                        onBack()
+                    }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
@@ -257,20 +265,21 @@ fun BodyMeasurementsScreen(
                         .padding(bottom = 25.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Botón de historial
-                    ExtendedFloatingActionButton(
-                        onClick = onMeasurementsHistoryClick,
-                        modifier = Modifier.weight(1f),
-                        containerColor = traiOrange,
-                        contentColor = Color.Black
-                    ) {
-                        Icon(
-                            painter = painterResource(id = R.drawable.history_logo),
-                            contentDescription = "Historial",
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Ver Historial")
+                    if (!bodyStatsViewModel.isEditMode) {
+                        ExtendedFloatingActionButton(
+                            onClick = onMeasurementsHistoryClick,
+                            modifier = Modifier.weight(1f),
+                            containerColor = traiOrange,
+                            contentColor = Color.Black
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.history_logo),
+                                contentDescription = "Historial",
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(stringResource(R.string.view_history))
+                        }
                     }
 
                     // Botón de guardar
@@ -280,12 +289,12 @@ fun BodyMeasurementsScreen(
                                 saveData()
                             }
                         },
-                        modifier = Modifier.weight(1f),
+                        modifier = Modifier.weight(if (bodyStatsViewModel.isEditMode) 1f else 1f),
                         text = {
-                            if (bodyStatsViewModel.isLoading) {
-                                Text("Guardando...")
-                            } else {
-                                Text(stringResource(R.string.save_measurements))
+                            when {
+                                bodyStatsViewModel.isLoading -> Text("Guardando...")
+                                bodyStatsViewModel.isEditMode -> Text("Actualizar")
+                                else -> Text(stringResource(R.string.save_measurements))
                             }
                         },
                         icon = {
@@ -319,8 +328,10 @@ fun BodyMeasurementsScreen(
                     verticalArrangement = Arrangement.spacedBy(24.dp)
                 ) {
                     // Mostrar información de suscripción
-                    subscriptionLimits?.let { limits ->
-                        SubscriptionInfoCard(limits = limits)
+                    if (!bodyStatsViewModel.isEditMode) {
+                        subscriptionLimits?.let { limits ->
+                            SubscriptionInfoCard(limits = limits)
+                        }
                     }
 
                     // 1) Selector de género

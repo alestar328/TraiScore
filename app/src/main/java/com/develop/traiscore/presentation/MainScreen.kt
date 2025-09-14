@@ -48,7 +48,9 @@ fun MainScreen(
     modifier: Modifier = Modifier,
     navController: NavHostController,
     exeScreenViewModel: ExercisesScreenViewModel = hiltViewModel(),
-    routineViewModel: RoutineViewModel = hiltViewModel()
+    routineViewModel: RoutineViewModel = hiltViewModel(),
+    initialSelectedIndex: Int = 0 // ✅ NUEVO PARÁMETRO
+
 ) {
     val navItemList = listOf(
         NavItem(
@@ -79,7 +81,7 @@ fun MainScreen(
     )
 
     var routineScreenState by remember { mutableStateOf<ScreenState>(ScreenState.MAIN_ROUTINE_MENU) }
-    var selectedIndex by remember { mutableIntStateOf(0) }
+    var selectedIndex by remember { mutableIntStateOf(initialSelectedIndex) } // ✅ USAR parámetro
     var isBottomSheetVisible by remember { mutableStateOf(false) }
     var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
 
@@ -87,17 +89,6 @@ fun MainScreen(
 
 
 
-   /* LaunchedEffect(Unit) {
-        UserRoleManager.getCurrentUserRole { role ->
-            currentUserRole = role
-        }
-    }
-    LaunchedEffect(currentUserRole) {
-        if (currentUserRole != null) {
-            // Limpiar cualquier estado previo del cliente
-            routineViewModel.clearTargetClient()
-        }
-    }*/
     LaunchedEffect(Unit) {
         // ✅ ELIMINADO: Ya no necesitamos getUserRole
         routineViewModel.clearTargetClient()
