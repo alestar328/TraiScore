@@ -160,6 +160,9 @@ fun MainScreen(
             onEditMeasurementFromHistory = {
                 routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
             },
+            onBackToMeasurements = {  // ✅ AGREGAR ESTA LÍNEA
+                routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
+            },
             routineViewModel = routineViewModel
         )
     }
@@ -199,7 +202,9 @@ fun ContentScreen(
     onMeasurementsClick: () -> Unit,
     onMeasurementsHistoryClick: () -> Unit,
     onEditMeasurementFromHistory: () -> Unit,
+    onBackToMeasurements: () -> Unit,
     routineViewModel: RoutineViewModel
+
     // ✅ ELIMINADO: currentUserRole: UserRole?
 ) {
     // ✅ NUEVO: UI completamente basada en flavor
@@ -212,6 +217,10 @@ fun ContentScreen(
                 onRoutineSelected = onRoutineSelected,
                 onBackToRoutineMenu = onBackToRoutineMenu,
                 onCreateRoutine = onCreateRoutine,
+                onMeasurementsClick = onMeasurementsClick,
+                onMeasurementsHistoryClick = onMeasurementsHistoryClick,
+                onEditMeasurementFromHistory = onEditMeasurementFromHistory,
+                onBackToMeasurements = onBackToMeasurements,
                 routineViewModel = routineViewModel
             )
         }
@@ -227,6 +236,7 @@ fun ContentScreen(
                 onMeasurementsClick = onMeasurementsClick,
                 onMeasurementsHistoryClick = onMeasurementsHistoryClick,
                 onEditMeasurementFromHistory = onEditMeasurementFromHistory,
+                onBackToMeasurements = onBackToMeasurements,
                 routineViewModel = routineViewModel
             )
         }
@@ -243,6 +253,7 @@ fun ContentScreen(
                 onMeasurementsClick = onMeasurementsClick,
                 onMeasurementsHistoryClick = onMeasurementsHistoryClick,
                 onEditMeasurementFromHistory = onEditMeasurementFromHistory,
+                onBackToMeasurements = onBackToMeasurements,
                 routineViewModel = routineViewModel
             )
         }
@@ -257,6 +268,10 @@ private fun TrainerContent(
     onRoutineSelected: (String, String) -> Unit,
     onBackToRoutineMenu: () -> Unit,
     onCreateRoutine: () -> Unit,
+    onMeasurementsClick: () -> Unit,
+    onMeasurementsHistoryClick: () -> Unit,
+    onEditMeasurementFromHistory: () -> Unit,
+    onBackToMeasurements: () -> Unit,
     routineViewModel: RoutineViewModel
 ) {
     when (selectedIndex) {
@@ -303,12 +318,29 @@ private fun TrainerContent(
                 else -> Unit
             }
         }
-        2 -> ProfileScreen(
-            navController = navController,
-            onMeasurementsClick = {
-                navController.navigate(NavigationRoutes.Measurements.route)
+        2 -> {
+            // ✅ AGREGAR manejo de ScreenState para medidas también en Trainer
+            when (routineScreenState) {
+                is ScreenState.BODY_MEASUREMENTS_SCREEN -> BodyMeasurementsScreen(
+                    onBack = onBackToRoutineMenu,
+                    onSave = { gender, data ->
+                        onBackToRoutineMenu()
+                    },
+                    onMeasurementsClick = onMeasurementsClick,
+                    onMeasurementsHistoryClick = onMeasurementsHistoryClick
+                )
+                is ScreenState.MEASUREMENTS_HISTORY_SCREEN -> BodyMeasurementsHistoryScreen(
+                    onBack = onBackToMeasurements,
+                    onEditMeasurement = { historyItem ->
+                        onEditMeasurementFromHistory()
+                    }
+                )
+                else -> ProfileScreen(
+                    navController = navController,
+                    onMeasurementsClick = onMeasurementsClick // ✅ USAR callback
+                )
             }
-        )
+        }
     }
 }
 
@@ -324,6 +356,7 @@ private fun AthleteContent(
     onMeasurementsClick: () -> Unit,
     onMeasurementsHistoryClick: () -> Unit,
     onEditMeasurementFromHistory: () -> Unit,
+    onBackToMeasurements: () -> Unit,
     routineViewModel: RoutineViewModel
 ) {
     when (selectedIndex) {
@@ -375,16 +408,14 @@ private fun AthleteContent(
                     onMeasurementsHistoryClick = onMeasurementsHistoryClick
                 )
                 is ScreenState.MEASUREMENTS_HISTORY_SCREEN -> BodyMeasurementsHistoryScreen(
-                    onBack = onBackToRoutineMenu,
+                    onBack = onBackToMeasurements,
                     onEditMeasurement = { historyItem ->
                         onEditMeasurementFromHistory()
                     }
                 )
                 else -> ProfileScreen(
                     navController = navController,
-                    onMeasurementsClick = {
-                        navController.navigate(NavigationRoutes.Measurements.route)
-                    }
+                    onMeasurementsClick = onMeasurementsClick
                 )
             }
         }

@@ -415,7 +415,6 @@ fun AppNavigation(navController: NavHostController) {
             BodyMeasurementsHistoryScreen(
                 onBack = { navController.popBackStack() },
                 onEditMeasurement = { documentId ->
-                    // Handle navigation here where navController is available
                     navController.navigate(NavigationRoutes.MeasurementsEdit.createRoute(documentId))
                 },
                 bodyStatsViewModel = bodyStatsViewModel
@@ -483,10 +482,7 @@ fun AppNavigation(navController: NavHostController) {
 
             BodyMeasurementsScreen(
                 onBack = {
-                    // Navigate to Main screen instead of popBackStack
-                    navController.navigate(NavigationRoutes.Main.route) {
-                        popUpTo(NavigationRoutes.Measurements.route) { inclusive = true }
-                    }
+                    navController.popBackStack()
                 },
                 onSave = { gender, data ->
                     navController.popBackStack()

@@ -235,7 +235,7 @@ fun BodyMeasurementsScreen(
                     Text(
                         // ✅ CAMBIO: Título dinámico según modo
                         if (bodyStatsViewModel.isEditMode) "Editar medidas"
-                        else stringResource(R.string.measurements_title),
+                        else stringResource(R.string.profile_my_sizes),
                         color = traiBlue
                     )
                 },
@@ -262,7 +262,7 @@ fun BodyMeasurementsScreen(
                     modifier = Modifier
                         .fillMaxWidth()
                         .navigationBarsPadding()
-                        .padding(bottom = 25.dp),
+                        .padding(bottom = 75.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     if (!bodyStatsViewModel.isEditMode) {
