@@ -41,6 +41,7 @@ import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.develop.traiscore.BuildConfig
+import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -169,7 +170,9 @@ fun MainScreen(
 
     // ✅ NUEVO: Solo mostrar AddExerciseBottomSheet en la versión athlete
     if (BuildConfig.FLAVOR == "athlete") {
+        val addExerciseViewModel: AddExerciseViewModel = hiltViewModel()
         AddExerciseBottomSheet(
+            viewModel = addExerciseViewModel,
             isVisible = isBottomSheetVisible,
             onDismiss = { isBottomSheetVisible = false },
             onSave = { updated ->

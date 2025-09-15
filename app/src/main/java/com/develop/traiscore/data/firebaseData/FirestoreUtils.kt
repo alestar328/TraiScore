@@ -67,18 +67,19 @@ fun calculateTodayDataAndNavigate(
 suspend fun saveExerciseToFirebase(
     name: String,
     category: String,
-    exerciseDao: ExerciseDao
+    exerciseDao: ExerciseDao,
+    onComplete: (Boolean) -> Unit = {} // Agregar callback
 ) {
-    // Obtener el usuario actual
     val currentUser = FirebaseAuth.getInstance().currentUser
     if (currentUser == null) {
         println("❌ Usuario no autenticado")
+        onComplete(false)
         return
     }
 
     val userId = currentUser.uid
 
-    // Primero guardar en local para generar ID
+    // Primero guardar en local
     val localExercise = ExerciseEntity(
         id = 0,
         idIntern = "",
@@ -89,7 +90,6 @@ suspend fun saveExerciseToFirebase(
 
     val localId = exerciseDao.insertExercise(localExercise)
 
-    // Luego sincronizar con Firebase en la subcolección del usuario
     val db = Firebase.firestore
     val userExercisesCollection = db.collection("users")
         .document(userId)
@@ -119,22 +119,24 @@ suspend fun saveExerciseToFirebase(
                 .document(newDocId)
                 .set(newExercise)
                 .addOnSuccessListener {
-                    println("✅ Ejercicio guardado con ID: $newDocId en subcolección del usuario")
+                    println("✅ Ejercicio guardado con ID: $newDocId")
 
-                    // Actualizar el registro local con el Firebase ID
                     CoroutineScope(Dispatchers.IO).launch {
                         val updatedExercise = localExercise.copy(
                             id = localId.toInt(),
                             idIntern = newDocId
                         )
                         exerciseDao.updateExercise(updatedExercise)
+                        onComplete(true) // ✅ Callback de éxito
                     }
                 }
                 .addOnFailureListener { e ->
                     println("❌ Error al guardar el ejercicio: ${e.message}")
+                    onComplete(false) // ✅ Callback de error
                 }
         }
         .addOnFailureListener { e ->
             println("❌ Error al obtener ejercicios existentes: ${e.message}")
+            onComplete(false) // ✅ Callback de error
         }
 }

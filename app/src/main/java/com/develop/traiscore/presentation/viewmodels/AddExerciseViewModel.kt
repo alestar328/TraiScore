@@ -155,8 +155,11 @@ class AddExerciseViewModel @Inject constructor(
     }
 
     suspend fun saveExerciseToDatabase(name: String, category: String) {
-        saveExerciseToFirebase(name, category, exerciseDao)
-        refreshExercises() // ✅ Llamar refresh después de guardar
+        saveExerciseToFirebase(name, category, exerciseDao) { success ->
+            if (success) {
+                refreshExercises() // ✅ Solo refresh si guardado fue exitoso
+            }
+        }
     }
     fun saveWorkoutEntry(
         title: String,

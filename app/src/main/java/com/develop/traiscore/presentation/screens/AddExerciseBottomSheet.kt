@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation.screens
 
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -24,6 +23,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.Text
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -88,6 +88,9 @@ private fun AddExerciseBottomSheetContent(
     onDismiss: () -> Unit,
     onSave: (Map<String, Any>) -> Unit
 ) {
+    LaunchedEffect(Unit) {
+        viewModel.refreshExercises()
+    }
     val exerciseNames = viewModel.exerciseNames
     var selectedExercise by remember {
         mutableStateOf(
