@@ -9,15 +9,25 @@ import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.data.firebaseData.saveExerciseToFirebase
 import com.develop.traiscore.data.local.dao.ExerciseDao
+import com.develop.traiscore.data.local.entity.ExerciseEntity
 import com.develop.traiscore.data.repository.SessionRepository
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
+
+data class ExerciseWithSource(
+    val name: String,
+    val category: String,
+    val isUserCreated: Boolean,
+    val documentId: String? = null // Solo para ejercicios del usuario
+)
 
 @HiltViewModel
 class AddExerciseViewModel @Inject constructor(
@@ -31,6 +41,9 @@ class AddExerciseViewModel @Inject constructor(
         private set
     private val userId = FirebaseAuth.getInstance().currentUser!!.uid
     private val firestore = Firebase.firestore
+
+    var exercisesWithSource by mutableStateOf<List<ExerciseWithSource>>(emptyList())
+        private set
 
     var exercisesWithCategory by mutableStateOf<List<Pair<String, String>>>(emptyList())
         private set
@@ -62,10 +75,148 @@ class AddExerciseViewModel @Inject constructor(
             }
     }
     init {
-        // Cargar ejercicios de la colección global (ejercicios por defecto)
-        // Y de la subcolección del usuario (ejercicios personalizados)
+        loadAllExercisesWithSource()
+
         loadAllExercises()
     }
+    fun deleteUserExercise(
+        documentId: String,
+        onComplete: (Boolean, String?) -> Unit
+    ) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            onComplete(false, "Usuario no autenticado")
+            return
+        }
+
+        val userId = currentUser.uid
+
+        Firebase.firestore.collection("users")
+            .document(userId)
+            .collection("exercises")
+            .document(documentId)
+            .delete()
+            .addOnSuccessListener {
+                println("✅ Ejercicio eliminado exitosamente")
+                loadAllExercisesWithSource() // Refrescar la lista
+                onComplete(true, null)
+            }
+            .addOnFailureListener { exception ->
+                println("❌ Error al eliminar ejercicio: ${exception.message}")
+                onComplete(false, exception.message)
+            }
+    }
+
+    fun updateUserExercise(
+        documentId: String,
+        newName: String,
+        newCategory: String,
+        onComplete: (Boolean, String?) -> Unit
+    ) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            onComplete(false, "Usuario no autenticado")
+            return
+        }
+
+        val userId = currentUser.uid
+        val updateData = hashMapOf<String, Any>(
+            "name" to newName,
+            "category" to newCategory
+        )
+
+        Firebase.firestore.collection("users")
+            .document(userId)
+            .collection("exercises")
+            .document(documentId)
+            .update(updateData)
+            .addOnSuccessListener {
+                println("✅ Ejercicio actualizado exitosamente")
+                loadAllExercisesWithSource() // Refrescar la lista
+                onComplete(true, null)
+            }
+            .addOnFailureListener { exception ->
+                println("❌ Error al actualizar ejercicio: ${exception.message}")
+                onComplete(false, exception.message)
+            }
+    }
+
+    fun loadAllExercisesWithSource() {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            println("❌ Usuario no autenticado")
+            return
+        }
+
+        val userId = currentUser.uid
+        val allExercisesWithSource = mutableListOf<ExerciseWithSource>()
+
+        // Primero cargar ejercicios por defecto de la colección global
+        Firebase.firestore.collection("exercises")
+            .get()
+            .addOnSuccessListener { globalSnapshot ->
+                println("🔍 Ejercicios globales encontrados: ${globalSnapshot.size()}")
+                val defaultExercises = globalSnapshot.documents.mapNotNull { doc ->
+                    val name = doc.getString("name")
+                    val category = doc.getString("category")
+                    println("📄 Ejercicio global: $name - $category")
+                    if (name != null && category != null) {
+                        ExerciseWithSource(
+                            name = name,
+                            category = category,
+                            isUserCreated = false,
+                            documentId = null
+                        )
+                    } else null
+                }
+                allExercisesWithSource.addAll(defaultExercises)
+                println("✅ ${defaultExercises.size} ejercicios por defecto cargados")
+
+                // Luego cargar ejercicios personalizados de la subcolección del usuario
+                Firebase.firestore.collection("users")
+                    .document(userId)
+                    .collection("exercises")
+                    .get()
+                    .addOnSuccessListener { userSnapshot ->
+                        println("🔍 Ejercicios del usuario encontrados: ${userSnapshot.size()}")
+                        val userExercises = userSnapshot.documents.mapNotNull { doc ->
+                            val name = doc.getString("name")
+                            val category = doc.getString("category")
+                            println("📄 Ejercicio usuario: $name - $category - ID: ${doc.id}")
+                            if (name != null && category != null) {
+                                ExerciseWithSource(
+                                    name = name,
+                                    category = category,
+                                    isUserCreated = true,
+                                    documentId = doc.id
+                                )
+                            } else null
+                        }
+                        allExercisesWithSource.addAll(userExercises)
+                        println("✅ ${userExercises.size} ejercicios del usuario cargados")
+
+                        // Actualizar la lista combinada sin duplicados por nombre
+                        exercisesWithSource = allExercisesWithSource.distinctBy { it.name }
+
+                        // También actualizar la lista original para compatibilidad
+                        exercisesWithCategory = allExercisesWithSource.map { Pair(it.name, it.category) }
+
+                        println("🎯 Total ejercicios finales: ${exercisesWithSource.size}")
+                        exercisesWithSource.forEach { exercise ->
+                            println("📋 ${exercise.name} (${exercise.category}) - Usuario: ${exercise.isUserCreated}")
+                        }
+                    }
+                    .addOnFailureListener { exception ->
+                        println("❌ Error al cargar ejercicios del usuario: ${exception.message}")
+                        exercisesWithSource = defaultExercises
+                        exercisesWithCategory = defaultExercises.map { Pair(it.name, it.category) }
+                    }
+            }
+            .addOnFailureListener { exception ->
+                println("❌ Error al cargar ejercicios por defecto: ${exception.message}")
+            }
+    }
+
     fun loadAllExercisesWithCategory() {
         val currentUser = FirebaseAuth.getInstance().currentUser
         if (currentUser == null) {
@@ -155,12 +306,89 @@ class AddExerciseViewModel @Inject constructor(
     }
 
     suspend fun saveExerciseToDatabase(name: String, category: String) {
-        saveExerciseToFirebase(name, category, exerciseDao) { success ->
+        saveExerciseToFirebaseCompatible(name, category, exerciseDao) { success ->
             if (success) {
-                refreshExercises() // ✅ Solo refresh si guardado fue exitoso
+                loadAllExercisesWithSource() // Usar la nueva función de carga
             }
         }
     }
+    private suspend fun saveExerciseToFirebaseCompatible(
+        name: String,
+        category: String,
+        exerciseDao: ExerciseDao,
+        onComplete: (Boolean) -> Unit = {}
+    ) {
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            println("❌ Usuario no autenticado")
+            onComplete(false)
+            return
+        }
+
+        val userId = currentUser.uid
+
+        // Primero guardar en local para mantener compatibilidad
+        val localExercise = ExerciseEntity(
+            id = 0,
+            idIntern = "",
+            name = name,
+            category = category,
+            isDefault = false
+        )
+
+        val localId = exerciseDao.insertExercise(localExercise)
+
+        val db = Firebase.firestore
+        val userExercisesCollection = db.collection("users")
+            .document(userId)
+            .collection("exercises")
+
+        userExercisesCollection.get()
+            .addOnSuccessListener { snapshot ->
+                val userExerciseDocs = snapshot.documents.filter {
+                    it.id.startsWith("userExer")
+                }
+
+                val nextNumber = (userExerciseDocs.mapNotNull {
+                    it.id.removePrefix("userExer").toIntOrNull()
+                }.maxOrNull() ?: 0) + 1
+
+                val newDocId = "userExer$nextNumber"
+
+                val newExercise = hashMapOf(
+                    "name" to name,
+                    "category" to category,
+                    "isDefault" to false,
+                    "createdBy" to userId,
+                    "localId" to localId
+                )
+
+                userExercisesCollection
+                    .document(newDocId)
+                    .set(newExercise)
+                    .addOnSuccessListener {
+                        println("✅ Ejercicio guardado con ID: $newDocId")
+
+                        CoroutineScope(Dispatchers.IO).launch {
+                            val updatedExercise = localExercise.copy(
+                                id = localId.toInt(),
+                                idIntern = newDocId
+                            )
+                            exerciseDao.updateExercise(updatedExercise)
+                            onComplete(true) // ✅ Callback de éxito
+                        }
+                    }
+                    .addOnFailureListener { e ->
+                        println("❌ Error al guardar el ejercicio: ${e.message}")
+                        onComplete(false) // ✅ Callback de error
+                    }
+            }
+            .addOnFailureListener { e ->
+                println("❌ Error al obtener ejercicios existentes: ${e.message}")
+                onComplete(false) // ✅ Callback de error
+            }
+    }
+
     fun saveWorkoutEntry(
         title: String,
         exerciseId : Int,

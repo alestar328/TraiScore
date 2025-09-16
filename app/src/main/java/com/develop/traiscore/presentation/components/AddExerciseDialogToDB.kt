@@ -3,7 +3,10 @@ package com.develop.traiscore.presentation.components
 import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
@@ -36,12 +39,29 @@ import com.develop.traiscore.presentation.theme.traiBlue
 @Composable
 fun AddExerciseDialogToDB(
     onDismiss: () -> Unit,
-    onSave: (String, String) -> Unit // nombre, categoría
+    onSave: (String, String) -> Unit, // nombre, categoría
+    onUpdate: ((String, String, String) -> Unit)? = null, // documentId, nombre, categoría
+    onDelete: ((String) -> Unit)? = null, // documentId
+    // Parámetros para edición
+    isEditing: Boolean = false,
+    initialName: String = "",
+    initialCategory: String = "",
+    documentId: String = ""
 ) {
     val context = LocalContext.current
     var name by remember { mutableStateOf("") }
-    var selectedCategory by remember { mutableStateOf<DefaultCategoryExer?>(null) }
+    var selectedCategory by remember {
+        mutableStateOf<DefaultCategoryExer?>(
+            if (initialCategory.isNotEmpty()) {
+                DefaultCategoryExer.entries.find {
+                    context.getString(it.titleCat) == initialCategory || it.name == initialCategory
+                }
+            } else null
+        )
+    }
     var expanded by remember { mutableStateOf(false) }
+    var showDeleteConfirmation by remember { mutableStateOf(false) }
+
     var message = ""
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -49,9 +69,18 @@ fun AddExerciseDialogToDB(
             TextButton(
                 onClick = {
                     if (name.isNotBlank() && selectedCategory != null) {
-                        message = "Guardado!";
-                        onSave(name, selectedCategory!!.name)
-                        Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                        if (isEditing && onUpdate != null) {
+                            // Modo edición
+                            onUpdate(documentId, name, selectedCategory!!.name)
+                        } else {
+                            // Modo creación
+                            onSave(name, selectedCategory!!.name)
+                        }
+                        Toast.makeText(
+                            context,
+                            if (isEditing) "Ejercicio actualizado!" else "Ejercicio guardado!",
+                            Toast.LENGTH_SHORT
+                        ).show()
                         onDismiss()
                     }
                 },
@@ -59,24 +88,42 @@ fun AddExerciseDialogToDB(
                     containerColor = Color(0xFFA8E6CF), // Verde pastel
                     contentColor = Color.Black
                 )
-            )
-            {
-                Text("Guardar")
+            ) {
+                Text(if (isEditing) "Actualizar" else "Guardar")
             }
         },
         dismissButton = {
-            TextButton(
-                onClick = onDismiss,
-                colors = ButtonDefaults.textButtonColors(
-                    containerColor = Color(0xFFFF8A80), // Rojo pastel
-                    contentColor = Color.Black
-                )
-            ) {
-                Text("Cancelar")
+            Row {
+                if (isEditing && onDelete != null) {
+                    TextButton(
+                        onClick = { showDeleteConfirmation = true },
+                        colors = ButtonDefaults.textButtonColors(
+                            containerColor = Color(0xFFFFCDD2), // Rojo muy claro
+                            contentColor = Color.Black
+                        )
+                    ) {
+                        Text("Eliminar")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                }
+
+                TextButton(
+                    onClick = onDismiss,
+                    colors = ButtonDefaults.textButtonColors(
+                        containerColor = Color(0xFFFF8A80), // Rojo pastel
+                        contentColor = Color.Black
+                    )
+                ) {
+                    Text("Cancelar")
+                }
             }
         },
         title = {
-            Text("Nuevo Ejercicio", fontSize = 20.sp, color = Color.Cyan)
+            Text(
+                if (isEditing) "Editar Ejercicio" else "Nuevo Ejercicio",
+                fontSize = 20.sp,
+                color = Color.Cyan
+            )
         },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -156,4 +203,42 @@ fun AddExerciseDialogToDB(
         containerColor = Color.DarkGray,
         shape = RoundedCornerShape(16.dp)
     )
+
+    // Diálogo de confirmación para eliminar
+    if (showDeleteConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showDeleteConfirmation = false },
+            title = { Text("Confirmar eliminación", color = Color.White) },
+            text = {
+                Text(
+                    "¿Estás seguro de que deseas eliminar el ejercicio \"$name\"?",
+                    color = Color.White
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        onDelete?.invoke(documentId)
+                        showDeleteConfirmation = false
+                        onDismiss()
+                        Toast.makeText(context, "Ejercicio eliminado", Toast.LENGTH_SHORT).show()
+                    },
+                    colors = ButtonDefaults.textButtonColors(
+                        containerColor = Color.Red,
+                        contentColor = Color.White
+                    )
+                ) {
+                    Text("Eliminar")
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showDeleteConfirmation = false }
+                ) {
+                    Text("Cancelar", color = Color.White)
+                }
+            },
+            containerColor = Color.DarkGray
+        )
+    }
 }
