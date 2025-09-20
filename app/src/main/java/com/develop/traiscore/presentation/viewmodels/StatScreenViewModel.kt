@@ -66,6 +66,9 @@ class StatScreenViewModel @Inject constructor(private val context: Context) : Vi
     private val _repsProgress = MutableStateFlow<List<Pair<String, Float>>>(emptyList())
     val repsProgress: StateFlow<List<Pair<String, Float>>> = _repsProgress
 
+    private val _rirProgress = MutableStateFlow<List<Pair<String, Float>>>(emptyList())
+    val rirProgress: StateFlow<List<Pair<String, Float>>> = _rirProgress
+
     // Datos circulares
     private val _circularData = MutableStateFlow(Triple(0f, 0, 0))
     val circularData: StateFlow<Triple<Float, Int, Int>> = _circularData
@@ -480,6 +483,7 @@ class StatScreenViewModel @Inject constructor(private val context: Context) : Vi
         val sdf = SimpleDateFormat("dd/MM", Locale.getDefault())
         val wData = mutableListOf<Pair<String, Float>>()
         val rData = mutableListOf<Pair<String, Float>>()
+        val rirData = mutableListOf<Pair<String, Float>>() // ✅ NUEVA LISTA PARA RIR
         val allRir = mutableListOf<Int>()
 
         Log.d("StatsVM", "📊 Procesando ${documents.size} documentos")
@@ -500,14 +504,17 @@ class StatScreenViewModel @Inject constructor(private val context: Context) : Vi
 
             wData.add(label to weight)
             rData.add(label to reps)
+            rirData.add(label to rir.toFloat()) // ✅ AGREGAR DATOS DE RIR
             allRir.add(rir)
         }
 
         Log.d("StatsVM", "📈 Weight data ordenado: $wData")
         Log.d("StatsVM", "📊 Reps data ordenado: $rData")
+        Log.d("StatsVM", "🎯 RIR data ordenado: $rirData") // ✅ LOG PARA RIR
 
         _weightProgress.value = wData
         _repsProgress.value = rData
+        _rirProgress.value = rirData // ✅ ASIGNAR DATOS DE RIR
 
         updateCircularData(wData, rData, allRir)
     }

@@ -63,6 +63,7 @@ import com.develop.traiscore.presentation.components.LineChartView
 import com.develop.traiscore.presentation.components.ProgressRadarChart
 import com.develop.traiscore.presentation.components.ToggleButtonRowStats
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
+import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.theme.traiOrange
@@ -87,7 +88,7 @@ fun StatScreen(
     val circularData by viewModel.circularData.collectAsState()
     val selected by viewModel.selectedExercise.collectAsState()
     var showChronoScreen by remember { mutableStateOf(false) }
-
+    val rirData by viewModel.rirProgress.collectAsState()
 
     val (oneRepMax, maxReps, averageRIR) = circularData
     val weightByReps = remember(weightData) {
@@ -171,26 +172,13 @@ fun StatScreen(
             topBar = {
                 TraiScoreTopBar(
                     leftIcon = {
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clickable {
-                                    calculateTodayDataAndNavigate(
-                                        context = context,
-                                        navController = navController,
-                                        viewModel = viewModel,
-                                        oneRepMax = oneRepMax,
-                                        maxReps = maxReps
-                                    )
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_camara),
-                                contentDescription = "Compartir sesión",
-                                tint = MaterialTheme.tsColors.ledCyan,
-                            )
-                        }
+                        ProIconUI(
+                            onClick = {
+                                navController.navigate(NavigationRoutes.Pricing.route)
+                            },
+                            fontSize = 15.sp,
+
+                        )
                     },
                     rightIcon = {
                         FloatingActionButton(
@@ -277,12 +265,35 @@ fun StatScreen(
                                             placeholder = stringResource(id = R.string.stats_exercises),
                                             onItemSelected = { viewModel.onExerciseSelected(it) },
                                             modifier = Modifier.fillMaxWidth(),
-                                            textFieldHeight = 55.dp,
-                                            textSize = 15.sp,
-                                            contentPadding = PaddingValues(horizontal = 4.dp, vertical = 0.2.dp)
+                                            textFieldHeight = 50.dp,
+                                            textSize = 14.sp,
+                                            contentPadding = PaddingValues(horizontal = 4.dp)
 
                                             )
-                                        Spacer(modifier = Modifier.height(4.dp))
+                                    }
+
+                                    Row(
+                                        horizontalArrangement = Arrangement.SpaceBetween,
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                    ){
+                                        Column(
+                                            horizontalAlignment = Alignment.Start,
+                                            modifier = Modifier.padding(3.dp)
+                                        ) {
+                                            Text(
+                                                text = "Últimas series",
+                                                style = MaterialTheme.typography.titleLarge
+                                            )
+                                            Text(
+                                                text = "RM: Repetición máxima según tu útima serie",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                            Text(
+                                                text = "MR: Máximas repeticiones posibles",
+                                                style = MaterialTheme.typography.bodyMedium
+                                            )
+                                        }
                                     }
 
                                     // Detalles del ejercicio
@@ -291,7 +302,7 @@ fun StatScreen(
                                         modifier = Modifier
                                             .fillMaxWidth()
                                             .background(Color.DarkGray, RoundedCornerShape(8.dp))
-                                            .padding(10.dp)
+                                            .padding(5.dp)
                                     ) {
                                         // Peso
                                         Column(
@@ -393,6 +404,24 @@ fun StatScreen(
                                                 .padding(horizontal = 0.dp)
                                         )
                                     }
+                                    // Gráfica Por RIR
+                                    Column {
+                                        Text(
+                                            text = stringResource(id = R.string.stats_by_rir),
+                                            style = MaterialTheme.typography.titleLarge,
+                                            color = MaterialTheme.colorScheme.onBackground,
+                                            modifier = Modifier.padding(bottom = 8.dp)
+                                        )
+                                        LineChartView(
+                                            dataPoints = rirData,
+                                            lineColor = Color.Cyan,
+                                            backgroundChartColor = Color.DarkGray,
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(120.dp)
+                                                .padding(horizontal = 0.dp)
+                                        )
+                                    }
                                     Column {
 
                                         if (isLoadingRadarData) {
@@ -418,14 +447,15 @@ fun StatScreen(
                                                     )
                                                 }
                                             }
-                                        } else if (radarChartData != null) {
-                                            ProgressRadarChart(
-                                                radarData = radarChartData!!,
-                                                modifier = Modifier
-                                                    .fillMaxWidth(),
+                                        } /** else if (radarChartData != null) {
+                                                    ProgressRadarChart(
+                                                        radarData = radarChartData!!,
+                                                        modifier = Modifier
+                                                            .fillMaxWidth(),
 
-                                            )
-                                        } else {
+                                                    )
+                                                }
+                                        else {
                                             Box(
                                                 modifier = Modifier
                                                     .fillMaxWidth()
@@ -458,7 +488,7 @@ fun StatScreen(
                                                 }
                                             }
 
-                                        }
+                                        } **/
                                     }
 
                                 }

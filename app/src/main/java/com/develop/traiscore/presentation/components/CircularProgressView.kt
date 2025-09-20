@@ -29,7 +29,7 @@ fun CircularProgressView(
     modifier: Modifier = Modifier,
     strokeColor: Color = Color.Cyan,
     backgroundColor: Color = traiOrange,
-    strokeWidth: Float = 16f
+    strokeWidth: Float = 13f
 ) {
     // Animar el progreso
     val animatedProgress = remember { Animatable(0f) }

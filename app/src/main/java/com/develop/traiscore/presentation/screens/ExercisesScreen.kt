@@ -150,7 +150,7 @@ fun ExercisesScreen(
                 // FAB condicional solo en vista TODAY
                 if (currentViewMode.value == ViewMode.TODAY &&
                     !hasActiveSession &&
-                    availableSessions.size < 6) {
+                    availableSessions.size < 10) {
                     FloatingActionButton(
                         onClick = { showNewSessionDialog = true },
                         containerColor = MaterialTheme.tsColors.ledCyan,

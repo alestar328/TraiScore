@@ -105,6 +105,7 @@
     <string name="stats_effort">Esfuerzo</string>
     <string name="stats_by_weight">Por peso:</string>
     <string name="stats_by_reps">Por repeticiones:</string>
+    <string name="stats_by_rir">Por RIR:</string>
     <string name="stats_top_5_exer">Top 5 ejercicios - Progreso</string>
 
     <string name="stats_top_3_exer">Top 3 ejercicios</string>

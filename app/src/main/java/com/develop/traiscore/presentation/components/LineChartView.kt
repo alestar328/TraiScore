@@ -123,7 +123,7 @@ fun LineChartView(
                 brush = Brush.verticalGradient(
                     colors = listOf(lineColor.copy(alpha = 0.3f), Color.Transparent),
                     startY = paddingY,
-                    endY = yAxis
+                    endY = size.height
                 )
             )
 

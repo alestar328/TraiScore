@@ -191,5 +191,6 @@
 
 
     <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
+    <string name="stats_by_rir">Von RIR:</string>
 
 </resources>
