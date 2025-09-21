@@ -25,6 +25,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
 import com.develop.traiscore.data.local.entity.WorkoutEntry
+import com.develop.traiscore.presentation.theme.traiBlue
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -69,7 +70,7 @@ fun WorkoutCard(
                     Icon(
                         Icons.Default.Delete,
                         contentDescription = "Delete",
-                        tint = Color.Red,
+                        tint = traiBlue,
                         modifier = Modifier.size(17.dp)
                     )
 

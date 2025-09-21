@@ -152,7 +152,7 @@ dependencies {
     // optional - Kotlin Extensions and Coroutines support for Room
     implementation(libs.androidx.room.ktx)
 
-    val nav_version = "2.8.4"
+    val nav_version = "2.9.4"
     implementation(libs.androidx.material3.window.size)
     // ViewModel
     implementation(libs.androidx.lifecycle.viewmodel.ktx)

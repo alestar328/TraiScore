@@ -1,7 +1,6 @@
 package com.develop.traiscore.presentation.screens
 
 import androidx.compose.foundation.background
-import androidx.compose.material.FloatingActionButton
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items

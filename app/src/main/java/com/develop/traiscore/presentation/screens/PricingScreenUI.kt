@@ -15,8 +15,19 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
+import com.develop.traiscore.presentation.components.general.PricingCardUI
+import com.develop.traiscore.presentation.theme.traiBlue
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -24,33 +35,57 @@ import androidx.compose.ui.res.painterResource
 fun PricingScreenUI(
     onProIconClick: () -> Unit = {},
     onSkipClick: () -> Unit = {},
+    onSubscribeClick: (String) -> Unit = {}, // Callback para suscripción
+    onNotNowClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
+    // Estado para manejar qué plan está seleccionado
+    var selectedPlan by remember { mutableStateOf("Anual") } // Por defecto anual
+
     Scaffold(
         topBar = {
             TopAppBar(
+                navigationIcon = {
+                    // 👇 Spacer para balancear el espacio izquierdo
+                    Spacer(modifier = Modifier.width(64.dp))
+                    // (ajusta el valor según el ancho de "Omitir")
+                },
                 title = {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Start,
+                        horizontalArrangement = Arrangement.Center,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Texto "TraiScore"
                         Text(
-                            text = "TraiScore",
-                            style = MaterialTheme.typography.headlineSmall,
-                            color = MaterialTheme.colorScheme.onBackground,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Spacer(modifier = Modifier.width(12.dp))
-
-                        // ProIconUI al lado del texto
-                        ProIconUI(
-                            onClick = onProIconClick,
-                            fontSize = 13.sp,
-
+                            text = buildAnnotatedString {
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = traiBlue // 👈 Color para "Trai"
+                                    )
+                                ) {
+                                    append("Trai")
+                                }
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = Color.White // 👈 Color para "Score"
+                                    )
+                                ) {
+                                    append("Score")
+                                }
+                                append(" ") // espacio entre Score y PRO
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = Color.Yellow // 👈 Color para "PRO"
+                                    )
+                                ) {
+                                    append("Pro")
+                                }
+                            },
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontWeight = FontWeight.Bold
                             )
+                        )
                     }
                 },
                 actions = {
@@ -78,28 +113,112 @@ fun PricingScreenUI(
                     .padding(paddingValues)
                     .background(MaterialTheme.colorScheme.background)
                     .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(16.dp)
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                item {
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = "Ventajas del Plan Pro",
-                        style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                }
 
                 item {
                     AdvantagesList()
+                }
+
+                // Sección de cards de pricing
+                item {
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Text(
+                        text = "Elige tu plan",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(bottom = 16.dp),
+                        textAlign = TextAlign.Center
+                    )
+
+                    // Row con las dos cards de pricing
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(16.dp, Alignment.CenterHorizontally),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Card Mensual
+                        PricingCardUI(
+                            planName = "Pro",
+                            period = "Mensual",
+                            price = "2,99",
+                            billingInfo = "Facturado mensualmente",
+                            isSelected = selectedPlan == "Mensual",
+                            onClick = { selectedPlan = "Mensual" }
+                        )
+
+                        // Card Anual
+                        PricingCardUI(
+                            planName = "Pro",
+                            period = "Anual",
+                            price = "29,99",
+                            billingInfo = "Facturado anualmente",
+                            savings = "6,89€",
+                            isSelected = selectedPlan == "Anual",
+                            onClick = { selectedPlan = "Anual" }
+                        )
+                    }
+                }
+
+                // Botón de suscripción
+                item {
+                    Spacer(modifier = Modifier.height(20.dp))
+
+                    Button(
+                        onClick = { onSubscribeClick(selectedPlan) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(56.dp),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = traiBlue
+                        ),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                            text = "Suscribirse al plan $selectedPlan",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 16.sp
+                            ),
+                            color = Color.White
+                        )
+                    }
+                }
+
+                // Texto "Ahora no" clickable
+                item {
+                    Spacer(modifier = Modifier.height(10.dp))
+
+                    Text(
+                        text = "Ahora no",
+                        style = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Medium
+                        ),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.7f),
+                        modifier = Modifier
+                            .clickable { onNotNowClick() }
+                            .padding(vertical = 8.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                // Texto informativo sobre cancelación
+                item {
+                    Text(
+                        text = "Cancela tu suscripción en cualquier momento",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(bottom = 24.dp)
+                    )
                 }
             }
         }
     )
 }
-
 
 // Estructura de datos para las ventajas
 data class AdvantageData(
@@ -227,7 +346,9 @@ fun PricingScreenUIPreview() {
     MaterialTheme {
         PricingScreenUI(
             onProIconClick = { /* Acción ProIcon */ },
-            onSkipClick = { /* Acción Omitir */ }
+            onSkipClick = { /* Acción Omitir */ },
+            onSubscribeClick = { plan -> /* Acción Suscribirse: $plan */ },
+            onNotNowClick = { /* Acción Ahora no */ }
         )
     }
 }

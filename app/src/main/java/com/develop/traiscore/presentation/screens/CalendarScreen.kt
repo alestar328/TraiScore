@@ -199,7 +199,7 @@ fun CalendarScreen(
 
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
+                            .fillMaxSize()
                             .padding(32.dp),
                         contentAlignment = Alignment.Center
                     ) {
@@ -242,7 +242,7 @@ private fun SessionDayCard(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 8.dp, vertical = 4.dp)
+            .padding( vertical = 4.dp)
     ) {
         // Header compacto de la sesión
         Row(
