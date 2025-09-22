@@ -51,6 +51,7 @@ import com.develop.traiscore.data.local.entity.WorkoutWithExercise
 import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.components.WorkoutCard
+import com.develop.traiscore.presentation.components.general.DeleteConfirmationDialog
 import com.develop.traiscore.presentation.components.general.NewSessionUX
 import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
@@ -94,6 +95,28 @@ fun ExercisesScreen(
     var showNewSessionDialog by remember { mutableStateOf(false) }
 
     val newSessionViewModel: NewSessionViewModel = hiltViewModel()
+
+    val showDeleteDialog = remember { mutableStateOf(false) }
+    val workoutToDelete = remember { mutableStateOf<WorkoutEntry?>(null) }
+
+    val handleDeleteRequest = { workout: WorkoutEntry ->
+        workoutToDelete.value = workout
+        showDeleteDialog.value = true
+    }
+
+    val confirmDelete = {
+        workoutToDelete.value?.uid?.let { id ->
+            viewModel.deleteWorkoutEntry(id)
+        }
+        showDeleteDialog.value = false
+        workoutToDelete.value = null
+    }
+
+    val cancelDelete = {
+        showDeleteDialog.value = false
+        workoutToDelete.value = null
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -103,49 +126,45 @@ fun ExercisesScreen(
             topBar = {
                 TraiScoreTopBar(
                     leftIcon = {
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clickable {
-                                    if (showSearchBar.value) {
-                                        showSearchBar.value = false
-                                        selectedSearch.value = ""
-                                    }
-                                    showViewModeSelector.value = !showViewModeSelector.value
-                                },
-                            contentAlignment = Alignment.Center
+                        IconButton(
+                            onClick = {
+                                if (showSearchBar.value) {
+                                    showSearchBar.value = false
+                                    selectedSearch.value = ""
+                                }
+                                showViewModeSelector.value = !showViewModeSelector.value
+                            }
                         ) {
                             Icon(
                                 imageVector = Icons.Default.DateRange,
                                 contentDescription = "Selector de vista",
-                                tint = MaterialTheme.tsColors.ledCyan,
+                                tint = MaterialTheme.tsColors.ledCyan
                             )
                         }
                     },
                     rightIcon = {
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clickable {
-                                    calculateTodayDataAndNavigate(
-                                        context = context,
-                                        navController = navController,
-                                        viewModel = statViewModel,
-                                        oneRepMax = oneRepMax,
-                                        maxReps = maxReps
-                                    )
-                                },
-                            contentAlignment = Alignment.Center
+                        IconButton(
+                            onClick = {
+                                calculateTodayDataAndNavigate(
+                                    context = context,
+                                    navController = navController,
+                                    viewModel = statViewModel,
+                                    oneRepMax = oneRepMax,
+                                    maxReps = maxReps
+                                )
+                            }
                         ) {
                             Icon(
                                 painter = painterResource(id = R.drawable.ic_camara),
                                 contentDescription = "Compartir sesión",
                                 tint = MaterialTheme.tsColors.ledCyan,
+                                modifier = Modifier.size(30.dp)
                             )
                         }
                     }
                 )
-            },
+            }
+            ,
             floatingActionButton = {
                 // FAB condicional solo en vista TODAY
                 if (currentViewMode.value == ViewMode.TODAY &&
@@ -257,9 +276,7 @@ fun ExercisesScreen(
                                         selectedEntry.value = workout
                                         showBottomSheet.value = true
                                     },
-                                    onDeleteClick = { workout ->
-                                        workout.uid?.let { viewModel.deleteWorkoutEntry(it) }
-                                    }
+                                    onDeleteClick = handleDeleteRequest
                                 )
                             }
 
@@ -270,9 +287,7 @@ fun ExercisesScreen(
                                         selectedEntry.value = workout
                                         showBottomSheet.value = true
                                     },
-                                    onDeleteClick = { workout ->
-                                        workout.uid?.let { viewModel.deleteWorkoutEntry(it) }
-                                    }
+                                    onDeleteClick = handleDeleteRequest
                                 )
                             }
                         }
@@ -298,6 +313,13 @@ fun ExercisesScreen(
             }
         }
     )
+    DeleteConfirmationDialog(
+        isVisible = showDeleteDialog.value,
+        exerciseTitle = workoutToDelete.value?.title ?: "",
+        onConfirm = confirmDelete,
+        onDismiss = cancelDelete
+    )
+
     if (showNewSessionDialog) {
         NewSessionUX(
             onDismiss = { showNewSessionDialog = false },

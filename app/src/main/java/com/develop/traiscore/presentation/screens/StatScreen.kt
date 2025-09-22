@@ -619,10 +619,10 @@ fun StatScreen(
                                                                 Color.DarkGray,
                                                                 RoundedCornerShape(8.dp)
                                                             )
-                                                            .padding(16.dp)
+                                                            .padding(20.dp)
                                                     ) {
                                                         Text(
-                                                            text = stringResource(id = R.string.stats_size_resume) + "${metric.displayName}",
+                                                            text = stringResource(id = R.string.stats_size_resume) + " ${metric.displayName}",
                                                             style = MaterialTheme.typography.titleMedium,
                                                             color = Color.White,
                                                             modifier = Modifier.padding(bottom = 8.dp)

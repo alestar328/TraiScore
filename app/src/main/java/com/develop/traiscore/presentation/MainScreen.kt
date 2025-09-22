@@ -50,7 +50,7 @@ fun MainScreen(
     navController: NavHostController,
     exeScreenViewModel: ExercisesScreenViewModel = hiltViewModel(),
     routineViewModel: RoutineViewModel = hiltViewModel(),
-    initialSelectedIndex: Int = 0 // ✅ NUEVO PARÁMETRO
+    initialSelectedIndex: Int = 0
 
 ) {
     val navItemList = listOf(

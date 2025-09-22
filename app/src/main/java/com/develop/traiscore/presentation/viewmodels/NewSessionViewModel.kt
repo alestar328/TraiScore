@@ -1,5 +1,7 @@
 package com.develop.traiscore.presentation.viewmodels
 
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -47,13 +49,19 @@ class NewSessionViewModel @Inject constructor(
 
     private val _availableSessions = MutableStateFlow<List<Map<String, Any>>>(emptyList())
     val availableSessions: StateFlow<List<Map<String, Any>>> = _availableSessions.asStateFlow()
+    private val _hasSessionsLoaded = mutableStateOf(false) // ⭐ NUEVO para tracking
+    val hasSessionsLoaded: State<Boolean> = _hasSessionsLoaded
 
 
     init {
         // Verificar sesión activa al inicializar
         checkForActiveSession()
     }
-
+    fun preloadSessions() {
+        if (!_hasSessionsLoaded.value) {
+            loadAvailableSessions()
+        }
+    }
     /**
      * Crear una nueva sesión
      */
