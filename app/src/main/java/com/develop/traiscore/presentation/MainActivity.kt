@@ -345,9 +345,7 @@ fun AppNavigation(navController: NavHostController) {
                 }
             )
         }
-        composable(NavigationRoutes.MyExercises.route) {
-            MyExercisesUI(navController = navController)
-        }
+
 
         composable(NavigationRoutes.Login.route) {
             LoginScreenRoute(
@@ -503,6 +501,14 @@ fun AppNavigation(navController: NavHostController) {
                     navController.navigate(NavigationRoutes.MeasurementsHistory.route)
                 },
                 bodyStatsViewModel = bodyStatsViewModel
+            )
+        }
+        composable(NavigationRoutes.MyExercises.route) {
+            MyExercisesUI(
+                navController = navController,
+                onBack = {
+                    navController.popBackStack()
+                }
             )
         }
         composable(

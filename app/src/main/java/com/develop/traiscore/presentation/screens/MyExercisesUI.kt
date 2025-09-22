@@ -17,8 +17,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -27,14 +31,17 @@ import androidx.navigation.NavHostController
 import com.develop.traiscore.R
 import com.develop.traiscore.presentation.components.AddExerciseDialogToDB
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
+import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 import com.develop.traiscore.presentation.viewmodels.ExerciseWithSource
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MyExercisesUI(
     navController: NavHostController,
+    onBack: () -> Unit,
     addExerciseViewModel: AddExerciseViewModel = hiltViewModel()
 ) {
     val exercisesWithSource by remember { derivedStateOf { addExerciseViewModel.exercisesWithSource } }
@@ -53,18 +60,45 @@ fun MyExercisesUI(
 
     Scaffold(
         topBar = {
-            TraiScoreTopBar(
-                leftIcon = {
-                    IconButton(
-                        onClick = { navController.popBackStack() }
+            TopAppBar(
+                title = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = MaterialTheme.tsColors.ledCyan
+                        // Texto "TraiScore"
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = traiBlue // 👈 Color para "Trai"
+                                    )
+                                ) {
+                                    append("Trai")
+                                }
+                                withStyle(
+                                    style = SpanStyle(
+                                        color = Color.White // 👈 Color para "Score"
+                                    )
+                                ) {
+                                    append("Score")
+                                }
+                            },
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontWeight = FontWeight.Bold
+                            )
                         )
                     }
                 },
+                navigationIcon = {
+                    IconButton(onClick = {  onBack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
             )
         },
         floatingActionButton = {
