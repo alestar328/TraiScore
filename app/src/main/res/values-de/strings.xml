@@ -159,6 +159,7 @@
     <!--PROFILE-->
     <string name="profile_friends_count">Freunde</string>
     <string name="profile_my_sizes">Meine Maße</string>
+    <string name="profile_my_health_with_ia">Meine Gesundheit mit KI</string>
     <string name="profile_my_exercises">Meine Übungen</string>
     <string name="profile_close_session">Abmelden</string>
 

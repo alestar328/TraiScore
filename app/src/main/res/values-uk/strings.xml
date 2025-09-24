@@ -146,6 +146,7 @@
     <!--PROFILE-->
     <string name="profile_friends_count">Друзі</string>
     <string name="profile_my_sizes">Мої вимірювання</string>
+    <string name="profile_my_health_with_ia">Мое здоровье с ИИ</string>
     <string name="profile_my_exercises">Мої вправи</string>
     <string name="profile_close_session">Вийти</string>
 

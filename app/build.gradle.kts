@@ -185,9 +185,9 @@ dependencies {
 
     implementation(libs.google.pay.api)
     implementation(libs.tasks.api.coroutines)
-    implementation("com.android.billingclient:billing-ktx:6.0.1")
     implementation("com.google.android.gms:play-services-wallet:19.4.0")
     implementation("com.google.pay.button:compose-pay-button:1.1.0")
+    implementation("com.android.billingclient:billing-ktx:8.0.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

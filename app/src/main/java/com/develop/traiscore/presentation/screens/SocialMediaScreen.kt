@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -46,6 +47,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
@@ -82,13 +84,31 @@ fun SocialMediaScreen(
     totalWeight: Double,
     onDismiss: () -> Unit,
     onShare: (Bitmap) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+
+    // ⬇️ estado de transformación persistente (viene de CameraGalleryScreen)
+    scale: Float,
+    offsetX: Float,
+    offsetY: Float,
+    rotation: Float,
+    onTransform: (scale: Float, offsetX: Float, offsetY: Float, rotation: Float) -> Unit,
+    onResetTransform: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-
     var isCapturing by remember { mutableStateOf(false) }
     var captureFunction by remember { mutableStateOf<(suspend () -> Bitmap)?>(null) }
+
+    // ⬇️ Gestos que actualizan el estado ELEVADO
+    val minScale = 1f
+    val maxScale = 6f
+    val transformState = rememberTransformableState { zoom, pan, rot ->
+        val newScale = (scale * zoom).coerceIn(minScale, maxScale)
+        val newOffsetX = offsetX + pan.x
+        val newOffsetY = offsetY + pan.y
+        val newRotation = rotation + rot
+        onTransform(newScale, newOffsetX, newOffsetY, newRotation)
+    }
 
     Box(
         modifier = modifier
@@ -97,7 +117,7 @@ fun SocialMediaScreen(
             .systemBarsPadding()
             .navigationBarsPadding()
     ) {
-        // ✅ CONTENIDO A CAPTURAR (CON SU PROPIO drawWithCache)
+        // ⬇️ Contenido que se captura (incluye la foto transformable + overlays)
         CapturedContent(
             photo = photo,
             exerciseName = exerciseName,
@@ -106,13 +126,17 @@ fun SocialMediaScreen(
             maxReps = maxReps,
             totalWeight = totalWeight,
             trainingDays = trainingDays,
-            onCaptureReady = { captureFunc ->
-                captureFunction = captureFunc
-            },
+            transformState = transformState,
+            // ⬇️ valores actuales para aplicarlos en la foto
+            scale = scale,
+            offsetX = offsetX,
+            offsetY = offsetY,
+            rotation = rotation,
+            onCaptureReady = { captureFunc -> captureFunction = captureFunc },
             modifier = Modifier.fillMaxSize()
         )
 
-        // ✅ BOTONES FUERA DEL ÁREA DE CAPTURA
+        // Botones (no se incluyen en la captura)
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -146,8 +170,6 @@ fun SocialMediaScreen(
                                     topWeight = topWeight,
                                     maxReps = maxReps
                                 )
-                            } catch (e: Exception) {
-                                android.util.Log.e("SocialMediaScreen", "Error capturing: ${e.message}")
                             } finally {
                                 isCapturing = false
                             }
@@ -187,18 +209,24 @@ private fun CapturedContent(
     topWeight: Float,
     maxReps: Int,
     trainingDays: Int,
+
+    // ⬇️ para transformar la foto
+    transformState: androidx.compose.foundation.gestures.TransformableState,
+    scale: Float,
+    offsetX: Float,
+    offsetY: Float,
+    rotation: Float,
+
     onCaptureReady: (suspend () -> Bitmap) -> Unit,
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     val graphicsLayer = rememberGraphicsLayer()
-    val displayExerciseName = exerciseName.ifEmpty {
-        stringResource(R.string.filter_no_main_exercise)
-    }
-    val displayExerciseMaxReps = exerciseNameMaxReps.ifEmpty {
-        stringResource(R.string.filter_no_max_reps)
-    }
 
+    val displayExerciseName = exerciseName.ifEmpty { stringResource(R.string.filter_no_main_exercise) }
+    val displayExerciseMaxReps = exerciseNameMaxReps.ifEmpty { stringResource(R.string.filter_no_max_reps) }
+
+    // captura del contenido con drawWithCache + graphicsLayer
     LaunchedEffect(Unit) {
         onCaptureReady {
             graphicsLayer.toImageBitmap().asAndroidBitmap()
@@ -206,64 +234,83 @@ private fun CapturedContent(
     }
 
     Box(
-        modifier = modifier
-            .drawWithCache {
-                onDrawWithContent {
-                    drawContent()
-                    graphicsLayer.record {
-                        this@onDrawWithContent.drawContent()
-                    }
+        modifier = modifier.drawWithCache {
+            onDrawWithContent {
+                drawContent()
+                graphicsLayer.record {
+                    this@onDrawWithContent.drawContent()
                 }
             }
+        }
     ) {
-        // Imagen de fondo
-        AsyncImage(
-            model = ImageRequest.Builder(context)
-                .data(photo)
-                .build(),
-            contentDescription = "Foto capturada",
-            modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.FillHeight
-        )
-
-        // ✅ OVERLAY OSCURO QUE CUBRE TODA LA IMAGEN
+        // ⬇️ Marco 9:16 tipo "Historias"
         Box(
             modifier = Modifier
-                .fillMaxSize()
-                .background(
-                    brush = Brush.verticalGradient(
-                        colors = listOf(
-                            Color.Black.copy(alpha = 0.4f),
-                            Color.Black.copy(alpha = 0.2f),
-                            Color.Black.copy(alpha = 0.3f),
-                            Color.Black.copy(alpha = 0.6f)
+                .align(Alignment.Center)
+                .fillMaxWidth()
+                .aspectRatio(9f / 16f)
+                .background(Color.Black),
+            contentAlignment = Alignment.Center
+        ) {
+            // ⬇️ FOTO TRANSFORMABLE (pinch/drag/rotate)
+            AsyncImage(
+                model = ImageRequest.Builder(context)
+                    .data(photo)
+                    .build(),
+                contentDescription = "Foto",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .fillMaxSize()
+                    .transformable(transformState)
+                    .graphicsLayer {
+                        scaleX = scale
+                        scaleY = scale
+                        translationX = offsetX
+                        translationY = offsetY
+                        rotationZ = rotation
+                    }
+            )
+
+            // Overlay de gradiente
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(
+                        Brush.verticalGradient(
+                            colors = listOf(
+                                Color.Black.copy(alpha = 0.4f),
+                                Color.Black.copy(alpha = 0.2f),
+                                Color.Black.copy(alpha = 0.3f),
+                                Color.Black.copy(alpha = 0.6f)
+                            )
                         )
                     )
-                )
-        )
+            )
 
-        androidx.compose.foundation.Image(
-            painter = painterResource(id = R.drawable.trailogoup),
-            contentDescription = "TraiScore Logo",
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(20.dp)
-                .height(40.dp)
-        )
+            // Logo inferior
+            androidx.compose.foundation.Image(
+                painter = painterResource(id = R.drawable.trailogoup),
+                contentDescription = "TraiScore Logo",
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(20.dp)
+                    .height(40.dp)
+            )
 
-        // ✅ OVERLAY CON ELEMENTOS TRANSFORMABLES
-        TransformableStatsOverlay(
-            exerciseName = displayExerciseName,
-            exerciseNameMaxReps = displayExerciseMaxReps,
-            topWeight = topWeight,
-            maxReps = maxReps,
-            totalWeight = totalWeight,
-            trainingDays = trainingDays,
-            modifier = Modifier.fillMaxSize()
-        )
+            // ⬇️ Tus estadísticas por encima (no bloquean gestos de la foto)
+            TransformableStatsOverlay(
+                exerciseName = displayExerciseName,
+                exerciseNameMaxReps = displayExerciseMaxReps,
+                topWeight = topWeight,
+                maxReps = maxReps,
+                totalWeight = totalWeight,
+                trainingDays = trainingDays,
+                modifier = Modifier.matchParentSize()
+            )
+
+        }
     }
 }
-
 // ✅ NUEVO COMPOSABLE CON ELEMENTOS TRANSFORMABLES
 @Composable
 private fun TransformableStatsOverlay(

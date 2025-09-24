@@ -147,6 +147,7 @@
 
     <string name="profile_friends_count">Amici</string>
     <string name="profile_my_sizes">Le mie misure</string>
+    <string name="profile_my_health_with_ia">La mia salute con IA</string>
     <string name="profile_my_exercises">I miei esercizi</string>
     <string name="profile_close_session">Disconnetti</string>
 

@@ -2,9 +2,7 @@ package com.develop.traiscore.presentation.components.general
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import com.develop.traiscore.R
 import com.develop.traiscore.presentation.theme.tsColors
 
 @Composable

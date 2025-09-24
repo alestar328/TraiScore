@@ -14,6 +14,8 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.rememberTransformableState
+import androidx.compose.foundation.gestures.transformable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -28,6 +30,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
@@ -40,6 +43,7 @@ import androidx.core.content.ContextCompat
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import coil3.request.ImageRequest
+import coil3.request.crossfade
 import com.develop.traiscore.R
 import com.develop.traiscore.presentation.theme.traiBlue
 import kotlinx.coroutines.Dispatchers
@@ -87,7 +91,10 @@ fun CameraGalleryScreen(
     var imageCapture: ImageCapture? by remember { mutableStateOf(null) }
     var cameraProvider: ProcessCameraProvider? by remember { mutableStateOf(null) }
     val cameraExecutor: ExecutorService = remember { Executors.newSingleThreadExecutor() }
-
+    var photoScale by remember { mutableStateOf(1f) }
+    var photoOffsetX by remember { mutableStateOf(0f) }
+    var photoOffsetY by remember { mutableStateOf(0f) }
+    var photoRotation by remember { mutableStateOf(0f) }
     // Permisos
     val galleryPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
@@ -168,133 +175,156 @@ fun CameraGalleryScreen(
     }
 
     // UI Principal
-    if (showSocialShare && selectedPhoto != null) {
-        SocialMediaScreen(
-            photo = selectedPhoto!!.uri,
-            exerciseName = exerciseName,
-            exerciseNameMaxReps = exerciseNameMaxReps,
-            topWeight = oneRepMax,
-            totalWeight = totalWeight,
-            maxReps = maxReps,
-            trainingDays = trainingDays,
-            onDismiss = {
-                showSocialShare = false
-                selectedPhoto = null
-            },
-            onShare = { bitmap ->
-                Log.d("CameraGallery", "📤 Compartir bitmap")
-            }
-        )
-    } else if (showGallery) {
-        // ✅ PANTALLA COMPLETA DE GALERÍA
-        FullGalleryScreen(
-            photos = photos,
-            isLoading = isLoadingPhotos,
-            hasPermission = hasGalleryPermission,
-            onPhotoSelected = { photo ->
-                selectedPhoto = photo
-                showGallery = false
-                showSocialShare = true
-            },
-            onRequestPermission = {
-                val permission = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                    Manifest.permission.READ_MEDIA_IMAGES
-                } else {
-                    Manifest.permission.READ_EXTERNAL_STORAGE
+    when {
+        showSocialShare && selectedPhoto != null -> {
+            SocialMediaScreen(
+                photo = selectedPhoto!!.uri,
+                exerciseName = exerciseName,
+                exerciseNameMaxReps = exerciseNameMaxReps,
+                topWeight = oneRepMax,
+                totalWeight = totalWeight,
+                maxReps = maxReps,
+                trainingDays = trainingDays,
+                scale = photoScale,
+                offsetX = photoOffsetX,
+                offsetY = photoOffsetY,
+                rotation = photoRotation,
+
+                // 👇 setters (SocialMediaScreen actualizará estos)
+                onTransform = { newScale, newOffsetX, newOffsetY, newRotation ->
+                    photoScale = newScale
+                    photoOffsetX = newOffsetX
+                    photoOffsetY = newOffsetY
+                    photoRotation = newRotation
+                },
+                onResetTransform = {
+                    photoScale = 1f
+                    photoOffsetX = 0f
+                    photoOffsetY = 0f
+                    photoRotation = 0f
+                },
+                onDismiss = {
+                    showSocialShare = false
+                    selectedPhoto = null
+                },
+                onShare = { bitmap ->
+                    Log.d("CameraGallery", "📤 Compartir bitmap")
                 }
-                galleryPermissionLauncher.launch(permission)
-            },
-            onClose = { showGallery = false }
-        )
-    } else {
-        // ✅ PANTALLA DE CÁMARA CON BARRA INFERIOR
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-        ) {
-            // 📷 Vista de cámara REAL
-            if (hasCameraPermission) {
-                RealCameraView(
-                    onCameraSetup = { capture, provider ->
-                        imageCapture = capture
-                        cameraProvider = provider
-                    },
-                    modifier = Modifier.fillMaxSize()
-                )
-            } else {
-                // Mostrar mensaje de permisos
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            "Se requiere permiso de cámara",
-                            color = Color.White,
-                            fontSize = 18.sp
-                        )
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Button(
-                            onClick = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) }
-                        ) {
-                            Text("Permitir Cámara")
+            )
+        }
+
+        // 3) Galería
+        showGallery -> {
+            FullGalleryScreen(
+                photos = photos,
+                isLoading = isLoadingPhotos,
+                hasPermission = hasGalleryPermission,
+                onPhotoSelected = { photo ->
+                    selectedPhoto = photo
+                    showGallery = false
+                    showSocialShare  = true
+                },
+                onRequestPermission = {
+                    val permission =
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+                            Manifest.permission.READ_MEDIA_IMAGES
+                        } else {
+                            Manifest.permission.READ_EXTERNAL_STORAGE
+                        }
+                    galleryPermissionLauncher.launch(permission)
+                },
+                onClose = { showGallery = false }
+            )
+        }else -> {
+            // ✅ PANTALLA DE CÁMARA CON BARRA INFERIOR
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+            ) {
+                // 📷 Vista de cámara REAL
+                if (hasCameraPermission) {
+                    RealCameraView(
+                        onCameraSetup = { capture, provider ->
+                            imageCapture = capture
+                            cameraProvider = provider
+                        },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    // Mostrar mensaje de permisos
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                            Text(
+                                "Se requiere permiso de cámara",
+                                color = Color.White,
+                                fontSize = 18.sp
+                            )
+                            Spacer(modifier = Modifier.height(16.dp))
+                            Button(
+                                onClick = { cameraPermissionLauncher.launch(Manifest.permission.CAMERA) }
+                            ) {
+                                Text("Permitir Cámara")
+                            }
                         }
                     }
                 }
-            }
 
-            // ❌ Botón cerrar (top-left)
-            IconButton(
-                onClick = { navController.popBackStack() },
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(16.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Close,
-                    contentDescription = "Cerrar",
-                    tint = Color.White,
-                    modifier = Modifier.size(28.dp)
-                )
-            }
-
-            // 📸 Botón de captura (bottom-center)
-            FloatingActionButton(
-                onClick = { capturePhoto() },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .padding(bottom = 150.dp) // Espacio para la barra inferior
-                    .size(80.dp),
-                containerColor = Color.White,
-                elevation = FloatingActionButtonDefaults.elevation(8.dp)
-            ) {
-                Box(
+                // ❌ Botón cerrar (top-left)
+                IconButton(
+                    onClick = { navController.popBackStack() },
                     modifier = Modifier
-                        .size(60.dp)
-                        .background(Color.White, CircleShape),
-                    contentAlignment = Alignment.Center
+                        .align(Alignment.TopStart)
+                        .padding(16.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Cerrar",
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                // 📸 Botón de captura (bottom-center)
+                FloatingActionButton(
+                    onClick = { capturePhoto() },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .padding(bottom = 150.dp)
+                        .size(80.dp), // Botón exterior
+                    containerColor = Color.Transparent, // 👈 Sin fondo para que no sea un FAB gris
+                    elevation = FloatingActionButtonDefaults.elevation(0.dp) // 👈 Sin sombra extra
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(50.dp)
-                            .background(Color.White, CircleShape)
+                            .size(72.dp) // 👈 Aro exterior
                             .clip(CircleShape)
-                    )
+                            .background(Color.Black), // 👈 Borde negro
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(60.dp) // 👈 Centro blanco
+                                .clip(CircleShape)
+                                .background(Color.White)
+                        )
+                    }
                 }
-            }
 
-            // ✅ BARRA INFERIOR ESTILO INSTAGRAM
-            InstagramGalleryBar(
-                onClick = { showGallery = true },
-                modifier = Modifier
-                    .align(Alignment.BottomCenter)
-                    .fillMaxWidth()
-                    .navigationBarsPadding()
-            )
+                // ✅ BARRA INFERIOR ESTILO INSTAGRAM
+                InstagramGalleryBar(
+                    onClick = { showGallery = true },
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+                        .fillMaxWidth()
+                        .navigationBarsPadding()
+                )
+            }
         }
     }
-
     // Cleanup
     DisposableEffect(Unit) {
         onDispose {
@@ -613,6 +643,104 @@ private fun PhotoGridItem(
                     tint = Color.White,
                     modifier = Modifier.size(20.dp)
                 )
+            }
+        }
+    }
+}
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ImageEditor(
+    photoUri: Uri,
+    onCancel: () -> Unit,
+    onConfirm: () -> Unit
+) {
+    // Formato historias (vertical)
+    val targetAspect = 9f / 16f
+
+    // Estado de transformación
+    var scale by remember { mutableStateOf(1f) }
+    var offsetX by remember { mutableStateOf(0f) }
+    var offsetY by remember { mutableStateOf(0f) }
+    var rotation by remember { mutableStateOf(0f) }
+    val minScale = 1f
+    val maxScale = 6f
+
+    val transformState = rememberTransformableState { zoom, pan, rot ->
+        scale = (scale * zoom).coerceIn(minScale, maxScale)
+        offsetX += pan.x
+        offsetY += pan.y
+        rotation += rot
+    }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Ajustar foto") },
+                navigationIcon = {
+                    IconButton(onClick = onCancel) { Icon(Icons.Default.Close, null) }
+                },
+                actions = {
+                    IconButton(onClick = onConfirm) { Icon(Icons.Default.Check, null) }
+                }
+            )
+        }
+    ) { inner ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(inner)
+                .background(Color.Black)
+        ) {
+            // Marco 9:16 y foto transformable
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .fillMaxWidth()
+                    .aspectRatio(targetAspect)
+                    .background(Color.Black),
+                contentAlignment = Alignment.Center
+            ) {
+                AsyncImage(
+                    model = ImageRequest.Builder(LocalContext.current)
+                        .data(photoUri)
+                        .crossfade(true)
+                        .build(),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .transformable(transformState)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                            translationX = offsetX
+                            translationY = offsetY
+                            rotationZ = rotation
+                        },
+                    contentScale = ContentScale.Crop
+                )
+
+                // Overlay sutil para percibir el marco (opcional)
+                Box(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .background(Color.Black.copy(alpha = 0.08f))
+                )
+            }
+
+            // Controles básicos
+            Row(
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                TextButton(onClick = {
+                    scale = 1f; offsetX = 0f; offsetY = 0f; rotation = 0f
+                }) { Text("Reiniciar") }
+
+                TextButton(onClick = {
+                    offsetX = 0f; offsetY = 0f
+                }) { Text("Centrar") }
             }
         }
     }

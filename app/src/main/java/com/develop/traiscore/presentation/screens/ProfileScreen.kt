@@ -311,6 +311,22 @@ fun ProfileScreen(
                             onClick = { navController.navigate(NavigationRoutes.MyExercises.route) }
                         )
                     }
+                    Spacer(Modifier.height(20.dp))
+
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        ProfileButton(
+                            text = stringResource(R.string.profile_my_health_with_ia),
+                            modifier = Modifier.weight(1f),
+                            containerColor = Color.White,
+                            contentColor = Color.Black,
+                            painter = painterResource(id = R.drawable.brain_ia),
+                            onClick = onMeasurementsClick
+                        )
+
+                    }
                 }
                 Spacer(modifier = Modifier.weight(1f))
 
