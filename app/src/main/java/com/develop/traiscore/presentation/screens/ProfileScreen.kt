@@ -28,9 +28,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
+import com.develop.traiscore.BuildConfig
 import com.develop.traiscore.R
 import com.develop.traiscore.core.UserRole
-import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.presentation.MainActivity
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.components.general.ProfilePhotoComponent
@@ -74,6 +74,9 @@ fun ProfileScreen(
 
     // Estado para controlar el listener de Firestore
     var firestoreListener by remember { mutableStateOf<ListenerRegistration?>(null) }
+    val isAthlete = BuildConfig.FLAVOR == "athlete"
+    val isTrainer = BuildConfig.FLAVOR == "trainer"
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     // Función para limpiar el listener
     fun cleanupListener() {
@@ -117,93 +120,49 @@ fun ProfileScreen(
             profileViewModel.clearError()
         }
     }
-    LaunchedEffect(navController.currentBackStackEntry) {
-        // Obtener rol del usuario
-        UserRoleManager.getCurrentUserRole { role ->
-            currentUserRole = role
-        }
+    if (isAthlete) {
+        LaunchedEffect(Unit) {
+            val currentUser = auth.currentUser ?: return@LaunchedEffect
+            isLoading = true
+            trainerInfo = null
+            try {
+                // Carga inicial (si la quieres)
+                FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(currentUser.uid)
+                    .get()
+                    .await()
 
-        // Si es cliente, configurar listener en tiempo real
-        val currentUser = auth.currentUser
-        if (currentUser != null) {
-            scope.launch {
-                try {
-                    isLoading = true
-                    trainerInfo = null
-
-                    val userDoc = FirebaseFirestore.getInstance()
-                        .collection("users")
-                        .document(currentUser.uid)
-                        .get()
-                        .await()
-
-                    val userRole = userDoc.getString("userRole")
-                    if (userRole == "CLIENT") {
-                        // Limpiar listener anterior si existe
-                        cleanupListener()
-
-                        // Configurar listener en tiempo real para detectar cambios en la vinculación
-                        firestoreListener = FirebaseFirestore.getInstance()
-                            .collection("users")
-                            .document(currentUser.uid)
-                            .addSnapshotListener { snapshot, error ->
-                                if (error != null) {
-                                    android.util.Log.e("ProfileScreen", "Error en listener", error)
-                                    isLoading = false
-                                    return@addSnapshotListener
-                                }
-
-                                if (snapshot?.exists() == true) {
-                                    val linkedTrainerUid = snapshot.getString("linkedTrainerUid")
-                                    android.util.Log.d(
-                                        "ProfileScreen",
-                                        "Listener - linkedTrainerUid: $linkedTrainerUid"
-                                    )
-
-                                    if (linkedTrainerUid != null) {
-                                        // Tiene trainer, obtener información
-                                        scope.launch {
-                                            try {
-                                                val fetchedTrainerInfo =
-                                                    fetchTrainerInfo(linkedTrainerUid)
-                                                trainerInfo = fetchedTrainerInfo
-                                                isLoading = false
-                                            } catch (e: Exception) {
-                                                android.util.Log.e(
-                                                    "ProfileScreen",
-                                                    "Error obteniendo info del trainer",
-                                                    e
-                                                )
-                                                trainerInfo = null
-                                                isLoading = false
-                                            }
-                                        }
-                                    } else {
-                                        // No tiene trainer vinculado
-                                        android.util.Log.d(
-                                            "ProfileScreen",
-                                            "Cliente sin trainer vinculado"
-                                        )
-                                        trainerInfo = null
-                                        isLoading = false
-                                    }
-                                } else {
-                                    trainerInfo = null
-                                    isLoading = false
-                                }
+                // Listener en tiempo real
+                cleanupListener()
+                firestoreListener = FirebaseFirestore.getInstance()
+                    .collection("users")
+                    .document(currentUser.uid)
+                    .addSnapshotListener { snapshot, error ->
+                        if (error != null) {
+                            android.util.Log.e("ProfileScreen", "Error listener", error)
+                            isLoading = false
+                            return@addSnapshotListener
+                        }
+                        val linkedTrainerUid = snapshot?.getString("linkedTrainerUid")
+                        if (linkedTrainerUid != null) {
+                            // Carga info del trainer
+                            scope.launch {
+                                trainerInfo = fetchTrainerInfo(linkedTrainerUid)
+                                isLoading = false
                             }
-                    } else {
-                        isLoading = false
+                        } else {
+                            trainerInfo = null
+                            isLoading = false
+                        }
                     }
-                } catch (e: Exception) {
-                    android.util.Log.e("ProfileScreen", "Error inicial", e)
-                    isLoading = false
-                }
+            } catch (e: Exception) {
+                android.util.Log.e("ProfileScreen", "Error inicial", e)
+                isLoading = false
             }
         }
     }
 
-    // Limpiar listener cuando se destruye la composición
     DisposableEffect(Unit) {
         onDispose {
             cleanupListener()
@@ -238,19 +197,14 @@ fun ProfileScreen(
 
                     },
                     rightIcon = {
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp) // Igualado al tamaño del FloatingActionButton
-                                .clickable {
-                                    navController.navigate(NavigationRoutes.Settings.route)
-                                },
-                            contentAlignment = Alignment.Center
+                        IconButton(
+                            onClick = { navController.navigate(NavigationRoutes.Settings.route) }
                         ) {
                             Icon(
-                                Icons.Default.Settings,
-                                modifier = Modifier.size(30.dp),
+                                imageVector = Icons.Default.Settings,
                                 contentDescription = "Settings",
-                                tint = MaterialTheme.tsColors.ledCyan
+                                tint = MaterialTheme.tsColors.ledCyan,
+                                modifier = Modifier.size(24.dp)
                             )
                         }
                     }
@@ -260,6 +214,7 @@ fun ProfileScreen(
             Column(
                 modifier = Modifier
                     .padding(padding)
+                    .navigationBarsPadding()
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -275,18 +230,18 @@ fun ProfileScreen(
                             profileViewModel.uploadProfilePhoto(uri)
                         }
                     )
-                    HexagonBadge(
+                  /*  HexagonBadge(
                         number = "1",
                         modifier = Modifier
                             .offset(x = 4.dp, y = 4.dp)
                             .size(24.dp)
-                    )
+                    )*/
                 }
 
                 Spacer(Modifier.height(16.dp))
 
                 // Estadísticas
-                Row(
+               /* Row(
                     modifier = Modifier
                         .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
@@ -294,7 +249,7 @@ fun ProfileScreen(
 
                     ProfileStat(count = "0", label = stringResource(R.string.profile_friends_count))
 
-                }
+                }*/
 
                 Spacer(Modifier.height(24.dp))
 
@@ -312,64 +267,86 @@ fun ProfileScreen(
                 }
 
                 // Botón de invitaciones para TRAINERS
-                if (currentUserRole == UserRole.TRAINER) {
+                if (isTrainer) {
                     ProfileButton(
                         text = "Gestionar Invitaciones",
                         containerColor = traiBlue,
                         contentColor = Color.White,
-
                         painter = rememberVectorPainter(image = Icons.Default.AddCircle),
-                        onClick = {
-                            navController.navigate(NavigationRoutes.TrainerInvitations.route)
-                        }
+                        onClick = { navController.navigate(NavigationRoutes.TrainerInvitations.route) }
                     )
                     Spacer(Modifier.height(12.dp))
                 }
 
                 // Botones principales
-                if (currentUserRole == UserRole.CLIENT) {
+                if (isAthlete) {
+                    TrainerSection(
+                        trainerInfo = trainerInfo,
+                        isLoading = isLoading,
+                        onAddTrainer = {
+                            // Navegamos directamente a la pantalla de invitación
+                            navController.navigate(NavigationRoutes.EnterInvitation.route)
+                        }
+                    )
+                    Spacer(Modifier.height(20.dp))
+
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween  // Espacio entre botones
+                        horizontalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         ProfileButton(
                             text = stringResource(R.string.profile_my_sizes),
+                            modifier = Modifier.weight(1f),
                             containerColor = traiBlue,
                             contentColor = Color.Black,
-                            painter = rememberVectorPainter(image = Icons.Default.Home),
+                            painter = painterResource(id = R.drawable.body_size),
                             onClick = onMeasurementsClick
                         )
                         ProfileButton(
                             text = stringResource(R.string.profile_my_exercises),
+                            modifier = Modifier.weight(1f),
                             containerColor = traiOrange,
                             contentColor = Color.Black,
                             painter = painterResource(id = R.drawable.exercises_icon),
-                            onClick = {navController.navigate(NavigationRoutes.MyExercises.route)}
+                            onClick = { navController.navigate(NavigationRoutes.MyExercises.route) }
                         )
                     }
                 }
-                Spacer(Modifier.height(12.dp))
-                ProfileButton(
-                    text = stringResource(R.string.profile_close_session),
-                    containerColor = Color.Red,
-                    contentColor = Color.White,
-                    painter = rememberVectorPainter(image = Icons.Default.Clear),
-                    onClick = {
-                        scope.launch {
-                            // Limpiar listener antes de cerrar sesión
-                            cleanupListener()
+                Spacer(modifier = Modifier.weight(1f))
 
-                            auth.signOut()
-                            googleSignInClient?.signOut()?.addOnCompleteListener {
-                                navController.navigate(NavigationRoutes.Login.route) {
-                                    popUpTo(navController.graph.id) { inclusive = true }
-                                }
-                            }
-                        }
-                    }
+                Text(
+                    text = stringResource(R.string.profile_close_session),
+                    color = Color.Red, // 👈 Texto en rojo
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 30.dp) // Espaciado vertical
+                        .clickable { showLogoutDialog = true },
+                    textAlign = TextAlign.Center // 👈 Centrado en la fila
                 )
             }
         }
+        if (showLogoutDialog) {
+            LogoutConfirmDialog(
+                onConfirm = {
+                    showLogoutDialog = false
+                    scope.launch {
+                        // 🔁 lo mismo que hacías en el onClick original
+                        cleanupListener()
+                        auth.signOut()
+                        googleSignInClient?.signOut()?.addOnCompleteListener {
+                            navController.navigate(NavigationRoutes.Login.route) {
+                                popUpTo(navController.graph.id) { inclusive = true }
+                            }
+                        }
+                    }
+                },
+                onDismiss = { showLogoutDialog = false }
+            )
+        }
+
+
+
         AchivementsUI(
             isVisible = showAchievements,
             onDismiss = { showAchievements = false },
@@ -408,7 +385,6 @@ private fun TrainerSection(
                     )
                 }
             }
-
             trainerInfo != null -> {
                 // Tiene trainer asignado
                 Column(
@@ -530,11 +506,60 @@ private fun TrainerSection(
                 }
             }
         }
-
-
     }
 }
+@Composable
+private fun LogoutConfirmDialog(
+    onConfirm: () -> Unit,
+    onDismiss: () -> Unit
+) {
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            shape = RoundedCornerShape(16.dp),
+            color = MaterialTheme.colorScheme.surface
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "¿Cerrar la sesión de tu cuenta?",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
 
+                Divider()
+
+                // Opción: Salir (fila completa)
+                Text(
+                    text = "Salir",
+                    color = Color.Red,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onConfirm() }
+                        .padding(vertical = 12.dp),
+                    textAlign = TextAlign.Center
+                )
+
+                // Opción: Cancelar (fila completa)
+                Text(
+                    text = "Cancelar",
+                    color = MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onDismiss() }
+                        .padding(vertical = 12.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
 @Composable
 private fun ProfileStat(count: String, label: String) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {

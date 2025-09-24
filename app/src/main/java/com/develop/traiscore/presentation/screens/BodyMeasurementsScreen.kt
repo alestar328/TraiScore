@@ -335,10 +335,22 @@ fun BodyMeasurementsScreen(
                     }
 
                     // 1) Selector de género
-                    Text("Genero", style = MaterialTheme.typography.titleLarge)
-                    Row(horizontalArrangement = Arrangement.spacedBy(24.dp)) {
+                    Text("Género", style = MaterialTheme.typography.titleLarge)
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.spacedBy(1.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         genders.forEach { (genderKey, genderDisplayName) ->
-                            Row(verticalAlignment = Alignment.CenterVertically) {
+                            // Cada opción ocupa un tercio del ancho
+                            Row(
+                                modifier = Modifier.weight(0.5f),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.Center // centra Radio + texto dentro de su celda
+                            ) {
                                 RadioButton(
                                     selected = (selectedGender == genderKey),
                                     onClick = { selectedGender = genderKey },
@@ -349,11 +361,13 @@ fun BodyMeasurementsScreen(
                                 )
                                 Text(
                                     text = genderDisplayName,
+                                    style = MaterialTheme.typography.bodyMedium,
                                     color = if (bodyStatsViewModel.isLoading) Color.Gray else Color.White
                                 )
                             }
                         }
                     }
+
 
                     // ✅ CAMBIO: Campos de medida usando enum y strings resources
                     val measurementTypes = MeasurementType.getAllMeasurements()

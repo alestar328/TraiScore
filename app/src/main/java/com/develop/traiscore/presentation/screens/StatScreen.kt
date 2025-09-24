@@ -125,9 +125,6 @@ fun StatScreen(
         }
     }
 
-
-
-
     LaunchedEffect(clientId) {
         clientId?.let { id ->
             bodyStatsViewModel.setTargetUser(id)

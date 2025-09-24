@@ -52,7 +52,7 @@ fun ProfilePhotoComponent(
 
     Box(
         modifier = modifier
-            .size(96.dp)
+            .size(120.dp)
             .clip(RoundedCornerShape(48.dp))
             .clickable {
                 if (!isUploading) {
@@ -122,11 +122,10 @@ fun ProfilePhotoComponent(
                 )
             }
         } else {
-            // Icono de cámara en la esquina
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
-                    .offset(x = (-4).dp, y = (-4).dp)
+                    .offset(x = (-10).dp, y = (-10).dp)
                     .size(28.dp)
                     .clip(RoundedCornerShape(14.dp))
                     .background(MaterialTheme.colorScheme.primary),

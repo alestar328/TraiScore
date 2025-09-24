@@ -10,9 +10,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.getValue
@@ -26,8 +24,13 @@ import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.withStyle
+import com.develop.traiscore.presentation.components.general.ButtonTheme
+import com.develop.traiscore.presentation.components.general.ButtonType
+import com.develop.traiscore.presentation.components.general.PayButton
 import com.develop.traiscore.presentation.components.general.PricingCardUI
 import com.develop.traiscore.presentation.theme.traiBlue
+import com.develop.traiscore.presentation.viewmodels.CheckoutViewModel
+import com.develop.traiscore.utils.PaymentsUtil
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -37,7 +40,9 @@ fun PricingScreenUI(
     onSkipClick: () -> Unit = {},
     onSubscribeClick: (String) -> Unit = {}, // Callback para suscripción
     onNotNowClick: () -> Unit = {},
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    payUiState: CheckoutViewModel.PaymentUiState = CheckoutViewModel.PaymentUiState.NotStarted,
+    onGooglePayClick: () -> Unit = {}
 ) {
     // Estado para manejar qué plan está seleccionado
     var selectedPlan by remember { mutableStateOf("Anual") } // Por defecto anual
@@ -144,7 +149,7 @@ fun PricingScreenUI(
                         PricingCardUI(
                             planName = "Pro",
                             period = "Mensual",
-                            price = "2,99",
+                            price = "2.99",
                             billingInfo = "Facturado mensualmente",
                             isSelected = selectedPlan == "Mensual",
                             onClick = { selectedPlan = "Mensual" }
@@ -154,9 +159,9 @@ fun PricingScreenUI(
                         PricingCardUI(
                             planName = "Pro",
                             period = "Anual",
-                            price = "29,99",
+                            price = "29.99",
                             billingInfo = "Facturado anualmente",
-                            savings = "6,89€",
+                            savings = "+15%",
                             isSelected = selectedPlan == "Anual",
                             onClick = { selectedPlan = "Anual" }
                         )
@@ -167,7 +172,7 @@ fun PricingScreenUI(
                 item {
                     Spacer(modifier = Modifier.height(20.dp))
 
-                    Button(
+                    /*Button(
                         onClick = { onSubscribeClick(selectedPlan) },
                         modifier = Modifier
                             .fillMaxWidth()
@@ -185,7 +190,15 @@ fun PricingScreenUI(
                             ),
                             color = Color.White
                         )
-                    }
+                    }*/
+                        PayButton(
+                            onClick = onGooglePayClick ,
+                            type = ButtonType.Subscribe,
+                            theme = ButtonTheme.Light,
+                            modifier = Modifier.fillMaxWidth(),
+                            allowedPaymentMethods = PaymentsUtil.allowedPaymentMethods.toString()
+                        )
+
                 }
 
                 // Texto "Ahora no" clickable

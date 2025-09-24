@@ -1,5 +1,6 @@
 package com.develop.traiscore.presentation
 
+import android.app.Activity
 import android.app.AlertDialog
 import android.content.Context
 import android.content.Intent
@@ -40,6 +41,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
 import com.develop.traiscore.R
+import com.develop.traiscore.activity.CheckoutActivity
 import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.exports.ImportRoutineViewModel
@@ -61,7 +63,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import com.develop.traiscore.presentation.screens.LoginScreenRoute
 import com.develop.traiscore.presentation.screens.MyExercisesUI
 import com.develop.traiscore.presentation.screens.PricingScreenUI
-import com.develop.traiscore.presentation.screens.ProfileScreen
 import com.develop.traiscore.presentation.screens.RoutineMenuScreen
 import com.develop.traiscore.presentation.screens.RoutineScreen
 import com.develop.traiscore.presentation.screens.ScreenModeUI
@@ -337,13 +338,25 @@ fun AppNavigation(navController: NavHostController) {
         startDestination = startRoute
     ) {
         composable(NavigationRoutes.Pricing.route) {
-            PricingScreenUI(
+         /*   PricingScreenUI(
                 onProIconClick = {
                 },
                 onSkipClick = {
                     navController.popBackStack()
                 }
-            )
+            )*/
+            val context = LocalContext.current
+            val activity = context as? Activity
+            var launched by remember { mutableStateOf(false) }
+
+            LaunchedEffect(launched) {
+                if (!launched) {
+                    launched = true
+                    activity?.startActivity(Intent(activity, CheckoutActivity::class.java))
+                    // Quitamos esta pantalla placeholder del back stack de Compose
+                    navController.popBackStack()
+                }
+            }
         }
 
 

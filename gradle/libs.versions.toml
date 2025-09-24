@@ -27,6 +27,9 @@ googleGmsGoogleServices = "4.4.2"
 googleFirebaseCrashlytics = "3.0.3"
 playServicesFido = "20.0.1"
 firebaseStorageKtx = "21.0.2"
+google-pay-api = "19.4.0"
+tasks-api-coroutines = "1.7.3"
+scenecore = "1.0.0-alpha06"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -62,6 +65,11 @@ androidx-paging-common-android = { group = "androidx.paging", name = "paging-com
 firebase-crashlytics = { group = "com.google.firebase", name = "firebase-crashlytics", version.ref = "firebaseCrashlytics" }
 play-services-fido = { group = "com.google.android.gms", name = "play-services-fido", version.ref = "playServicesFido" }
 firebase-storage-ktx = { group = "com.google.firebase", name = "firebase-storage-ktx", version.ref = "firebaseStorageKtx" }
+
+google-pay-api = { group = "com.google.android.gms" , name = "play-services-wallet", version.ref="google-pay-api" }
+tasks-api-coroutines = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-play-services" , version.ref = "tasks-api-coroutines" }
+androidx-scenecore = { group = "androidx.xr.scenecore", name = "scenecore", version.ref = "scenecore" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

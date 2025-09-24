@@ -3,7 +3,7 @@ package com.develop.traiscore.presentation.screens
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,8 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,10 +35,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -48,6 +52,7 @@ import com.develop.traiscore.R
 import com.develop.traiscore.presentation.components.AddExerciseDialogToDB
 import com.develop.traiscore.presentation.components.AutoResizedText
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
+import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 import kotlinx.coroutines.launch
 
@@ -84,70 +89,81 @@ fun SettingsScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    Image(
-                        painter = painterResource(id = R.drawable.trailogoup),
-                        contentDescription = "Logo cabecera",
+                    Row(
                         modifier = Modifier.fillMaxWidth(),
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = Color.White
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Texto "TraiScore"
+                        Text(
+                            text = buildAnnotatedString {
+                                withStyle( style = SpanStyle( color = traiBlue )) { append("Trai")}
+                                withStyle( style = SpanStyle(   color = Color.White ) ) { append("Score") }
+                            },
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontWeight = FontWeight.Bold
+                            )
                         )
                     }
                 },
+                navigationIcon = {
+                    IconButton(onClick = {  onBack() }) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                    }
+                },
+                actions = {
+                    // 👇 Esto crea un espacio equivalente al icono izquierdo
+                    Spacer(modifier = Modifier.size(48.dp))
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.DarkGray,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
+                    containerColor = MaterialTheme.colorScheme.background
                 )
             )
         },
         content = { paddingValues ->
             Column(
                 modifier = Modifier
-                    .background(Color.DarkGray)
+                    .background(MaterialTheme.colorScheme.background)
                     .padding(paddingValues)
                     .fillMaxSize()
                     .padding(TraiScoreTheme.dimens.paddingMedium)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                AutoResizedText(
+                Text(
                     text = "Ajustes",
-                    textStyle = MaterialTheme.typography.displayMedium.copy(
-                        color = Color.Black,
+                    style = MaterialTheme.typography.displaySmall.copy(
+                        color = Color.White,
                         textAlign = TextAlign.Center
-                    )
+                    ),
+                    modifier = Modifier.fillMaxWidth()
                 )
 
                 Spacer(modifier = Modifier.height(TraiScoreTheme.dimens.spacerMedium))
+
                 SettingsOptionRow(
-                    icon = { Icon(Icons.Default.Add, contentDescription = "Añadir ejercicio", tint = Color.Cyan) },
-                    label = "Añadir ejercicio",
-                    onClick = { showDialog = true }
+                    painter  = rememberVectorPainter(Icons.Default.Person) ,
+                    label = "Datos personales",
+                    iconTint = Color.Cyan,
+                    onClick = { /* TODO */ }
                 )
                 SettingsOptionRow(
-                    icon = { Icon(Icons.Default.Add, contentDescription = "Añadir categoria", tint = Color.Cyan) },
-                    label = "Añadir categoria",
+                    painter  = painterResource(id = R.drawable.category_icon),
+                    label = "Nueva categoria de ejercicio",
+                    iconTint = Color.Cyan,
                     onClick = { onNavigateToCreateCategory() }
                 )
                 SettingsOptionRow(
-                    icon = { Icon(painter = painterResource(R.drawable.language_icon), contentDescription = "Cambiar idioma", tint = Color.Cyan, modifier = Modifier.size(24.dp)) },
+                    painter  = painterResource(id = R.drawable.language_icon),
                     label = "Cambiar idioma",
+                    iconTint = Color.Cyan,
                     onClick = { onNavigateToLanguage() }
                 )
 
                 SettingsOptionRow(
-                    icon = { Icon(Icons.Default.Person, contentDescription = "Datos personales", tint = Color.Cyan) },
-                    label = "Datos personales",
-                    onClick = { /* TODO */ }
-                )
-                SettingsOptionRow(
-                    icon = { Icon(Icons.Default.Build, contentDescription = "Modo", tint = Color.Cyan) },
+                    painter  = painterResource(id = R.drawable.color_screen_icon),
                     label = "Cambiar modo de pantalla",
+                    iconTint = Color.Cyan,
                     onClick = { onNavigateToScreenMode()}
                 )
             }
@@ -159,9 +175,11 @@ fun SettingsScreen(
 }
 @Composable
 fun SettingsOptionRow(
-    icon: @Composable () -> Unit,
+    painter: Painter? = null,             // 👈 Igual que ProfileButton
     label: String,
-    onClick: () -> Unit
+    onClick: () -> Unit,
+    iconTint: Color = Color.Unspecified,  // 👈 Para poder controlar el color
+    iconSize: Dp = 24.dp                  // 👈 Tamaño configurable
 ) {
     Row(
         modifier = Modifier
@@ -170,13 +188,20 @@ fun SettingsOptionRow(
             .clickable { onClick() },
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(modifier = Modifier.padding(start = 16.dp)) {
-            icon()
+        if (painter != null) {
+            Icon(
+                painter = painter,
+                contentDescription = null,
+                modifier = Modifier
+                    .padding(start = 16.dp)
+                    .size(iconSize),
+                tint = iconTint
+            )
         }
         Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = label,
-            fontSize = 18.sp,
+            fontSize = 15.sp,
             fontWeight = FontWeight.Bold,
             color = Color.White
         )

@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         applicationId = "com.develop.traiscore"
-        minSdk = 26
+        minSdk = 30
         targetSdk = 35
         versionCode = 15
         versionName = "1.1.2"
@@ -84,6 +84,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.androidx.scenecore)
     val activity_version = "1.10.1"
     val camerax_version = "1.5.0-beta01"
     val composeBom = platform("androidx.compose:compose-bom:2025.08.00")
@@ -181,6 +182,13 @@ dependencies {
     implementation(libs.androidx.material3)
     implementation (libs.ui)
     implementation(libs.androidx.room.common)
+
+    implementation(libs.google.pay.api)
+    implementation(libs.tasks.api.coroutines)
+    implementation("com.android.billingclient:billing-ktx:6.0.1")
+    implementation("com.google.android.gms:play-services-wallet:19.4.0")
+    implementation("com.google.pay.button:compose-pay-button:1.1.0")
+
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)

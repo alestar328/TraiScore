@@ -70,20 +70,8 @@ fun MyExercisesUI(
                         // Texto "TraiScore"
                         Text(
                             text = buildAnnotatedString {
-                                withStyle(
-                                    style = SpanStyle(
-                                        color = traiBlue // 👈 Color para "Trai"
-                                    )
-                                ) {
-                                    append("Trai")
-                                }
-                                withStyle(
-                                    style = SpanStyle(
-                                        color = Color.White // 👈 Color para "Score"
-                                    )
-                                ) {
-                                    append("Score")
-                                }
+                                withStyle( style = SpanStyle( color = traiBlue )) { append("Trai")}
+                                withStyle( style = SpanStyle(   color = Color.White ) ) { append("Score") }
                             },
                             style = MaterialTheme.typography.headlineLarge.copy(
                                 fontWeight = FontWeight.Bold
@@ -95,6 +83,10 @@ fun MyExercisesUI(
                     IconButton(onClick = {  onBack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
+                },
+                actions = {
+                    // 👇 Esto crea un espacio equivalente al icono izquierdo
+                    Spacer(modifier = Modifier.size(48.dp))
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background

@@ -163,7 +163,6 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     // Google Sign In
-    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun signInWithGoogle(authManager: AuthenticationManager) {
         viewModelScope.launch {
             authManager.signInWithGoogle()

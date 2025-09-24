@@ -5,16 +5,38 @@
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES"/>
 
-    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="35" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" android:maxSdkVersion="35" />
+    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="35" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="35" />
     <uses-permission android:name="android.permission.INTERNET" />
-
     <uses-permission android:name="android.permission.GET_ACCOUNTS" />
     <uses-permission android:name="android.permission.MANAGE_ACCOUNTS" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
+
+    <queries>
+
+        <!-- Cualquier app que maneje ACTION_SEND image/* -->
+        <intent>
+            <action android:name="android.intent.action.SEND" />
+
+            <data android:mimeType="image/*" />
+        </intent>
+
+        <!-- Paquetes que te interesan asegurar -->
+        <package android:name="com.instagram.android" />
+        <package android:name="com.whatsapp" />
+        <package android:name="com.twitter.android" />
+        <package android:name="com.ss.android.ugc.trill" /> <!-- TikTok -->
+        <package android:name="com.facebook.katana" />
+        <package android:name="com.facebook.orca" /> <!-- Messenger -->
+        <package android:name="com.snapchat.android" />
+    </queries>
 
     <application
         android:name=".TraiScoreApp"
@@ -27,6 +49,11 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TraiScore"
         tools:targetApi="31">
+        <activity
+            android:name=".activity.CheckoutActivity"
+            android:exported="false"
+            android:label="@string/title_activity_checkout"
+            android:theme="@style/Theme.TraiScore" />
 
         <provider
             android:name="androidx.core.content.FileProvider"
@@ -43,19 +70,19 @@
             android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.TraiScore.NoSplash">
-
-
-        <intent-filter>
+            <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
+
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
-
 
             <!-- Intent filter principal para archivos JSON desde file:// -->
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:scheme="file" />
                 <data android:mimeType="application/json" />
             </intent-filter>
@@ -63,8 +90,10 @@
             <!-- Intent filter principal para archivos JSON desde content:// -->
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:scheme="content" />
                 <data android:mimeType="application/json" />
             </intent-filter>
@@ -72,55 +101,43 @@
             <!-- Intent filter para archivos de texto plano con patrón TraiScore -->
             <intent-filter android:priority="900">
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:scheme="file" />
                 <data android:mimeType="text/plain" />
                 <data android:pathPattern=".*TraiScore.*\\.json" />
             </intent-filter>
-
             <intent-filter android:priority="900">
                 <action android:name="android.intent.action.VIEW" />
+
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
+
                 <data android:scheme="content" />
                 <data android:mimeType="text/plain" />
                 <data android:pathPattern=".*TraiScore.*\\.json" />
             </intent-filter>
-
-
             <intent-filter android:priority="1000">
                 <action android:name="android.intent.action.SEND" />
+
                 <category android:name="android.intent.category.DEFAULT" />
+
                 <data android:mimeType="application/json" />
             </intent-filter>
-
             <intent-filter android:priority="900">
                 <action android:name="android.intent.action.SEND" />
+
                 <category android:name="android.intent.category.DEFAULT" />
+
                 <data android:mimeType="text/plain" />
             </intent-filter>
-
         </activity>
         <activity
             android:name=".presentation.MainActivity"
             android:exported="false"
-            android:theme="@style/Theme.TraiScore"/>
+            android:theme="@style/Theme.TraiScore" />
     </application>
-    <queries>
-        <!-- Cualquier app que maneje ACTION_SEND image/* -->
-        <intent>
-            <action android:name="android.intent.action.SEND" />
-            <data android:mimeType="image/*" />
-        </intent>
 
-        <!-- Paquetes que te interesan asegurar -->
-        <package android:name="com.instagram.android" />
-        <package android:name="com.whatsapp" />
-        <package android:name="com.twitter.android" />
-        <package android:name="com.ss.android.ugc.trill" /> <!-- TikTok -->
-        <package android:name="com.facebook.katana" />
-        <package android:name="com.facebook.orca" />        <!-- Messenger -->
-        <package android:name="com.snapchat.android" />
-    </queries>
 </manifest>

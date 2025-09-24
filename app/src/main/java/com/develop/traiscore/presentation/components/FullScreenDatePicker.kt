@@ -33,6 +33,7 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -74,9 +75,9 @@ fun DatePickerSection(
             focusedBorderColor = traiBlue,
             unfocusedBorderColor = Color.Gray,
             cursorColor = traiBlue,
-            textColor = Color.Black,
+            textColor = MaterialTheme.colorScheme.onSurface,
             focusedLabelColor = traiBlue,
-            unfocusedLabelColor = Color.Gray
+            unfocusedLabelColor = MaterialTheme.colorScheme.onSurface
         ),
         trailingIcon = {
             IconButton(onClick = onShowDatePicker) {

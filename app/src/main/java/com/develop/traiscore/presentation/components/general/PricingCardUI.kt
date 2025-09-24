@@ -115,7 +115,7 @@ fun PricingCardUI(
                 modifier = Modifier
                     .fillMaxWidth()
                     .fillMaxHeight()
-                    .padding(35.dp),
+                    .padding(vertical = 40.dp, horizontal = 20.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {

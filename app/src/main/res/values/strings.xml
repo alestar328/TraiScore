@@ -61,8 +61,6 @@
     <string name="today_closing_message2">Los ejercicios realizados se guardarán en tu historial.</string>
 
 
-
-
     <!--Calendar-->
     <string name="calendar_year">Año</string>
     <string name="calendar_year_no_data">Sin entrenamientos</string>
@@ -145,14 +143,13 @@
 
     <!--ROUTINE-->
 
-    <string name="routines_no_data">Sin rutinas</string> 
-    <string name="routines_no_data_message">No tienes rutinas guardadas</string> 
-    <string name="routines_accept">Aceptar</string> 
+    <string name="routines_no_data">Sin rutinas</string>
+    <string name="routines_no_data_message">No tienes rutinas guardadas</string>
+    <string name="routines_accept">Aceptar</string>
 
     <!-- Session card -->
     <string name="session_card_touch">Toca para empezar</string>
     <string name="session_new_session">Nueva sesión</string>
-
 
 
     <!--PROFILE-->
@@ -188,7 +185,7 @@
     <string name="measures_since">Hace</string>
     <string name="measures_total_measure">Total registros</string>
 
-    
-    
+
     <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
+    <string name="title_activity_checkout">CheckoutActivity</string>
 </resources>

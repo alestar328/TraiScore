@@ -1,58 +1,59 @@
 package com.develop.traiscore.data.repository
 
+import android.content.Context
 import android.net.Uri
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
-import kotlinx.coroutines.tasks.await
-import java.util.UUID
+import dagger.hilt.android.qualifiers.ApplicationContext
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.IOException
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 
 @Singleton
 class ProfileRepository @Inject constructor(
-    private val auth: FirebaseAuth,           // ← SIN valores por defecto
-    private val firestore: FirebaseFirestore, // ← SIN valores por defecto
-    private val storage: FirebaseStorage
+    @ApplicationContext private val context: Context,
+    private val dataStore: DataStore<Preferences>
 ) {
 
-    suspend fun uploadProfilePhoto(imageUri: Uri): String {
-        val currentUser = auth.currentUser
-            ?: throw Exception("Usuario no autenticado")
-
-        // Crear referencia única para la imagen
-        val imageFileName = "profile_${currentUser.uid}_${UUID.randomUUID()}.jpg"
-        val storageRef = storage.reference
-            .child("profile_photos")
-            .child(imageFileName)
-
-        // Subir imagen a Firebase Storage
-        val uploadTask = storageRef.putFile(imageUri).await()
-
-        // Obtener URL de descarga
-        val downloadUrl = uploadTask.storage.downloadUrl.await().toString()
-
-        // Actualizar URL en Firestore
-        updateUserPhotoUrl(currentUser.uid, downloadUrl)
-
-        return downloadUrl
+    companion object {
+        private val KEY_PHOTO_PATH = stringPreferencesKey("profile_photo_path")
+        private const val DIR_NAME = "profile"
+        private const val FILE_NAME = "profile.jpg"
     }
 
-    private suspend fun updateUserPhotoUrl(uid: String, photoUrl: String) {
-        firestore.collection("users")
-            .document(uid)
-            .update("photoURL", photoUrl)
-            .await()
+    /**
+     * Copia la imagen a almacenamiento interno y guarda la ruta en DataStore.
+     * Devuelve la ruta absoluta del archivo local.
+     */
+    suspend fun uploadProfilePhoto(imageUri: Uri): String = withContext(Dispatchers.IO) {
+        val dir = File(context.filesDir, DIR_NAME).apply { if (!exists()) mkdirs() }
+        val outFile = File(dir, FILE_NAME)
+
+        context.contentResolver.openInputStream(imageUri)?.use { input ->
+            outFile.outputStream().use { output ->
+                input.copyTo(output)
+            }
+        } ?: throw IOException("No se pudo abrir el InputStream del Uri: $imageUri")
+
+        // Persistir la ruta absoluta en DataStore
+        dataStore.edit { prefs ->
+            prefs[KEY_PHOTO_PATH] = outFile.absolutePath
+        }
+
+        return@withContext outFile.absolutePath
     }
 
+    /**
+     * Lee desde DataStore la ruta local de la foto (si existe).
+     */
     suspend fun getCurrentUserPhotoUrl(): String? {
-        val currentUser = auth.currentUser ?: return null
-
-        val userDoc = firestore.collection("users")
-            .document(currentUser.uid)
-            .get()
-            .await()
-
-        return userDoc.getString("photoURL")
+        val prefs = dataStore.data.first()
+        return prefs[KEY_PHOTO_PATH]
     }
 }

@@ -29,8 +29,7 @@ fun ProIconUI(
 ) {
     Card(
         modifier = modifier
-            .clickable { onClick() }
-            .padding(4.dp),
+            .clickable { onClick() },
         colors = CardDefaults.cardColors(
             containerColor = backgroundColor
         ),

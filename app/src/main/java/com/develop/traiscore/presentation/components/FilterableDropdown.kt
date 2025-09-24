@@ -88,52 +88,42 @@ fun FilterableDropdown(
         },
     ) {
         // Input field
+        @OptIn(ExperimentalMaterial3Api::class)
         OutlinedTextField(
             value = filterText,
             onValueChange = { newValue ->
                 filterText = newValue
-                userIsTyping = true // **CLAVE**: Siempre marcar que está escribiendo
+                userIsTyping = true
             },
-            textStyle = if (textSize != null) {
-                LocalTextStyle.current.copy(fontSize = textSize)
-            } else {
-                LocalTextStyle.current
-            },
+            singleLine = true,
+            maxLines = 1,
+            textStyle = textSize?.let { LocalTextStyle.current.copy(fontSize = it) }
+                ?: LocalTextStyle.current,
             placeholder = {
                 if (filterText.text.isEmpty()) {
                     Text(
                         text = placeholder,
-                        style = if (textSize != null) {
-                            LocalTextStyle.current.copy(fontSize = textSize)
-                        } else {
-                            LocalTextStyle.current
-                        }
+                        style = textSize?.let { LocalTextStyle.current.copy(fontSize = it) }
+                            ?: LocalTextStyle.current
                     )
                 }
             },
             trailingIcon = {
                 if (hasText) {
-                    // ✅ MOSTRAR ICONO DE CLOSE CUANDO HAY TEXTO
                     IconButton(
                         onClick = {
                             filterText = TextFieldValue("")
-                            onItemSelected("") // ✅ NOTIFICAR QUE SE LIMPIÓ LA SELECCIÓN
+                            onItemSelected("")
                             expanded = false
                             userIsTyping = false
                         }
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Limpiar",
-                            tint = Color.Red
-                        )
+                        Icon(Icons.Default.Close, contentDescription = "Limpiar", tint = Color.Red)
                     }
                 } else {
-                    // ✅ MOSTRAR ARROW DROPDOWN CUANDO NO HAY TEXTO
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = shouldShowDropdown)
                 }
             },
-            singleLine = true,
             keyboardOptions = KeyboardOptions.Default.copy(
                 capitalization = KeyboardCapitalization.Words,
                 imeAction = ImeAction.Done
@@ -150,20 +140,10 @@ fun FilterableDropdown(
             modifier = Modifier
                 .menuAnchor()
                 .fillMaxWidth()
-                .then(
-                    if (textFieldHeight != null) {
-                        Modifier.height(textFieldHeight)
-                    } else {
-                        Modifier
-                    }
-                )
-                .then(
-                    if (contentPadding != null) {
-                        Modifier.padding(contentPadding)
-                    } else {
-                        Modifier
-                    }
-                ) // **NUEVO**: Aplicar padding externo
+                // 👇 No fijes altura: usa la mínima nativa y deja que crezca si hace falta
+                .heightIn(min = TextFieldDefaults.MinHeight) // import androidx.compose.material3.TextFieldDefaults
+                // 👇 Aplica padding externo aquí (si lo pasas)
+                .then(if (contentPadding != null) Modifier.padding(contentPadding) else Modifier)
         )
 
         // **SOLUCIÓN**: Usar ExposedDropdownMenu que maneja mejor el teclado

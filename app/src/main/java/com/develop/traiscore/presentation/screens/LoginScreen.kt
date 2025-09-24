@@ -149,7 +149,7 @@ fun LoginScreen(
 
                                 Text(
                                     text = "Créala ahora",
-                                    color = uiColor,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     fontSize = 14.sp,
                                     fontFamily = Roboto,
                                     fontWeight = FontWeight.Medium,
@@ -246,11 +246,11 @@ private fun RegistrationSection(
         focusedBorderColor = traiBlue,
         unfocusedBorderColor = Color.Gray,
         cursorColor = traiBlue,
-        textColor = Color.Black,
+        textColor = MaterialTheme.colorScheme.onSurface,
         focusedLabelColor = traiBlue,
-        unfocusedLabelColor = Color.Black,
-        placeholderColor = Color.Gray,
-        disabledLabelColor = Color.Black,
+        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface,
+        placeholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
+        disabledLabelColor = MaterialTheme.colorScheme.onSurface,
         errorLabelColor = Color.Red,
         backgroundColor = Color.Transparent
     )
@@ -284,7 +284,7 @@ private fun RegistrationSection(
                 label = {
                     Text(
                         text = "Email",
-                        color = if (email.isEmpty()) Color.Black else traiBlue
+                        color = if (email.isEmpty()) MaterialTheme.colorScheme.onSurface else traiBlue
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -306,7 +306,7 @@ private fun RegistrationSection(
                     label = {
                         Text(
                             text = "Contraseña",
-                            color = if (password.isEmpty()) Color.Black else traiBlue
+                            color = if (email.isEmpty()) MaterialTheme.colorScheme.onSurface else traiBlue
                         )
                     },
                     modifier = Modifier.fillMaxWidth(),
@@ -325,7 +325,7 @@ private fun RegistrationSection(
                 label = {
                     Text(
                         text = "Nombre",
-                        color = if (firstName.isEmpty()) Color.Black else traiBlue
+                        color = if (email.isEmpty()) MaterialTheme.colorScheme.onSurface else traiBlue
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -346,7 +346,7 @@ private fun RegistrationSection(
                 label = {
                     Text(
                         text = "Apellido",
-                        color = if (lastName.isEmpty()) Color.Black else traiBlue
+                        color = if (email.isEmpty()) MaterialTheme.colorScheme.onSurface else traiBlue
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -372,7 +372,7 @@ private fun RegistrationSection(
             Text(
                 text = "Género:",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Black,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             ToggleButtonRowUser(
@@ -389,7 +389,7 @@ private fun RegistrationSection(
             Text(
                 text = "Tipo de cuenta:",
                 style = MaterialTheme.typography.bodyMedium,
-                color = Black,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier = Modifier.padding(bottom = 8.dp)
             )
             ToggleButtonRowUser(
@@ -491,10 +491,10 @@ private fun SocialMediaSection(
         focusedBorderColor = traiBlue,
         unfocusedBorderColor = Color.Gray,
         cursorColor = traiBlue,
-        textColor = Color.Black,
+        textColor = MaterialTheme.colorScheme.onSurface,
         focusedLabelColor = traiBlue,
-        unfocusedLabelColor = Color.Black,
-        placeholderColor = Color.Gray,
+        unfocusedLabelColor = MaterialTheme.colorScheme.onSurface,
+        placeholderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
         backgroundColor = Color.Transparent
     )
 
@@ -512,7 +512,7 @@ private fun SocialMediaSection(
             label = {
                 Text(
                     text = "Email",
-                    color = if (email.isEmpty()) Color.Black else traiBlue
+                    color = if (email.isEmpty()) MaterialTheme.colorScheme.onSurface else traiBlue
                 )
             },
             modifier = Modifier.fillMaxWidth(),
@@ -526,7 +526,7 @@ private fun SocialMediaSection(
             label = {
                 Text(
                     text = "Contraseña",
-                    color = if (password.isEmpty()) Color.Black else traiBlue
+                    color = if (email.isEmpty()) MaterialTheme.colorScheme.onSurface else traiBlue
                 )
             },
             modifier = Modifier.fillMaxWidth(),
@@ -633,7 +633,7 @@ private fun TopSection(
     showBackButton: Boolean = false,
     onBackClick: () -> Unit = {}
 ) {
-    val uiColor = if (isSystemInDarkTheme()) Color.White else Black
+    val uiColor = MaterialTheme.colorScheme.onBackground
 
     Box(
         contentAlignment = Alignment.TopCenter
