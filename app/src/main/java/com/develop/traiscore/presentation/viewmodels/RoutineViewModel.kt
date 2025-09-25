@@ -204,12 +204,13 @@ class RoutineViewModel : ViewModel() {
                     val trainerId = document.getString("trainerId")
                     val sectionsRaw = document.get("sections") as? List<Map<String, Any>> ?: emptyList()
                     val firstSectionType = sectionsRaw.firstOrNull()?.get("type") as? String ?: ""
+                    val rootType = document.getString("type")?.trim().orEmpty()  // p.ej. "LEGS"
 
                     newRoutines.add(
                         RoutineDocument(
                             userId = userId,
                             trainerId = trainerId,
-                            type = firstSectionType,
+                            type = rootType.ifEmpty { "CUSTOM" },
                             documentId = docId,
                             createdAt = createdAt,
                             clientName = clientName,
@@ -313,6 +314,7 @@ class RoutineViewModel : ViewModel() {
                 val routineName = snap.getString("routineName") ?: ""
                 val createdAt   = snap.getTimestamp("createdAt")
                 val trainerId   = snap.getString("trainerId")
+                val rootType = snap.getString("type")?.trim().orEmpty()
 
                 Log.d("RoutineViewModel", "Routine data found: $routineName")
 
@@ -341,7 +343,7 @@ class RoutineViewModel : ViewModel() {
                 routineDocument = RoutineDocument(
                     userId      = targetUserId,
                     trainerId   = trainerId,
-                    type        = "",
+                    type = rootType.ifEmpty { "CUSTOM" },
                     documentId  = documentId,
                     createdAt   = createdAt,
                     clientName  = clientName,

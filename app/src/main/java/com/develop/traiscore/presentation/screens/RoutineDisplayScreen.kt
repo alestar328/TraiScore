@@ -98,7 +98,7 @@ fun RoutineScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Rutina: $selectedType",
+                        text = currentRoutineData.routineName.ifBlank { "Rutina" },
                         color = Color.White
                     )
                 },

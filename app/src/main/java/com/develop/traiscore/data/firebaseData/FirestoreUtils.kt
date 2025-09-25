@@ -19,18 +19,19 @@ fun updateRoutineInFirebase(documentId: String, routineDoc: RoutineDocument): Ta
     val routineMap = mapOf(
         "clientName" to routineDoc.clientName,
         "routineName" to routineDoc.routineName,
+        "type" to routineDoc.type, // 👈 IMPORTANTE: conservar el tipo raíz
         "createdAt" to FieldValue.serverTimestamp(),
         "trainerId" to routineDoc.trainerId,
-        "sections" to routineDoc.sections.map { (type, exercises) ->
+        "sections" to routineDoc.sections.map { section ->
             mapOf(
-                "type" to type,
-                "exercises" to exercises.map { exercise ->
+                "type" to section.type,
+                "exercises" to section.exercises.map { e ->
                     mapOf(
-                        "name" to exercise.name,
-                        "series" to exercise.series,  // ✅ Debe guardarse
-                        "reps" to exercise.reps,      // ✅ Ya se guarda
-                        "weight" to exercise.weight,  // ✅ Debe guardarse
-                        "rir" to exercise.rir         // ✅ Debe guardarse
+                        "name" to e.name,
+                        "series" to e.series,
+                        "reps" to e.reps,
+                        "weight" to e.weight,
+                        "rir" to e.rir
                     )
                 }
             )
@@ -42,6 +43,7 @@ fun updateRoutineInFirebase(documentId: String, routineDoc: RoutineDocument): Ta
         .document(documentId)
         .set(routineMap)
 }
+
 fun calculateTodayDataAndNavigate(
     context: android.content.Context,
     navController: NavController,

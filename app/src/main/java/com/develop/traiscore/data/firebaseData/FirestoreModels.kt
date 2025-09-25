@@ -5,12 +5,14 @@ import com.google.firebase.Timestamp
 
 
 data class RoutineDocument(
-    val userId: String = "",
+    val userId: String = "",          // dueño/creador (trainer o self)
     val trainerId: String? = null,
     val documentId: String = "",
     val type: String,
     val createdAt: Timestamp? = null,
-    val clientName: String = "",
+    val clientId: String? = null,     // 👈 UID del cliente
+    val clientEmail: String? = null,  // 👈 email del cliente (opcional)
+    val clientName: String = "",      // 👈 display name (“Brazos de hierro” o nombre real)
     val routineName: String,
     val sections: List<RoutineSection> = emptyList(),
 )

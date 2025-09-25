@@ -5,7 +5,6 @@ import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -32,10 +31,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.foundation.Image
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -67,9 +62,7 @@ import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.google.firebase.auth.FirebaseAuth
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.layout.ContentScale
-import com.develop.traiscore.R
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -96,6 +89,10 @@ fun CreateRoutineScreen(
     // ✅ Estado para la imagen seleccionada del carousel
     var selectedMuscleGroupImage by remember { mutableStateOf<Int?>(null) }
     var showSelectedImage by remember { mutableStateOf(false) }
+    var selectedCategoryEnum by remember { mutableStateOf<DefaultCategoryExer?>(null) } // 👈 nuevo
+
+    fun resToEnum(resId: Int): DefaultCategoryExer? =
+        DefaultCategoryExer.values().firstOrNull { it.imageCat == resId }
 
     fun updateExerciseField(index: Int, columnType: ColumnType, newValue: String) {
         exercises = exercises.toMutableList().apply {
@@ -174,7 +171,7 @@ fun CreateRoutineScreen(
                                             ?: "",
                                         trainerId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid,
                                         documentId = "",
-                                        type = "CUSTOM", // Valor por defecto sin categoría forzada
+                                        type = selectedCategoryEnum?.name ?: "CUSTOM", // 👈 en vez de "CUSTOM" fijo
                                         createdAt = com.google.firebase.Timestamp.now(),
                                         clientName = workoutName,
                                         routineName = workoutName,
@@ -250,7 +247,8 @@ fun CreateRoutineScreen(
                             viewModel.createRoutineForUser(
                                 userId = effectiveUserId,
                                 clientName = workoutName,
-                                trainerId = if (targetClientId != null) FirebaseAuth.getInstance().currentUser?.uid else null
+                                trainerId = if (targetClientId != null) FirebaseAuth.getInstance().currentUser?.uid else null,
+                                routineType = selectedCategoryEnum?.name
                             ) { newRoutineId, createError ->
                                 if (createError != null || newRoutineId == null) {
                                     Toast.makeText(
@@ -265,7 +263,7 @@ fun CreateRoutineScreen(
                                 viewModel.saveSectionToRoutineForUser(
                                     userId = effectiveUserId,
                                     routineId = newRoutineId,
-                                    sectionName = workoutName, // ✅ String simple
+                                    sectionName = selectedCategoryEnum?.name ?: "CUSTOM", // 👈 Usa categoría, no nombre libre
                                     exercises = exercises
                                 ) { success, errorMsg ->
                                     if (success) {
@@ -479,8 +477,9 @@ fun CreateRoutineScreen(
                     modifier = Modifier.fillMaxWidth(),
                     onImageSelected = { imageRes ->
                         selectedMuscleGroupImage = imageRes
+                        selectedCategoryEnum = resToEnum(imageRes) // 👈 guarda el enum
                         showSelectedImage = true
-                        Log.d("CreateRoutineScreen", "Imagen seleccionada: $imageRes")
+                        Log.d("CreateRoutineScreen", "Imagen seleccionada: $imageRes -> ${selectedCategoryEnum?.name}")
                     }
                 )
                 Spacer(modifier = Modifier.height(100.dp))

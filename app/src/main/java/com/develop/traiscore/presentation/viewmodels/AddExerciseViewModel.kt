@@ -19,7 +19,9 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import java.text.Normalizer
 import java.util.Date
+import java.util.Locale
 import javax.inject.Inject
 
 data class ExerciseWithSource(
@@ -106,7 +108,39 @@ class AddExerciseViewModel @Inject constructor(
                 onComplete(false, exception.message)
             }
     }
+    private fun normalizeKey(raw: String?): String? {
+        if (raw == null) return null
+        val noDiacritics = Normalizer.normalize(raw, Normalizer.Form.NFD)
+            .replace("\\p{M}+".toRegex(), "")
+        return noDiacritics.trim().lowercase(Locale.getDefault())
+            .replace(Regex("\\s+"), " ")
+    }
 
+    // Alias tolerantes (singular/plural, con/sin acento, español)
+    private val aliasEsToEnum: Map<String, DefaultCategoryExer> = mapOf(
+        "pecho" to DefaultCategoryExer.CHEST,
+        "espalda" to DefaultCategoryExer.BACK,
+        "gluteo" to DefaultCategoryExer.GLUTES,
+        "gluteos" to DefaultCategoryExer.GLUTES,
+        "pierna" to DefaultCategoryExer.LEGS,
+        "piernas" to DefaultCategoryExer.LEGS,
+        "brazo" to DefaultCategoryExer.ARMS,
+        "brazos" to DefaultCategoryExer.ARMS,
+        "hombro" to DefaultCategoryExer.SHOULDERS,
+        "hombros" to DefaultCategoryExer.SHOULDERS,
+        "abdomen" to DefaultCategoryExer.CORE,
+        "core" to DefaultCategoryExer.CORE
+    )
+    fun resolveCategoryEnum(raw: String?): DefaultCategoryExer? {
+        if (raw.isNullOrBlank()) return null
+
+        // 1) Intentar como nombre de enum (CORE, CHEST, ...)
+        runCatching { return DefaultCategoryExer.valueOf(raw.trim().uppercase(Locale.getDefault())) }
+
+        // 2) Intentar alias/español normalizado (Abdomen, Pecho, Glúteos, Piernas, ...)
+        val key = normalizeKey(raw)
+        return aliasEsToEnum[key]
+    }
     fun updateUserExercise(
         documentId: String,
         newName: String,
@@ -436,55 +470,41 @@ class AddExerciseViewModel @Inject constructor(
         lastUsedExerciseName = name
     }
     fun fetchCategoryFor(exerciseName: String, onResult: (DefaultCategoryExer?) -> Unit) {
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        if (currentUser == null) {
-            onResult(null)
-            return
-        }
-
+        val currentUser = FirebaseAuth.getInstance().currentUser ?: return onResult(null)
         val userId = currentUser.uid
 
-        // Primero buscar en ejercicios personalizados del usuario
         Firebase.firestore.collection("users")
             .document(userId)
             .collection("exercises")
             .whereEqualTo("name", exerciseName)
             .get()
             .addOnSuccessListener { userSnapshot ->
-                val userCategoryName = userSnapshot.documents.firstOrNull()?.getString("category")
-                val userMatchedCategory = firebaseCategoryToEnum[userCategoryName]
-
-                if (userMatchedCategory != null) {
-                    // Encontrado en ejercicios del usuario
-                    onResult(userMatchedCategory)
+                val userRaw = userSnapshot.documents.firstOrNull()?.getString("category")
+                val userCat = resolveCategoryEnum(userRaw)
+                if (userCat != null) {
+                    onResult(userCat)
                 } else {
-                    // Si no se encuentra, buscar en ejercicios por defecto
                     Firebase.firestore.collection("exercises")
                         .whereEqualTo("name", exerciseName)
                         .get()
                         .addOnSuccessListener { globalSnapshot ->
-                            val globalCategoryName = globalSnapshot.documents.firstOrNull()?.getString("category")
-                            val globalMatchedCategory = firebaseCategoryToEnum[globalCategoryName]
-                            onResult(globalMatchedCategory)
+                            val globalRaw = globalSnapshot.documents.firstOrNull()?.getString("category")
+                            val globalCat = resolveCategoryEnum(globalRaw)
+                            onResult(globalCat)
                         }
-                        .addOnFailureListener {
-                            onResult(null)
-                        }
+                        .addOnFailureListener { onResult(null) }
                 }
             }
             .addOnFailureListener {
-                // Si falla la búsqueda en ejercicios del usuario, buscar en globales
                 Firebase.firestore.collection("exercises")
                     .whereEqualTo("name", exerciseName)
                     .get()
                     .addOnSuccessListener { globalSnapshot ->
-                        val categoryName = globalSnapshot.documents.firstOrNull()?.getString("category")
-                        val matchedCategory = firebaseCategoryToEnum[categoryName]
-                        onResult(matchedCategory)
+                        val globalRaw = globalSnapshot.documents.firstOrNull()?.getString("category")
+                        val globalCat = resolveCategoryEnum(globalRaw)
+                        onResult(globalCat)
                     }
-                    .addOnFailureListener {
-                        onResult(null)
-                    }
+                    .addOnFailureListener { onResult(null) }
             }
     }
     fun hasActiveSession(callback: (Boolean, String?) -> Unit) {
@@ -612,28 +632,24 @@ class AddExerciseViewModel @Inject constructor(
         userId: String,
         clientName: String,
         trainerId: String? = null,
+        routineType: String? = null, // 👈 nuevo opcional
         onComplete: (String?, String?) -> Unit
     ) {
         val routineDocument = hashMapOf(
             "clientName" to clientName,
             "routineName" to clientName,
+            "type" to (routineType ?: "CUSTOM"), // 👈 guarda el tipo
             "createdAt" to FieldValue.serverTimestamp(),
             "trainerId" to trainerId,
             "sections" to emptyList<Map<String, Any>>()
         )
-
-        firestore
-            .collection("users")
-            .document(userId) // ✅ USAR el userId proporcionado
+        firestore.collection("users").document(userId)
             .collection("routines")
             .add(routineDocument)
-            .addOnSuccessListener { documentReference ->
-                onComplete(documentReference.id, null)
-            }
-            .addOnFailureListener { exception ->
-                onComplete(null, exception.message)
-            }
+            .addOnSuccessListener { onComplete(it.id, null) }
+            .addOnFailureListener { ex -> onComplete(null, ex.message) }
     }
+
     fun refreshExercises() {
         loadAllExercises() // Reutilizar la función que ya carga ambas fuentes
     }
