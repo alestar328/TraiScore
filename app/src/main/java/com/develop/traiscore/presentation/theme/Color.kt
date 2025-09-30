@@ -30,7 +30,7 @@ val LightBlueWhite = Color(0xFFF1F5F9) //Social media background
 val BlueGray = Color(0xFF334155)
 
 val traiOrange = Color(0xFFFFC36F)
-
+val traiYellow = Color(0xFFFFE082)
 object ColorUtils {
     /**
      * Crea un Color desde valores RGB individuales (0-255)

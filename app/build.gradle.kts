@@ -86,17 +86,14 @@ android {
 dependencies {
     implementation(libs.androidx.scenecore)
     val activity_version = "1.10.1"
-    val camerax_version = "1.5.0-beta01"
+    val camerax_version = "1.5.0"
     val composeBom = platform("androidx.compose:compose-bom:2025.08.00")
     implementation(composeBom)
     testImplementation(composeBom)
     androidTestImplementation(composeBom)
 
-    // Specify Compose library dependencies without a version definition
     implementation("androidx.compose.foundation:foundation")
-    // ..
     testImplementation("androidx.compose.ui:ui-test-junit4")
-    // ..
     androidTestImplementation("androidx.compose.ui:ui-test")
 
 
@@ -104,7 +101,11 @@ dependencies {
     implementation("androidx.camera:camera-core:${camerax_version}")
     implementation("androidx.camera:camera-camera2:${camerax_version}")
     implementation("androidx.camera:camera-lifecycle:${camerax_version}")
+    implementation("androidx.camera:camera-video:${camerax_version}")
     implementation("androidx.camera:camera-view:${camerax_version}")
+    implementation("androidx.camera:camera-mlkit-vision:${camerax_version}")
+    implementation("androidx.camera:camera-extensions:${camerax_version}")
+
 
     implementation("com.google.guava:guava:33.4.8-android")
 
@@ -165,7 +166,7 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     //La mierda de abajo no acepta la palabra 'class'
     implementation(libs.androidx.material3.window.size)
-
+    implementation("androidx.compose.material:material:1.9.1")
     //Hilt
     implementation("com.google.dagger:hilt-android:2.51.1")
     kapt("com.google.dagger:hilt-android-compiler:2.51.1")
@@ -188,6 +189,8 @@ dependencies {
     implementation("com.google.android.gms:play-services-wallet:19.4.0")
     implementation("com.google.pay.button:compose-pay-button:1.1.0")
     implementation("com.android.billingclient:billing-ktx:8.0.0")
+
+    implementation ("com.google.mlkit:text-recognition:16.0.1")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -49,9 +49,11 @@ import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.screens.BodyMeasurementsHistoryScreen
 import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
 import com.develop.traiscore.presentation.screens.CameraGalleryScreen
+import com.develop.traiscore.presentation.screens.CameraScanScreen
 import com.develop.traiscore.presentation.screens.ClientProfileScreen
 import com.develop.traiscore.presentation.screens.CreateCategoryUI
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
+import com.develop.traiscore.presentation.screens.LabResultsScreen
 import com.develop.traiscore.presentation.screens.LanguageScreenUI
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -62,6 +64,8 @@ import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import com.develop.traiscore.presentation.screens.LoginScreenRoute
 import com.develop.traiscore.presentation.screens.MyExercisesUI
+import com.develop.traiscore.presentation.screens.MyHealthWithIAScreen
+import com.develop.traiscore.presentation.screens.PhotoPreviewTempScreen
 import com.develop.traiscore.presentation.screens.PricingScreenUI
 import com.develop.traiscore.presentation.screens.RoutineMenuScreen
 import com.develop.traiscore.presentation.screens.RoutineScreen
@@ -701,6 +705,19 @@ fun AppNavigation(navController: NavHostController) {
                 routineViewModel = routineViewModel
             )
         }
+        composable(NavigationRoutes.MyHealthWithIA.route) {
+            MyHealthWithIAScreen(
+                navController = navController,
+                onScanDocument = {
+                    // TODO: aquí puedes navegar a tu flujo de escaneo OCR o abrir cámara/intent
+                    // navController.navigate("scan_flow")
+                },
+                onUploadDocument = {
+                    // TODO: aquí puedes lanzar un document picker o navegar a una pantalla de carga
+                    // navController.navigate("upload_flow")
+                }
+            )
+        }
         composable(
             route = "create_routine_for_client/{clientId}",
             arguments = listOf(navArgument("clientId") { type = NavType.StringType })
@@ -761,6 +778,49 @@ fun AppNavigation(navController: NavHostController) {
                 navController = navController // ← AGREGAR ESTO
             )
         }
+
+        composable(NavigationRoutes.CameraScan.route) {
+            CameraScanScreen(
+                onBack = { navController.popBackStack() },
+                onPhotoCaptured = { uri ->
+                    navController.navigate(NavigationRoutes.PhotoPreviewTemp.createRoute(uri.toString()))
+                }
+            )
+        }
+
+// --- Preview TEMPORAL para probar la captura ---
+        composable(
+            route = NavigationRoutes.PhotoPreviewTemp.route,
+            arguments = listOf(navArgument("uri") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val uri = backStackEntry.arguments?.getString("uri").orEmpty()
+            val labVm: com.develop.traiscore.presentation.viewmodels.LabResultsViewModel = hiltViewModel()
+            PhotoPreviewTempScreen(
+                photoUri = uri,
+                onConfirm = { entries ->
+                    labVm.setEntries(entries)               // 1) guarda en VM
+                    navController.navigate(NavigationRoutes.LabResults.route) // 2) navega a la tabla
+                },
+                onRetake = { navController.popBackStack() }
+            )
+        }
+        composable(NavigationRoutes.LabResults.route) {
+            val labVm: com.develop.traiscore.presentation.viewmodels.LabResultsViewModel = hiltViewModel()
+            val state = labVm.uiState.collectAsState()
+
+            LabResultsScreen(
+                entries = state.value.entries,
+                onEntriesChange = { labVm.setEntries(it) },
+                onBack = { navController.popBackStack() },     // volver a la foto si quieres
+                onConfirm = {
+                    // Aquí podrías persistir o continuar flujo (guardar en BD / enviar al servidor / navegar)
+                    navController.popBackStack() // o navega a otra pantalla
+                },
+                unitSuggestionsByTest = labVm.unitSuggestionsByTest
+            )
+        }
+
+
 
 
     }

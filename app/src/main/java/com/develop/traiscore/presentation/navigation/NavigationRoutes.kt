@@ -17,6 +17,13 @@ sealed class NavigationRoutes(val route: String) {
     object Language : NavigationRoutes("language")
     object Pricing : NavigationRoutes("pricing")
     object MyExercises : NavigationRoutes("my_exercises")
+    object MyHealthWithIA : NavigationRoutes("my_health_ia")
+    object CameraScan : NavigationRoutes("camera_scan")
+    object PhotoPreviewTemp : NavigationRoutes("photo_preview_temp?uri={uri}") {
+        fun createRoute(uri: String) = "photo_preview_temp?uri=$uri"
+    }
+    object LabResults : NavigationRoutes("lab_results")
+
     object ClientProfile : NavigationRoutes("client_profile/{clientId}") {
         fun createRoute(clientId: String) = "client_profile/$clientId"
     }

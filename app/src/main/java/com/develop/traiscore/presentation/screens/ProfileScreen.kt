@@ -23,6 +23,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -323,7 +324,7 @@ fun ProfileScreen(
                             containerColor = Color.White,
                             contentColor = Color.Black,
                             painter = painterResource(id = R.drawable.brain_ia),
-                            onClick = onMeasurementsClick
+                            onClick = { navController.navigate(NavigationRoutes.MyHealthWithIA.route) }
                         )
 
                     }
@@ -587,6 +588,7 @@ private fun ProfileStat(count: String, label: String) {
 @Composable
 fun ProfileButton(
     text: String,
+    iconSize: Dp = 28.dp,
     modifier: Modifier = Modifier,
     containerColor: Color = Color(0xFFE0E0E0),
     contentColor: Color = Color.Black,
@@ -609,7 +611,7 @@ fun ProfileButton(
             Icon(
                 painter = painter, // Usamos el Painter aquí
                 contentDescription = null,
-                modifier = Modifier.size(28.dp)
+                modifier = Modifier.size(iconSize)
             )
             Spacer(modifier = Modifier.width(12.dp))
         }
