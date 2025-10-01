@@ -23,6 +23,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import coil3.compose.rememberAsyncImagePainter
 import com.develop.traiscore.data.local.entity.LabEntry
+import com.develop.traiscore.presentation.components.general.FingerBrushUI
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.DetectedWord
 import com.google.mlkit.vision.common.InputImage
@@ -38,6 +39,7 @@ fun PhotoPreviewTempScreen(
 ) {
     val context = LocalContext.current
     val recognizer = remember { TextRecognition.getClient(TextRecognizerOptions.DEFAULT_OPTIONS) }
+    var selected by remember { mutableStateOf<Set<Int>>(emptySet()) }
 
     // Estado con palabras detectadas (coords normalizadas 0..1 respecto a la imagen original)
     var words by remember { mutableStateOf<List<DetectedWord>>(emptyList()) }
@@ -126,6 +128,18 @@ fun PhotoPreviewTempScreen(
                     imageHeightPx = imgHeight,
                     contentScale = ContentScale.Fit
                 )
+                FingerBrushUI(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .fillMaxHeight(),
+                    words = words,
+                    imageWidthPx = imgWidth,
+                    imageHeightPx = imgHeight,
+                    selected = selected,
+                    onSelectedChange = { selected = it },
+                    brushRadiusDp = 28.dp,               // ajustable
+                    contentScale = ContentScale.Fit      // igual que la Image
+                )
             }
 
             Row(
@@ -140,7 +154,9 @@ fun PhotoPreviewTempScreen(
                 ) { Text("Repetir") }
                 Button(
                     onClick = {
-                        val parsed = parseLabEntriesFromText(fullText)
+                        val selectedText = selected.sorted().joinToString(" ") { idx -> words[idx].text }
+
+                        val parsed = parseLabEntriesFromText(selectedText)
                         onConfirm(parsed)
                     },
                     modifier = Modifier.weight(1f)
