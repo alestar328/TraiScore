@@ -1,5 +1,6 @@
 package com.develop.traiscore.presentation.components.general
 
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Box
@@ -17,6 +18,8 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.toSize
+import com.develop.traiscore.presentation.screens.BrushTag
+import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.DetectedWord
 import kotlin.math.max
 import kotlin.math.min
@@ -28,20 +31,25 @@ fun FingerBrushUI(
     words: List<DetectedWord>,
     imageWidthPx: Int,
     imageHeightPx: Int,
-    selected: Set<Int>,
-    onSelectedChange: (Set<Int>) -> Unit,
+    activeTag: BrushTag,                          // 👈 NUEVO
+    selectedName: Set<Int>,                       // 👈 NUEVO
+    selectedValue: Set<Int>,                      // 👈 NUEVO
+    onSelectedNameChange: (Set<Int>) -> Unit,     // 👈 NUEVO
+    onSelectedValueChange: (Set<Int>) -> Unit,     // 👈 NUEVO
+    brushColorName: Color,                        // 👈 NUEVO
+    brushColorValue: Color,                       // 👈 NUEVO
     brushRadiusDp: Dp = 28.dp,
     contentScale: ContentScale = ContentScale.Fit
 ) {
     val density = LocalDensity.current
-    val brushRadiusPx = with(androidx.compose.ui.platform.LocalDensity.current) { brushRadiusDp.toPx() }
+    val brushRadiusPx = with(LocalDensity.current) { brushRadiusDp.toPx() }
     val primary = MaterialTheme.colorScheme.primary
-    val selectedFill = primary.copy(alpha = 0.22f)
-    val selectedStroke = primary
     val unselectedStroke = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f)
-    // Estado local para interacción (evita recomputar conjuntos en cada pixel)
-    var localSelected by remember(selected, words) { mutableStateOf(selected) }
 
+    val selectedFill = primary.copy(alpha = 0.70f)
+    val selectedStroke = traiBlue
+    var localName by remember(selectedName, words) { mutableStateOf(selectedName) }
+    var localValue by remember(selectedValue, words) { mutableStateOf(selectedValue) }
     // Caja que coincide con el espacio de la imagen (mismo padre/medidas que la Image)
     Box(
         modifier = modifier,
@@ -50,38 +58,69 @@ fun FingerBrushUI(
         Canvas(
             modifier = Modifier
                 .fillMaxSize()
-                .pointerInput(words, imageWidthPx, imageHeightPx, brushRadiusPx) {
+                .pointerInput(words, imageWidthPx, imageHeightPx, brushRadiusPx, activeTag) {
                     detectDragGestures(
                         onDragStart = { pos ->
                             val hit = hitTestIndicesAt(
                                 pointer = pos,
                                 words = words,
-                                canvasSize =  size.toSize(),
+                                canvasSize = size.toSize(),
                                 imageWidthPx = imageWidthPx,
                                 imageHeightPx = imageHeightPx,
                                 contentScale = contentScale,
                                 brushRadiusPx = brushRadiusPx
                             )
-                            if (hit.isNotEmpty()) {
-                                localSelected = (localSelected + hit)
-                                onSelectedChange(localSelected)
+
+                            val targets = when (activeTag) {
+                                BrushTag.NAME  -> hit.filter { it !in localValue }.toSet() // no pisa naranja
+                                BrushTag.VALUE -> hit.filter { it !in localName }.toSet()  // no pisa azul
+                            }
+
+                            if (targets.isNotEmpty()) {
+                                when (activeTag) {
+                                    BrushTag.NAME -> {
+                                        localName = localName + targets
+                                        onSelectedNameChange(localName)
+                                    }
+                                    BrushTag.VALUE -> {
+                                        localValue = localValue + targets
+                                        onSelectedValueChange(localValue)
+                                    }
+                                }
                             }
                         },
                         onDrag = { change, _ ->
                             val hit = hitTestIndicesAt(
                                 pointer = change.position,
                                 words = words,
-                                canvasSize =  size.toSize(),
+                                canvasSize = size.toSize(),
                                 imageWidthPx = imageWidthPx,
                                 imageHeightPx = imageHeightPx,
                                 contentScale = contentScale,
                                 brushRadiusPx = brushRadiusPx
                             )
-                            if (hit.isNotEmpty()) {
-                                val newSet = localSelected + hit
-                                if (newSet !== localSelected) {
-                                    localSelected = newSet
-                                    onSelectedChange(localSelected)
+
+                            val targets = when (activeTag) {
+                                BrushTag.NAME  -> hit.filter { it !in localValue }.toSet()
+                                BrushTag.VALUE -> hit.filter { it !in localName }.toSet()
+                            }
+
+                            if (targets.isNotEmpty()) {
+                                when (activeTag) {
+                                    BrushTag.NAME -> {
+                                        val newSet = localName + targets
+                                        if (newSet !== localName) {
+                                            localName = newSet
+                                            onSelectedNameChange(localName)
+                                        }
+                                    }
+                                    BrushTag.VALUE -> {
+                                        val newSet = localValue + targets
+                                        if (newSet !== localValue) {
+                                            localValue = newSet
+                                            onSelectedValueChange(localValue)
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -115,27 +154,44 @@ fun FingerBrushUI(
                 val bottom = topOffset + dw.bottom * drawH
                 val rect = Rect(Offset(left, top), Offset(right, bottom))
 
-                if (index in localSelected) {
-                    // Seleccionado: fondo + borde
-                    drawRect(
-                        color = selectedFill,
-                        topLeft = rect.topLeft,
-                        size = Size(rect.width, rect.height)
-                    )
-                    drawRect(
-                        color = selectedStroke,
-                        topLeft = rect.topLeft,
-                        size = Size(rect.width, rect.height),
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f)
-                    )
-                } else {
-                    // No seleccionado: solo borde claro
-                    drawRect(
-                        color = unselectedStroke,
-                        topLeft = rect.topLeft,
-                        size = Size(rect.width, rect.height),
-                        style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f)
-                    )
+                when {
+                    index in localName -> {
+                        // Nombre → azul
+                        drawRect(
+                            color = brushColorName.copy(alpha = 0.22f),
+                            topLeft = rect.topLeft,
+                            size = Size(rect.width, rect.height)
+                        )
+                        drawRect(
+                            color = brushColorName,
+                            topLeft = rect.topLeft,
+                            size = Size(rect.width, rect.height),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f)
+                        )
+                    }
+                    index in localValue -> {
+                        // Valor → naranja
+                        drawRect(
+                            color = brushColorValue.copy(alpha = 0.22f),
+                            topLeft = rect.topLeft,
+                            size = Size(rect.width, rect.height)
+                        )
+                        drawRect(
+                            color = brushColorValue,
+                            topLeft = rect.topLeft,
+                            size = Size(rect.width, rect.height),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f)
+                        )
+                    }
+                    else -> {
+                        // No seleccionado: borde tenue opcional
+                        drawRect(
+                            color = unselectedStroke,
+                            topLeft = rect.topLeft,
+                            size = Size(rect.width, rect.height),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2f)
+                        )
+                    }
                 }
             }
 

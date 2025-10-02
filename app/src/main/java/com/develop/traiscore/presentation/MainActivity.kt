@@ -40,6 +40,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.navArgument
+import androidx.navigation.navigation
 import com.develop.traiscore.R
 import com.develop.traiscore.activity.CheckoutActivity
 import com.develop.traiscore.core.UserRole
@@ -789,35 +790,51 @@ fun AppNavigation(navController: NavHostController) {
         }
 
 // --- Preview TEMPORAL para probar la captura ---
-        composable(
-            route = NavigationRoutes.PhotoPreviewTemp.route,
-            arguments = listOf(navArgument("uri") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val uri = backStackEntry.arguments?.getString("uri").orEmpty()
-            val labVm: com.develop.traiscore.presentation.viewmodels.LabResultsViewModel = hiltViewModel()
-            PhotoPreviewTempScreen(
-                photoUri = uri,
-                onConfirm = { entries ->
-                    labVm.setEntries(entries)               // 1) guarda en VM
-                    navController.navigate(NavigationRoutes.LabResults.route) // 2) navega a la tabla
-                },
-                onRetake = { navController.popBackStack() }
-            )
-        }
-        composable(NavigationRoutes.LabResults.route) {
-            val labVm: com.develop.traiscore.presentation.viewmodels.LabResultsViewModel = hiltViewModel()
-            val state = labVm.uiState.collectAsState()
+        navigation(
+            route = "lab_flow",
+            startDestination = NavigationRoutes.PhotoPreviewTemp.route
+        ) {
 
-            LabResultsScreen(
-                entries = state.value.entries,
-                onEntriesChange = { labVm.setEntries(it) },
-                onBack = { navController.popBackStack() },     // volver a la foto si quieres
-                onConfirm = {
-                    // Aquí podrías persistir o continuar flujo (guardar en BD / enviar al servidor / navegar)
-                    navController.popBackStack() // o navega a otra pantalla
-                },
-                unitSuggestionsByTest = labVm.unitSuggestionsByTest
-            )
+            composable(
+                route = NavigationRoutes.PhotoPreviewTemp.route,
+                arguments = listOf(navArgument("uri") { type = NavType.StringType })
+            ) { backStackEntry ->
+                val uri = backStackEntry.arguments?.getString("uri").orEmpty()
+
+                // 👇 OBTÉN el parentEntry del graph padre
+                val parentEntry = remember(navController) {
+                    navController.getBackStackEntry("lab_flow")
+                }
+                // 👇 El MISMO VM para todo el graph
+                val labVm: com.develop.traiscore.presentation.viewmodels.LabResultsViewModel =
+                    hiltViewModel(parentEntry)
+
+                PhotoPreviewTempScreen(
+                    photoUri = uri,
+                    onConfirm = { entries ->
+                        labVm.setEntries(entries)                          // guarda en el VM compartido
+                        navController.navigate(NavigationRoutes.LabResults.route)
+                    },
+                    onRetake = { navController.popBackStack() }
+                )
+            }
+
+            composable(NavigationRoutes.LabResults.route) {
+                val parentEntry = remember(navController) {
+                    navController.getBackStackEntry("lab_flow")
+                }
+                val labVm: com.develop.traiscore.presentation.viewmodels.LabResultsViewModel =
+                    hiltViewModel(parentEntry)
+                val state = labVm.uiState.collectAsState()
+
+                LabResultsScreen(
+                    entries = state.value.entries,
+                    onEntriesChange = { labVm.setEntries(it) },
+                    onBack = { navController.popBackStack() },
+                    onConfirm = { navController.popBackStack() },
+                    unitSuggestionsByTest = labVm.unitSuggestionsByTest
+                )
+            }
         }
 
 

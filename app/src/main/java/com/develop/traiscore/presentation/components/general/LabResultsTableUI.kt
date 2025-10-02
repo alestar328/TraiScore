@@ -19,8 +19,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.develop.traiscore.R
 import com.develop.traiscore.data.local.entity.LabEntry
+import com.develop.traiscore.presentation.theme.traiOrange
 import java.util.UUID
 
 
@@ -214,6 +216,7 @@ private fun LabRow(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (showColTest) {
+            //CELDA PRUEBA
             OutlinedTextField(
                 value = testText,
                 onValueChange = {
@@ -224,13 +227,14 @@ private fun LabRow(
                     .weight(0.5f)
                     .padding(horizontal = 6.dp),
                 singleLine = true,
-                label = { Text("Prueba") },
+                textStyle = MaterialTheme.typography.bodyMedium,
                 keyboardOptions = KeyboardOptions.Default.copy(imeAction = ImeAction.Next),
                 keyboardActions = KeyboardActions(onNext = { /* foco a valor */ })
             )
         }
 
         if (showColValue) {
+            // CELDA VALOR
             OutlinedTextField(
                 value = valueText,
                 onValueChange = {
@@ -242,10 +246,16 @@ private fun LabRow(
                     .weight(0.25f)
                     .padding(horizontal = 6.dp),
                 singleLine = true,
-                label = { Text("Valor") },
+                textStyle = MaterialTheme.typography.bodyMedium,
                 keyboardOptions = KeyboardOptions(
                     keyboardType = KeyboardType.Decimal,
                     imeAction = ImeAction.Next
+                ),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = traiOrange, // 👈 aquí tu color
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline, // normal
+                    cursorColor = traiOrange, // opcional, para que combine
+                    focusedLabelColor = traiOrange // si tuviera label
                 )
             )
         }
@@ -260,6 +270,7 @@ private fun LabRow(
                     expanded = unitExpanded,
                     onExpandedChange = { unitExpanded = it }
                 ) {
+                    // CELDA UNIDADES
                     OutlinedTextField(
                         value = unitText,
                         onValueChange = {
@@ -270,7 +281,7 @@ private fun LabRow(
                             .menuAnchor()
                             .fillMaxWidth(),
                         singleLine = true,
-                        label = { Text("Unidad") },
+                        textStyle = MaterialTheme.typography.bodyMedium,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitExpanded) }
                     )
                     ExposedDropdownMenu(
