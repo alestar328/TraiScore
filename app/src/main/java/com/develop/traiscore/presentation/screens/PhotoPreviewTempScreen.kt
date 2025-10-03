@@ -21,6 +21,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -35,7 +36,7 @@ import com.google.mlkit.vision.text.latin.TextRecognizerOptions
 import java.util.UUID
 import kotlin.math.abs
 
-enum class BrushTag { NAME, VALUE }
+enum class BrushTag { NAME, VALUE , CLEAN}
 
 @Composable
 fun PhotoPreviewTempScreen(
@@ -183,6 +184,17 @@ fun PhotoPreviewTempScreen(
                         )
                     )
                     Text("Valor", modifier = Modifier.padding(start = 6.dp))
+                }
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    RadioButton(
+                        selected = selectedTag == BrushTag.CLEAN,
+                        onClick = { selectedTag = BrushTag.CLEAN },
+                        colors = RadioButtonDefaults.colors(
+                            selectedColor = MaterialTheme.colorScheme.onSurface, // o el color que prefieras
+                            unselectedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    )
+                    Text("Limpiar", modifier = Modifier.padding(start = 6.dp))
                 }
             }
 

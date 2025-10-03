@@ -71,20 +71,33 @@ fun FingerBrushUI(
                                 brushRadiusPx = brushRadiusPx
                             )
 
-                            val targets = when (activeTag) {
-                                BrushTag.NAME  -> hit.filter { it !in localValue }.toSet() // no pisa naranja
-                                BrushTag.VALUE -> hit.filter { it !in localName }.toSet()  // no pisa azul
-                            }
-
-                            if (targets.isNotEmpty()) {
-                                when (activeTag) {
-                                    BrushTag.NAME -> {
+                            when (activeTag) {
+                                BrushTag.NAME -> {
+                                    val targets = hit.filter { it !in localValue }.toSet()
+                                    if (targets.isNotEmpty()) {
                                         localName = localName + targets
                                         onSelectedNameChange(localName)
                                     }
-                                    BrushTag.VALUE -> {
+                                }
+                                BrushTag.VALUE -> {
+                                    val targets = hit.filter { it !in localName }.toSet()
+                                    if (targets.isNotEmpty()) {
                                         localValue = localValue + targets
                                         onSelectedValueChange(localValue)
+                                    }
+                                }
+                                BrushTag.CLEAN -> {
+                                    if (hit.isNotEmpty()) {
+                                        val newName = localName - hit
+                                        val newValue = localValue - hit
+                                        if (newName !== localName) {
+                                            localName = newName
+                                            onSelectedNameChange(localName)
+                                        }
+                                        if (newValue !== localValue) {
+                                            localValue = newValue
+                                            onSelectedValueChange(localValue)
+                                        }
                                     }
                                 }
                             }
@@ -100,21 +113,20 @@ fun FingerBrushUI(
                                 brushRadiusPx = brushRadiusPx
                             )
 
-                            val targets = when (activeTag) {
-                                BrushTag.NAME  -> hit.filter { it !in localValue }.toSet()
-                                BrushTag.VALUE -> hit.filter { it !in localName }.toSet()
-                            }
-
-                            if (targets.isNotEmpty()) {
-                                when (activeTag) {
-                                    BrushTag.NAME -> {
+                            when (activeTag) {
+                                BrushTag.NAME -> {
+                                    val targets = hit.filter { it !in localValue }.toSet()
+                                    if (targets.isNotEmpty()) {
                                         val newSet = localName + targets
                                         if (newSet !== localName) {
                                             localName = newSet
                                             onSelectedNameChange(localName)
                                         }
                                     }
-                                    BrushTag.VALUE -> {
+                                }
+                                BrushTag.VALUE -> {
+                                    val targets = hit.filter { it !in localName }.toSet()
+                                    if (targets.isNotEmpty()) {
                                         val newSet = localValue + targets
                                         if (newSet !== localValue) {
                                             localValue = newSet
@@ -122,8 +134,23 @@ fun FingerBrushUI(
                                         }
                                     }
                                 }
+                                BrushTag.CLEAN -> {
+                                    if (hit.isNotEmpty()) {
+                                        val newName = localName - hit
+                                        val newValue = localValue - hit
+                                        if (newName !== localName) {
+                                            localName = newName
+                                            onSelectedNameChange(localName)
+                                        }
+                                        if (newValue !== localValue) {
+                                            localValue = newValue
+                                            onSelectedValueChange(localValue)
+                                        }
+                                    }
+                                }
                             }
                         }
+
                     )
                 }
         ) {

@@ -22,6 +22,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.develop.traiscore.R
 import com.develop.traiscore.data.local.entity.LabEntry
+import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.theme.traiOrange
 import java.util.UUID
 
@@ -309,7 +310,7 @@ private fun LabRow(
                 .size(40.dp)
                 .padding(start = 4.dp)
         ) {
-            Icon(Icons.Default.Delete, contentDescription = "Eliminar fila")
+            Icon(Icons.Default.Delete, contentDescription = "Eliminar fila", tint = traiBlue)
         }
     }
 }
