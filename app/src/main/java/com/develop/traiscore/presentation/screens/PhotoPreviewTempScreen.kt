@@ -152,7 +152,7 @@ fun PhotoPreviewTempScreen(
                     onSelectedValueChange = { selectedValue = it },
                     brushColorName = traiBlue,              // 👈 color del pincel para Nombre
                     brushColorValue = traiOrange,           // 👈 color del pincel para Valor
-                    brushRadiusDp = 28.dp,
+                    brushRadiusDp = 20.dp,
                     contentScale = ContentScale.Fit
                 )
             }

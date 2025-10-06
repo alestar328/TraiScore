@@ -2,7 +2,12 @@ package com.develop.traiscore.presentation.viewmodels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.develop.traiscore.data.local.dao.MedicalStatsDao
 import com.develop.traiscore.data.local.entity.LabEntry
+import com.develop.traiscore.data.mappers.toDto
+import com.develop.traiscore.data.remote.dtos.MedicalReportDto
+import com.develop.traiscore.data.remote.dtos.MedicalStatsExport
+import com.develop.traiscore.utils.UnitRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +25,7 @@ data class LabResultsUiState(
 
 @HiltViewModel
 class LabResultsViewModel @Inject constructor(
-    // inyecta repositorios si luego persistes en Room/Firestore
+    private val repo: MedicalStatsDao
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(LabResultsUiState())
@@ -28,13 +33,12 @@ class LabResultsViewModel @Inject constructor(
 
     /** Sugerencias de unidades por prueba (puedes sustituir por datos remotos/config) */
     val unitSuggestionsByTest: Map<String, List<String>> = mapOf(
-        "Glucosa" to listOf("mg/dL", "mmol/L"),
-        "Urea" to listOf("mg/dL", "mmol/L"),
-        "Creatinina" to listOf("mg/dL", "µmol/L"),
-        "Ácido úrico" to listOf("mg/dL", "µmol/L"),
-        "Colesterol total" to listOf("mg/dL", "mmol/L"),
+        "Glucosa" to UnitRegistry.labels(listOf("mg/dL", "mmol/L")),
+        "Urea" to UnitRegistry.labels(listOf("mg/dL", "mmol/L")),
+        "Creatinina" to UnitRegistry.labels(listOf("mg/dL", "µmol/L")),
+        "Ácido úrico" to UnitRegistry.labels(listOf("mg/dL", "µmol/L")),
+        "Colesterol total" to UnitRegistry.labels(listOf("mg/dL", "mmol/L")),
     )
-
     /** Inicializa/rehidrata la lista (p. ej. desde OCR o BD). */
     fun setEntries(entries: List<LabEntry>) {
         _uiState.update { it.copy(entries = entries, errorMessage = null) }
@@ -49,6 +53,37 @@ class LabResultsViewModel @Inject constructor(
             unit = null
         )
         _uiState.update { it.copy(entries = it.entries + newRow) }
+    }
+    fun buildReportDto(userId: String, appVersion: String, source: String = "manual", tags: List<String> = emptyList()): MedicalReportDto {
+        val now = System.currentTimeMillis()
+        val reportId = java.util.UUID.randomUUID().toString()
+        val entriesDto = uiState.value.entries.map { it.toDto() }
+        return MedicalReportDto(
+            id = reportId,
+            userId = userId,
+            createdAt = now,
+            source = source,
+            tags = tags,
+            entriesCount = entriesDto.size,
+            appVersion = appVersion,
+            schemaVersion = 1,
+            entries = entriesDto
+        )
+    }
+    fun saveCurrentReport(userId: String, appVersion: String, onDone: (Boolean, String?) -> Unit) {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true, errorMessage = null) }
+            val dto = buildReportDto(userId, appVersion)
+            val res = repo.saveReport(userId, dto)
+            res.fold(
+                onSuccess = { onDone(true, null) },
+                onFailure = { e ->
+                    _uiState.update { it.copy(errorMessage = e.message) }
+                    onDone(false, e.message)
+                }
+            )
+            _uiState.update { it.copy(isLoading = false) }
+        }
     }
 
     /** Actualiza una fila completa (copy desde la UI). */

@@ -74,6 +74,7 @@ import com.develop.traiscore.presentation.screens.ScreenModeUI
 import com.develop.traiscore.presentation.screens.SettingsScreen
 import com.develop.traiscore.presentation.screens.StatScreen
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
+import com.develop.traiscore.presentation.viewmodels.LabResultsViewModel
 import com.develop.traiscore.presentation.viewmodels.MyClientsViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
@@ -823,15 +824,31 @@ fun AppNavigation(navController: NavHostController) {
                 val parentEntry = remember(navController) {
                     navController.getBackStackEntry("lab_flow")
                 }
-                val labVm: com.develop.traiscore.presentation.viewmodels.LabResultsViewModel =
-                    hiltViewModel(parentEntry)
+                val labVm: LabResultsViewModel = hiltViewModel(parentEntry)
                 val state = labVm.uiState.collectAsState()
+
+                // 👇 OBTÉN context fuera del lambda
+                val context = LocalContext.current
+
+                // 👇 Si quieres resolverlo ya (y evitar tocar PackageManager dentro del click)
+                val appVersion: String = runCatching {
+                    // API < 33
+                    @Suppress("DEPRECATION")
+                    context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "unknown"
+                }.getOrElse { "unknown" }
 
                 LabResultsScreen(
                     entries = state.value.entries,
                     onEntriesChange = { labVm.setEntries(it) },
                     onBack = { navController.popBackStack() },
-                    onConfirm = { navController.popBackStack() },
+                    onConfirm = {
+                        val userId = FirebaseAuth.getInstance().currentUser?.uid.orEmpty()
+
+                        // Si prefieres calcular en el click, usa la variable `appVersion` ya capturada arriba
+                        labVm.saveCurrentReport(userId, appVersion) { ok, err ->
+                            // TODO: feedback UI (Snackbar/Toast) y navegación si procede
+                        }
+                    },
                     unitSuggestionsByTest = labVm.unitSuggestionsByTest
                 )
             }

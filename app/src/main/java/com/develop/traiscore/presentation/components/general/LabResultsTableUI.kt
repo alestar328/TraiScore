@@ -209,7 +209,9 @@ private fun LabRow(
     var unitText by remember(entry.id) { mutableStateOf(entry.unit ?: "") }
 
     var unitExpanded by remember { mutableStateOf(false) }
-
+    val allUnits = remember {
+        com.develop.traiscore.utils.UnitRegistry.allLabels().sorted()
+    }
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -264,8 +266,7 @@ private fun LabRow(
         if (showColUnit) {
             Column(
                 modifier = Modifier
-                    .weight(0.25f)
-                    .padding(horizontal = 6.dp)
+                    .weight(0.27f)
             ) {
                 ExposedDropdownMenuBox(
                     expanded = unitExpanded,
@@ -282,6 +283,7 @@ private fun LabRow(
                             .menuAnchor()
                             .fillMaxWidth(),
                         singleLine = true,
+                        readOnly = true,
                         textStyle = MaterialTheme.typography.bodyMedium,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = unitExpanded) }
                     )
@@ -289,7 +291,7 @@ private fun LabRow(
                         expanded = unitExpanded,
                         onDismissRequest = { unitExpanded = false }
                     ) {
-                        unitSuggestions.forEach { suggestion ->
+                        allUnits.forEach { suggestion ->
                             DropdownMenuItem(
                                 text = { Text(suggestion) },
                                 onClick = {
