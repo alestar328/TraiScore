@@ -18,7 +18,7 @@ android {
 
     defaultConfig {
         applicationId = "com.develop.traiscore"
-        minSdk = 30
+        minSdk = 31
         targetSdk = 35
         versionCode = 15
         versionName = "1.1.2"
@@ -195,7 +195,7 @@ dependencies {
     implementation("com.google.ai.edge.aicore:aicore:0.0.1-exp01")
     implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
     implementation(platform("com.google.firebase:firebase-bom:34.3.0"))
-
+    implementation("androidx.compose.foundation:foundation:1.9.3")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
