@@ -191,6 +191,11 @@ dependencies {
     implementation("com.android.billingclient:billing-ktx:8.0.0")
 
     implementation ("com.google.mlkit:text-recognition:16.0.1")
+    implementation("com.google.firebase:firebase-ai")
+    implementation("com.google.ai.edge.aicore:aicore:0.0.1-exp01")
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
+    implementation(platform("com.google.firebase:firebase-bom:34.3.0"))
+
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
