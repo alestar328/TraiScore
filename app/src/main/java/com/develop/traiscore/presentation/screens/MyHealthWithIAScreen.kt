@@ -79,6 +79,18 @@ fun MyHealthWithIAScreen(
                 painter = painterResource(id = R.drawable.upload_doc),
                 onClick = { onUploadDocument?.invoke() }
             )
+            Spacer(Modifier.height(20.dp))
+
+            ProfileButton(
+                text = "Ver informes anteriores",
+                iconSize = 36.dp,
+                modifier = Modifier
+                    .fillMaxWidth(),
+                containerColor = traiYellow,
+                contentColor = Color.Black,
+                painter = painterResource(id = R.drawable.history_logo),
+                onClick = { navController.navigate(NavigationRoutes.MedicalHistory.route) }
+            )
 
         }
     }

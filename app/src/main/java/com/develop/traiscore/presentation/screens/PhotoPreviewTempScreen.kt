@@ -172,7 +172,7 @@ fun PhotoPreviewTempScreen(
                             unselectedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     )
-                    Text("Nombre", modifier = Modifier.padding(start = 6.dp))
+                    Text("Nombre", style = MaterialTheme.typography.bodyLarge)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(
@@ -183,7 +183,7 @@ fun PhotoPreviewTempScreen(
                             unselectedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     )
-                    Text("Valor", modifier = Modifier.padding(start = 6.dp))
+                    Text("Valor",  style = MaterialTheme.typography.bodyLarge)
                 }
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     RadioButton(
@@ -194,7 +194,7 @@ fun PhotoPreviewTempScreen(
                             unselectedColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
                         )
                     )
-                    Text("Limpiar", modifier = Modifier.padding(start = 6.dp))
+                    Text("Limpiar", style = MaterialTheme.typography.bodyLarge)
                 }
             }
 

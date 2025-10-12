@@ -41,5 +41,7 @@ sealed class NavigationRoutes(val route: String) {
     object ClientRoutines : NavigationRoutes("client_routines/{clientId}") {
         fun createRoute(clientId: String) = "client_routines/$clientId"
     }
+    object MedicalHistory : NavigationRoutes("medical_history")
+
 
 }

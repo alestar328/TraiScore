@@ -64,6 +64,7 @@ import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import com.develop.traiscore.presentation.screens.LoginScreenRoute
+import com.develop.traiscore.presentation.screens.MedicalHistoryScreenUI
 import com.develop.traiscore.presentation.screens.MyExercisesUI
 import com.develop.traiscore.presentation.screens.MyHealthWithIAScreen
 import com.develop.traiscore.presentation.screens.PhotoPreviewTempScreen
@@ -789,7 +790,11 @@ fun AppNavigation(navController: NavHostController) {
                 }
             )
         }
-
+        composable(NavigationRoutes.MedicalHistory.route) {
+            MedicalHistoryScreenUI(
+                onBack = { navController.popBackStack() }
+            )
+        }
 // --- Preview TEMPORAL para probar la captura ---
         navigation(
             route = "lab_flow",

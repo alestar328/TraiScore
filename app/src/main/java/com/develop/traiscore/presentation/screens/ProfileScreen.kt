@@ -281,7 +281,7 @@ fun ProfileScreen(
 
                 // Botones principales
                 if (isAthlete) {
-                    TrainerSection(
+                  /*  TrainerSection(
                         trainerInfo = trainerInfo,
                         isLoading = isLoading,
                         onAddTrainer = {
@@ -289,7 +289,7 @@ fun ProfileScreen(
                             navController.navigate(NavigationRoutes.EnterInvitation.route)
                         }
                     )
-                    Spacer(Modifier.height(20.dp))
+                    Spacer(Modifier.height(20.dp))*/
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),

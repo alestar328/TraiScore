@@ -6,7 +6,6 @@ import com.develop.traiscore.data.local.dao.MedicalStatsDao
 import com.develop.traiscore.data.local.entity.LabEntry
 import com.develop.traiscore.data.mappers.toDto
 import com.develop.traiscore.data.remote.dtos.MedicalReportDto
-import com.develop.traiscore.data.remote.dtos.MedicalStatsExport
 import com.develop.traiscore.utils.UnitRegistry
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -150,5 +149,12 @@ class LabResultsViewModel @Inject constructor(
     /** Reemplaza la lista completa desde OCR ya parseado a LabEntry. */
     fun replaceAllFromOcr(entries: List<LabEntry>) {
         _uiState.update { it.copy(entries = entries) }
+    }
+
+    fun getReports(userId: String, limit: Int = 50, onResult: (Result<List<MedicalReportDto>>) -> Unit) {
+        viewModelScope.launch {
+            val result = repo.getReports(userId, limit)
+            onResult(result)
+        }
     }
 }

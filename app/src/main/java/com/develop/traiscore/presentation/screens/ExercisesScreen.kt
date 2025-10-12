@@ -11,11 +11,11 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.animation.with
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,7 +23,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.*
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
@@ -33,7 +32,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -54,12 +52,10 @@ import com.develop.traiscore.presentation.components.WorkoutCard
 import com.develop.traiscore.presentation.components.general.DeleteConfirmationDialog
 import com.develop.traiscore.presentation.components.general.NewSessionUX
 import com.develop.traiscore.presentation.theme.tsColors
-import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 import com.develop.traiscore.presentation.viewmodels.NewSessionViewModel
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.util.Date
-
 import com.develop.traiscore.presentation.viewmodels.ViewMode
 import com.develop.traiscore.presentation.viewmodels.ViewModeSelector
 import java.time.YearMonth
@@ -175,7 +171,7 @@ fun ExercisesScreen(
                         containerColor = MaterialTheme.tsColors.ledCyan,
                         contentColor = Color.Black,
                         modifier = Modifier
-                            .padding(bottom = 100.dp)
+                            .navigationBarsPadding()
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,

@@ -19,6 +19,7 @@ val gray = Color(0XFF888888);
 val lightGray = Color(0XFFCCCCCC);
 
 val traiBlue = Color(0xFF3AF2FF)
+val traiBlueLabel = Color(0xFF29A7B0)
 val traiBackgroundDark = Color(0xFF1C1C1C)
 val traiBackgroundDay = Color(0xFFAFB6C0)
 

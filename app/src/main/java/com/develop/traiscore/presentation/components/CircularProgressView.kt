@@ -73,7 +73,7 @@ fun CircularProgressView(
         // Etiqueta dentro del círculo
         Text(
             text = maxLabel,
-            fontSize = 18.sp,
+            fontSize = 14.sp,
             fontWeight = FontWeight.Normal,
             color = strokeColor
         )
