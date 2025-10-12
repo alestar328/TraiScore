@@ -20,15 +20,23 @@ android {
         applicationId = "com.develop.traiscore"
         minSdk = 31
         targetSdk = 35
-        versionCode = 15
-        versionName = "1.1.2"
+        versionCode = 16
+        versionName = "1.1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
             useSupportLibrary = true
         }
     }
-
+    signingConfigs {
+        create("release") {
+            storeFile = file("C:/Users/newge/AndroidStudioProjects/TraiScore2/key.jks")
+            storePassword = "123456"
+            keyAlias = "key"
+            keyPassword = "123456"
+            storeType = "PKCS12"
+        }
+    }
     buildTypes {
         release {
             isMinifyEnabled = false
@@ -36,7 +44,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
         }
     }
     flavorDimensions += "version"
