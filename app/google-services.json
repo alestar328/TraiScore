@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "484079628970-ciiepcung0j8vrop9ocsa6qoi7rq04p9.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.develop.traiscore",
+            "certificate_hash": "0ceb53f773b4897cb2da4fef10e65ca054486d46"
+          }
+        },
+        {
           "client_id": "484079628970-nga438gadueac4369men57eb9rv6tgab.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
@@ -37,6 +45,13 @@
             {
               "client_id": "484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "484079628970-3qlirfeifa19gn3ba2d062ienbu2jakj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bellon.TraiScore"
+              }
             }
           ]
         }
@@ -74,6 +89,13 @@
             {
               "client_id": "484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "484079628970-3qlirfeifa19gn3ba2d062ienbu2jakj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bellon.TraiScore"
+              }
             }
           ]
         }
@@ -111,6 +133,13 @@
             {
               "client_id": "484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "484079628970-3qlirfeifa19gn3ba2d062ienbu2jakj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bellon.TraiScore"
+              }
             }
           ]
         }

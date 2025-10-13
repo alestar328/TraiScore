@@ -119,7 +119,7 @@ fun WorkoutCard(
                     )
                 }
 
-                Text(
+              /*  Text(
                     text = SimpleDateFormat(
                         "dd/MM/yyyy",
                         Locale.getDefault()
@@ -127,7 +127,7 @@ fun WorkoutCard(
                     fontSize = 11.sp,
                     color = Color.White,
                     modifier = Modifier.padding(start = 8.dp)
-                )
+                )*/
             }
 
         }
