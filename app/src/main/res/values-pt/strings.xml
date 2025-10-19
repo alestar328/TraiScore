@@ -176,8 +176,5 @@
     <string name="measures_weight_change">Mudança de peso</string>
     <string name="measures_since">Desde</string>
     <string name="measures_total_measure">Total de registros</string>
-
-
-    <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
     <string name="stats_by_rir">Por RIR:</string>
 </resources>

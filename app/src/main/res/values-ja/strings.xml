@@ -176,7 +176,5 @@
     <string name="measures_weight_change">体重の変化</string>
     <string name="measures_since">以来</string>
     <string name="measures_total_measure">総記録</string>
-
-    <string name="web_client_id">484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com</string>
     <string name="stats_by_rir">RIRによる：</string>
 </resources>

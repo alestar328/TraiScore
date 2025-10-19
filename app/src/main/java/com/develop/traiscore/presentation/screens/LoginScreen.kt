@@ -149,7 +149,7 @@ fun LoginScreen(
 
                                 Text(
                                     text = "Créala ahora",
-                                    color = MaterialTheme.colorScheme.onBackground,
+                                    color = traiBlue,
                                     fontSize = 14.sp,
                                     fontFamily = Roboto,
                                     fontWeight = FontWeight.Medium,

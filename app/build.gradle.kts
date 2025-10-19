@@ -20,7 +20,7 @@ android {
         applicationId = "com.develop.traiscore"
         minSdk = 31
         targetSdk = 35
-        versionCode = 16
+        versionCode = 18
         versionName = "1.1.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"

@@ -34,7 +34,7 @@ class AuthenticationManager(
             Log.d("jejeje", "=== STARTING GOOGLE SIGN-IN ===")
 
             val googleIdOption = GetGoogleIdOption.Builder()
-                .setServerClientId(context.getString(R.string.web_client_id))
+                .setServerClientId(context.getString(R.string.default_web_client_id))
                 .setFilterByAuthorizedAccounts(false) // Permite cuentas no autorizadas previamente
                 .setAutoSelectEnabled(true) // Auto-selecciona si hay una sola cuenta
                 .build()

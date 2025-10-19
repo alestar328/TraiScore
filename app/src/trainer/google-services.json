@@ -22,14 +22,6 @@
           }
         },
         {
-          "client_id": "484079628970-etvq5ph2snv6d9oeg73ha8k33vnlfmm0.apps.googleusercontent.com",
-          "client_type": 1,
-          "android_info": {
-            "package_name": "com.develop.traiscore",
-            "certificate_hash": "52274d55b2a9699bf29969ce15aad04eb42e7d00"
-          }
-        },
-        {
           "client_id": "484079628970-nga438gadueac4369men57eb9rv6tgab.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
