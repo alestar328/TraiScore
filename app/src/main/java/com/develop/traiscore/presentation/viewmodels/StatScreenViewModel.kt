@@ -235,7 +235,7 @@ class StatScreenViewModel @Inject constructor(private val context: Context) : Vi
                 callback(null)
             }
     }
-    private fun calculateCurrentMonthTrainingDays() {
+    fun calculateCurrentMonthTrainingDays() {
         val userId = getTargetUserId()
         if (userId == null) {
             Log.e("StatsVM", "Usuario no identificado, no puedo calcular días de entrenamiento")

@@ -18,7 +18,10 @@ import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.text.Normalizer
 import java.util.Date
 import java.util.Locale
@@ -39,8 +42,7 @@ class AddExerciseViewModel @Inject constructor(
 ) : ViewModel() {
     var exerciseNames by mutableStateOf<List<String>>(emptyList())
         private set
-    var lastUsedExerciseName by mutableStateOf<String?>(null)
-        private set
+
     private val userId = FirebaseAuth.getInstance().currentUser!!.uid
     private val firestore = Firebase.firestore
 
@@ -50,6 +52,11 @@ class AddExerciseViewModel @Inject constructor(
     var exercisesWithCategory by mutableStateOf<List<Pair<String, String>>>(emptyList())
         private set
 
+    private val _lastUsedExerciseName = mutableStateOf<String?>(null)
+    val lastUsedExerciseName: String? get() = _lastUsedExerciseName.value
+
+    private val _onExerciseAdded = MutableSharedFlow<Unit>(replay = 0)
+    val onExerciseAdded = _onExerciseAdded.asSharedFlow()
 
     private val routinesRef = Firebase.firestore
         .collection("users")
@@ -423,52 +430,7 @@ class AddExerciseViewModel @Inject constructor(
             }
     }
 
-    fun saveWorkoutEntry(
-        title: String,
-        exerciseId : Int,
-        reps: Int,
-        weight: Double,
-        rir: Int,
-        sessionData: Triple<String, String, String>? = null
-    ) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid
-        if (userId == null) {
-            println("❌ Usuario no autenticado")
-            return
-        }
 
-        val workoutData = hashMapOf(
-            "uid" to userId,
-            "title" to title,
-            "exerciseId" to exerciseId,
-            "reps" to reps,
-            "weight" to weight,
-            "rir" to rir,
-            "timestamp" to Date()
-        )
-        sessionData?.let { (sessionId, sessionName, sessionColor) ->
-            workoutData["sessionId"] = sessionId
-            workoutData["sessionName"] = sessionName
-            workoutData["sessionColor"] = sessionColor
-        }
-
-
-        // Guardar la entrada de entrenamiento en la subcolección workoutEntries del usuario
-        Firebase.firestore.collection("users")
-            .document(userId)  // Usamos el UID del usuario autenticado
-            .collection("workoutEntries")
-            .add(workoutData)
-            .addOnSuccessListener {
-                println("✅ Entrada de entrenamiento guardada con ID: ${it.id}")
-                updateLastUsedExercise(title)
-            }
-            .addOnFailureListener { exception ->
-                println("❌ Error al guardar entrada: ${exception.message}")
-            }
-    }
-    fun updateLastUsedExercise(name: String) {
-        lastUsedExerciseName = name
-    }
     fun fetchCategoryFor(exerciseName: String, onResult: (DefaultCategoryExer?) -> Unit) {
         val currentUser = FirebaseAuth.getInstance().currentUser ?: return onResult(null)
         val userId = currentUser.uid
@@ -530,37 +492,53 @@ class AddExerciseViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             try {
+                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
+
                 val activeSessionResponse = sessionRepository.getActiveSession()
 
-                if (activeSessionResponse.success && activeSessionResponse.session != null) {
+                val workoutData = if (activeSessionResponse.success && activeSessionResponse.session != null) {
                     val session = activeSessionResponse.session
-
-                    // Agregar workout a la sesión activa
-                    workoutEntryViewModel.addWorkoutToActiveSession(
-                        title = title,
-                        reps = reps,
-                        weight = weight,
-                        rir = rir,
-                        activeSessionId = session.sessionId,
-                        activeSessionName = session.name,
-                        activeSessionColor = session.color
+                    hashMapOf(
+                        "title" to title,
+                        "reps" to reps,
+                        "weight" to weight,
+                        "rir" to rir,
+                        "timestamp" to Date(),
+                        "sessionId" to session.sessionId,
+                        "sessionName" to session.name,
+                        "sessionColor" to session.color
                     )
-
-                    // Incrementar contador de workouts en la sesión
-                    sessionRepository.incrementWorkoutCount(session.sessionId)
-                    updateLastUsedExercise(title)
-
-                    println("✅ Ejercicio agregado a sesión: ${session.name}")
-
                 } else {
-                    // No hay sesión activa - crear workout sin sesión (legacy)
-                    addWorkoutWithoutSession(title, reps, weight, rir)
-                    updateLastUsedExercise(title)
-                    println("⚠️ Ejercicio agregado sin sesión activa")
+                    hashMapOf(
+                        "title" to title,
+                        "reps" to reps,
+                        "weight" to weight,
+                        "rir" to rir,
+                        "timestamp" to Date()
+                    )
                 }
+
+                Firebase.firestore
+                    .collection("users")
+                    .document(userId)
+                    .collection("workoutEntries")
+                    .add(workoutData)
+                    .await()
+
+                if (activeSessionResponse.success && activeSessionResponse.session != null) {
+                    sessionRepository.incrementWorkoutCount(activeSessionResponse.session.sessionId)
+                }
+
+                _lastUsedExerciseName.value = title
+
+                println("✅ Ejercicio agregado correctamente")
+
+                // 🔹 Emitir evento de actualización
+                _onExerciseAdded.emit(Unit)
 
             } catch (e: Exception) {
                 println("❌ Error agregando ejercicio: ${e.message}")
+                e.printStackTrace()
             }
         }
     }

@@ -74,6 +74,8 @@ fun ExercisesScreen(
     val showSearchBar = remember { mutableStateOf(false) }
     val selectedSearch = remember { mutableStateOf("") }
     val context = LocalContext.current
+    var showAddExerciseSheet by remember { mutableStateOf(false) } // NUEVO
+
     // Estados para el nuevo sistema de vistas
     val showViewModeSelector = remember { mutableStateOf(false) }
     val currentViewMode = remember { mutableStateOf(ViewMode.TODAY) }

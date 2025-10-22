@@ -9,6 +9,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import com.develop.traiscore.R
@@ -43,6 +44,7 @@ import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.develop.traiscore.BuildConfig
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
+import com.develop.traiscore.presentation.viewmodels.NewSessionViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,16 +86,23 @@ fun MainScreen(
 
     var routineScreenState by remember { mutableStateOf<ScreenState>(ScreenState.MAIN_ROUTINE_MENU) }
     var selectedIndex by rememberSaveable { mutableIntStateOf(initialSelectedIndex) }
-    var isBottomSheetVisible by remember { mutableStateOf(false) }
     var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
 
     val shouldShowNavBar = currentUserRole != null || true // Siempre mostrar
 
+    val newSessionViewModel: NewSessionViewModel = hiltViewModel()
+    val hasActiveSession by newSessionViewModel.hasActiveSession.collectAsState()
+    val activeSession by newSessionViewModel.activeSession.collectAsState()
+
+    var isBottomSheetVisible by remember { mutableStateOf(false) }
 
 
     LaunchedEffect(Unit) {
         // ✅ ELIMINADO: Ya no necesitamos getUserRole
         routineViewModel.clearTargetClient()
+    }
+    LaunchedEffect(Unit) {
+        newSessionViewModel.checkForActiveSession()
     }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
@@ -114,6 +123,9 @@ fun MainScreen(
                         selectedIndex = selectedIndex,
                         onItemClick = { index ->
                             if (index == 2) {
+                                // CAMBIO: Ya NO verificar sesión activa
+                                // Simplemente abrir el BottomSheet
+                                println("🔍 Abriendo AddExerciseBottomSheet (con o sin sesión)")
                                 isBottomSheetVisible = true
                             } else {
                                 selectedIndex = index
@@ -172,12 +184,15 @@ fun MainScreen(
     // ✅ NUEVO: Solo mostrar AddExerciseBottomSheet en la versión athlete
     if (BuildConfig.FLAVOR == "athlete") {
         val addExerciseViewModel: AddExerciseViewModel = hiltViewModel()
+
         AddExerciseBottomSheet(
             viewModel = addExerciseViewModel,
             isVisible = isBottomSheetVisible,
-            onDismiss = { isBottomSheetVisible = false },
+            onDismiss = {
+                isBottomSheetVisible = false
+            },
             onSave = { updated ->
-                println("🔧 Datos actualizados: $updated")
+                println("✅ Ejercicio guardado: $updated")
                 isBottomSheetVisible = false
             }
         )

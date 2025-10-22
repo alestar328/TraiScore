@@ -68,6 +68,7 @@ import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.theme.traiOrange
 import com.develop.traiscore.presentation.theme.tsColors
+import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import com.develop.traiscore.presentation.viewmodels.StatScreenViewModel
 import com.develop.traiscore.statics.StatTab
@@ -79,7 +80,9 @@ fun StatScreen(
     viewModel: StatScreenViewModel = hiltViewModel(),
     bodyStatsViewModel: BodyStatsViewModel = hiltViewModel(),
     clientId: String? = null,
-    navController: NavController
+    navController: NavController,
+    addExerciseViewModel: AddExerciseViewModel = hiltViewModel() // 👈 Añadir
+
 ) {
     var selectedTab by remember { mutableStateOf(StatTab.RECORDS) }
     val exerOptions by viewModel.exerciseOptions.collectAsState()
@@ -89,7 +92,6 @@ fun StatScreen(
     val selected by viewModel.selectedExercise.collectAsState()
     var showChronoScreen by remember { mutableStateOf(false) }
     val rirData by viewModel.rirProgress.collectAsState()
-
     val (oneRepMax, maxReps, averageRIR) = circularData
     val weightByReps = remember(weightData) {
         weightData.map { (_, peso) ->
@@ -152,7 +154,14 @@ fun StatScreen(
             }
         }
     }
-
+    LaunchedEffect(Unit) {
+        addExerciseViewModel.onExerciseAdded.collect {
+            println("🔄 Refrescando datos de estadísticas tras nuevo ejercicio")
+            viewModel.loadRadarChartData()
+            viewModel.calculateCurrentMonthTrainingDays()
+            viewModel.onExerciseSelected(viewModel.selectedExercise.value ?: "")
+        }
+    }
     LaunchedEffect(selectedBodyMetric, bodyMeasurementData) {
         selectedBodyMetric?.let { metric ->
             bodyMeasurementData?.let { data ->

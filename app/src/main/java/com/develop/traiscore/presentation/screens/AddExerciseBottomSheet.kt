@@ -62,6 +62,9 @@ fun AddExerciseBottomSheet(
         skipPartiallyExpanded = true // ✅ AÑADIR: Salta el estado parcial
     )
 ) {
+    LaunchedEffect(isVisible) {
+        println("🔍 DEBUG: isVisible = $isVisible")
+    }
     if (isVisible) {
         ModalBottomSheet(
             onDismissRequest = onDismiss,
