@@ -121,15 +121,14 @@ fun MainScreen(
                         }
                     )
                 }
-                "athlete" -> {
+                "athlete", "production" -> { // 👈 INCLUYE production
                     BottomNavigationBar(
                         navItemList = navItemList,
                         selectedIndex = selectedIndex,
                         onItemClick = { index ->
+                            Log.d("MainScreen", "👉 Click en BottomNav index=$index flavor=${BuildConfig.FLAVOR}")
                             if (index == 2) {
-                                // CAMBIO: Ya NO verificar sesión activa
-                                // Simplemente abrir el BottomSheet
-                                println("🔍 Abriendo AddExerciseBottomSheet (con o sin sesión)")
+                                Log.d("MainScreen", "🟢 Abriendo AddExerciseBottomSheet desde flavor=${BuildConfig.FLAVOR}")
                                 isBottomSheetVisible = true
                             } else {
                                 selectedIndex = index

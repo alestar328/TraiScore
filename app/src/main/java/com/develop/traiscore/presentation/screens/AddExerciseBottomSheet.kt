@@ -69,8 +69,10 @@ fun AddExerciseBottomSheet(
     }
     if (isVisible) {
         ModalBottomSheet(
-            onDismissRequest = onDismiss,
-            sheetState = sheetState,
+            onDismissRequest = {
+                Log.d("AddExerciseSheet", "❌ onDismissRequest ejecutado")
+                onDismiss()
+            },            sheetState = sheetState,
             containerColor = Color.Gray,
             contentColor = Color.White,
             modifier = modifier
