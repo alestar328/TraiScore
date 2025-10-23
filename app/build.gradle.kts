@@ -20,7 +20,7 @@ android {
         applicationId = "com.develop.traiscore"
         minSdk = 31
         targetSdk = 35
-        versionCode = 19
+        versionCode = 23
         versionName = "1.1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -49,18 +49,20 @@ android {
     }
     flavorDimensions += "version"
     productFlavors {
-        create("production") { // Nuevo flavor para la version de Google Play
+        create("production") {
             dimension = "version"
-            // No hay applicationIdSuffix, por lo que usará el defaultConfig.applicationId
+            applicationId = "com.develop.traiscore"
+            applicationIdSuffix = ""
         }
         create("athlete") {
             dimension = "version"
-            applicationIdSuffix  = ".athlete"
+            //applicationId = "com.develop.traiscore.athlete"
+            applicationId = "com.develop.traiscore"
             versionNameSuffix = "-athlete"
         }
         create("trainer") {
             dimension = "version"
-            applicationIdSuffix = ".trainer"
+            applicationId = "com.develop.traiscore.trainer"
             versionNameSuffix = "-trainer"
         }
     }

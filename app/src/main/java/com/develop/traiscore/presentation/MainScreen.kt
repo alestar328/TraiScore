@@ -1,5 +1,8 @@
 package com.develop.traiscore.presentation
 
+import android.util.Log
+import android.widget.Toast
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
@@ -13,12 +16,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.painterResource
 import com.develop.traiscore.R
+import com.develop.traiscore.BuildConfig
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -42,7 +47,6 @@ import com.develop.traiscore.presentation.screens.StatScreen
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
-import com.develop.traiscore.BuildConfig
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 import com.develop.traiscore.presentation.viewmodels.NewSessionViewModel
 
@@ -150,53 +154,58 @@ fun MainScreen(
             }
         }
     ) { innerPadding ->
-        ContentScreen(
-            modifier = Modifier.padding(innerPadding),
-            selectedIndex = selectedIndex,
-            navController = navController,
-            exeScreenViewModel = exeScreenViewModel,
-            routineScreenState = routineScreenState,
-            onRoutineSelected = { docId, type ->
-                routineScreenState = ScreenState.FIREBASE_ROUTINE_SCREEN(docId, type)
-            },
-            onBackToRoutineMenu = {
-                routineScreenState = ScreenState.MAIN_ROUTINE_MENU
-            },
-            onCreateRoutine = {
-                routineScreenState = ScreenState.CREATE_ROUTINE_SCREEN
-            },
-            onMeasurementsClick = {
-                routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
-            },
-            onMeasurementsHistoryClick = {
-                routineScreenState = ScreenState.MEASUREMENTS_HISTORY_SCREEN
-            },
-            onEditMeasurementFromHistory = {
-                routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
-            },
-            onBackToMeasurements = {  // ✅ AGREGAR ESTA LÍNEA
-                routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
-            },
-            routineViewModel = routineViewModel
-        )
-    }
+        Box(Modifier.padding(innerPadding)) {
+            ContentScreen(
+                modifier = Modifier.padding(innerPadding),
+                selectedIndex = selectedIndex,
+                navController = navController,
+                exeScreenViewModel = exeScreenViewModel,
+                routineScreenState = routineScreenState,
+                onRoutineSelected = { docId, type ->
+                    routineScreenState = ScreenState.FIREBASE_ROUTINE_SCREEN(docId, type)
+                },
+                onBackToRoutineMenu = {
+                    routineScreenState = ScreenState.MAIN_ROUTINE_MENU
+                },
+                onCreateRoutine = {
+                    routineScreenState = ScreenState.CREATE_ROUTINE_SCREEN
+                },
+                onMeasurementsClick = {
+                    routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
+                },
+                onMeasurementsHistoryClick = {
+                    routineScreenState = ScreenState.MEASUREMENTS_HISTORY_SCREEN
+                },
+                onEditMeasurementFromHistory = {
+                    routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
+                },
+                onBackToMeasurements = {  // ✅ AGREGAR ESTA LÍNEA
+                    routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
+                },
+                routineViewModel = routineViewModel
+            )
+            // ✅ NUEVO: Solo mostrar AddExerciseBottomSheet en la versión athlete
+            if (BuildConfig.FLAVOR == "athlete" || BuildConfig.FLAVOR == "production") {
+                val addExerciseViewModel: AddExerciseViewModel = hiltViewModel()
+                val context = LocalContext.current
+                Log.d("AddExerciseBS", "FLAVOR=${BuildConfig.FLAVOR}, isBottomSheetVisible=$isBottomSheetVisible")
 
-    // ✅ NUEVO: Solo mostrar AddExerciseBottomSheet en la versión athlete
-    if (BuildConfig.FLAVOR == "athlete") {
-        val addExerciseViewModel: AddExerciseViewModel = hiltViewModel()
-
-        AddExerciseBottomSheet(
-            viewModel = addExerciseViewModel,
-            isVisible = isBottomSheetVisible,
-            onDismiss = {
-                isBottomSheetVisible = false
-            },
-            onSave = { updated ->
-                println("✅ Ejercicio guardado: $updated")
-                isBottomSheetVisible = false
+                AddExerciseBottomSheet(
+                    viewModel = addExerciseViewModel,
+                    isVisible = isBottomSheetVisible,
+                    onDismiss = {
+                        isBottomSheetVisible = false
+                    },
+                    onSave = { updated ->
+                        Log.d("AddExerciseBS", "✅ Ejercicio guardado: $updated")
+                        isBottomSheetVisible = false
+                    }
+                )
             }
-        )
+        }
     }
+
+
 }
 sealed class ScreenState {
     object MAIN_ROUTINE_MENU : ScreenState()
