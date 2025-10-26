@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -74,7 +73,6 @@ fun ExercisesScreen(
     val showSearchBar = remember { mutableStateOf(false) }
     val selectedSearch = remember { mutableStateOf("") }
     val context = LocalContext.current
-    var showAddExerciseSheet by remember { mutableStateOf(false) } // NUEVO
 
     // Estados para el nuevo sistema de vistas
     val showViewModeSelector = remember { mutableStateOf(false) }
@@ -171,9 +169,7 @@ fun ExercisesScreen(
                     FloatingActionButton(
                         onClick = { showNewSessionDialog = true },
                         containerColor = MaterialTheme.tsColors.ledCyan,
-                        contentColor = Color.Black,
-                        modifier = Modifier
-                            .navigationBarsPadding()
+                        contentColor = Color.Black
                     ) {
                         Icon(
                             imageVector = Icons.Default.Add,
@@ -235,8 +231,7 @@ fun ExercisesScreen(
                                 .fillMaxWidth()
                                 .background(MaterialTheme.colorScheme.background)
                                 .padding(
-                                    horizontal = TraiScoreTheme.dimens.paddingMedium,
-                                    vertical = 4.dp
+                                    horizontal = TraiScoreTheme.dimens.paddingMedium
                                 )
                         )
                     }

@@ -12,17 +12,17 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -48,19 +48,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.develop.traiscore.R
-import com.develop.traiscore.data.firebaseData.calculateTodayDataAndNavigate
 import com.develop.traiscore.domain.model.BodyMeasurementProgressData
 import com.develop.traiscore.domain.model.BodyMeasurementType
 import com.develop.traiscore.presentation.components.ChronoScreen
 import com.develop.traiscore.presentation.components.CircularProgressView
 import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.LineChartView
-import com.develop.traiscore.presentation.components.ProgressRadarChart
 import com.develop.traiscore.presentation.components.ToggleButtonRowStats
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
@@ -209,17 +208,12 @@ fun StatScreen(
                 )
             },
             content = { paddingValues ->
-                val isClientViewingOwnStats = clientId == null
-
                 Column(
                     modifier = Modifier
-                        .padding(paddingValues)
-                        .then(
-                            if (isClientViewingOwnStats) {
-                                Modifier.navigationBarsPadding()
-                            } else {
-                                Modifier
-                            }
+                        .padding(
+                            top = paddingValues.calculateTopPadding(),
+                            start = paddingValues.calculateStartPadding(LayoutDirection.Ltr),
+                            end = paddingValues.calculateEndPadding(LayoutDirection.Ltr)
                         )
                         .background(MaterialTheme.colorScheme.background)
                         .fillMaxSize()
@@ -428,74 +422,6 @@ fun StatScreen(
                                                 .padding(horizontal = 0.dp)
                                         )
                                     }
-                                    Column {
-
-                                        if (isLoadingRadarData) {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(300.dp)
-                                                    .background(
-                                                        Color.DarkGray,
-                                                        RoundedCornerShape(8.dp)
-                                                    ),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Column(
-                                                    horizontalAlignment = Alignment.CenterHorizontally
-                                                ) {
-                                                    CircularProgressIndicator(color = traiBlue)
-                                                    Spacer(modifier = Modifier.height(8.dp))
-                                                    Text(
-                                                        "Calculando progreso...",
-                                                        color = Color.White,
-                                                        style = MaterialTheme.typography.bodyMedium
-                                                    )
-                                                }
-                                            }
-                                        } /** else if (radarChartData != null) {
-                                                    ProgressRadarChart(
-                                                        radarData = radarChartData!!,
-                                                        modifier = Modifier
-                                                            .fillMaxWidth(),
-
-                                                    )
-                                                }
-                                        else {
-                                            Box(
-                                                modifier = Modifier
-                                                    .fillMaxWidth()
-                                                    .height(300.dp)
-                                                    .background(
-                                                        Color.DarkGray,
-                                                        RoundedCornerShape(8.dp)
-                                                    ),
-                                                contentAlignment = Alignment.Center
-                                            ) {
-                                                Column(
-                                                    horizontalAlignment = Alignment.CenterHorizontally
-                                                ) {
-                                                    Text(
-                                                        text = "📊",
-                                                        style = MaterialTheme.typography.headlineLarge
-                                                    )
-                                                    Spacer(modifier = Modifier.height(8.dp))
-                                                    Text(
-                                                        "Sin datos de progreso",
-                                                        color = MaterialTheme.colorScheme.onBackground,
-                                                        style = MaterialTheme.typography.titleMedium
-                                                    )
-                                                    Text(
-                                                        "Registra más entrenamientos para ver tu progreso",
-                                                        color = MaterialTheme.colorScheme.onBackground,
-                                                        style = MaterialTheme.typography.bodyMedium,
-                                                        textAlign = TextAlign.Center
-                                                    )
-                                                }
-                                            }
-
-                                        } **/
-                                    }
 
                                 }
                             }
@@ -581,7 +507,7 @@ fun StatScreen(
                                         // Gráfico de progreso de medidas corporales
                                         selectedBodyMetric?.let { metric ->
                                             Text(
-                                                text = stringResource(id = R.string.stats_size_progress) + "${metric.displayName}:",
+                                                text = stringResource(id = R.string.stats_size_progress) + " ${metric.displayName}:",
                                                 style = MaterialTheme.typography.titleLarge,
                                                 color = MaterialTheme.colorScheme.onBackground,
                                                 modifier = Modifier.padding(bottom = 8.dp)

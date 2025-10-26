@@ -150,8 +150,7 @@ fun CalendarScreen(
         // Lista de ejercicios del día seleccionado
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp),
-            contentPadding = PaddingValues(bottom = 105.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (selectedDaySessions.isNotEmpty()) {
                 // ⭐ MOSTRAR POR SESIONES

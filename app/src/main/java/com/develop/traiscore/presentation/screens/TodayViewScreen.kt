@@ -123,7 +123,6 @@ fun TodayViewScreen(
         // Lista principal
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(bottom = 110.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             // Sesiones terminadas (solo mostrar si no hay sesión activa)

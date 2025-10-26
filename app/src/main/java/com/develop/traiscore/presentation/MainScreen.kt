@@ -25,7 +25,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.tooling.preview.Preview
+//import androidx.compose.ui.tooling.preview.Preview
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
@@ -155,7 +155,6 @@ fun MainScreen(
     ) { innerPadding ->
         Box(Modifier.padding(innerPadding)) {
             ContentScreen(
-                modifier = Modifier.padding(innerPadding),
                 selectedIndex = selectedIndex,
                 navController = navController,
                 exeScreenViewModel = exeScreenViewModel,
@@ -184,10 +183,10 @@ fun MainScreen(
                 routineViewModel = routineViewModel
             )
             // ✅ NUEVO: Solo mostrar AddExerciseBottomSheet en la versión athlete
-            if (BuildConfig.FLAVOR == "athlete" || BuildConfig.FLAVOR == "production") {
+            if (BuildConfig.FLAVOR == "athlete" || BuildConfig.FLAVOR == "production" || BuildConfig.FLAVOR == "lite") {
                 val addExerciseViewModel: AddExerciseViewModel = hiltViewModel()
                 val context = LocalContext.current
-                Log.d("AddExerciseBS", "FLAVOR=${BuildConfig.FLAVOR}, isBottomSheetVisible=$isBottomSheetVisible")
+                //Log.d("AddExerciseBS", "FLAVOR=${BuildConfig.FLAVOR}, isBottomSheetVisible=$isBottomSheetVisible")
 
                 AddExerciseBottomSheet(
                     viewModel = addExerciseViewModel,
@@ -446,16 +445,5 @@ private fun AthleteContent(
                 )
             }
         }
-    }
-}
-@Preview(
-    name = "MainScreenPreview",
-    showBackground = true
-)
-@Composable
-fun MainScreenPreview() {
-    TraiScoreTheme {
-        val fakeNavController = rememberNavController()
-        MainScreen(navController = fakeNavController)
     }
 }

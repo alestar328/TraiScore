@@ -7,6 +7,7 @@ plugins {
     //Hilt
     id("kotlin-kapt")
     id("com.google.dagger.hilt.android")
+    // Google Services & Firebase
     alias(libs.plugins.google.gms.google.services)
     alias(libs.plugins.google.firebase.crashlytics)
 
@@ -65,6 +66,12 @@ android {
             applicationId = "com.develop.traiscore.trainer"
             versionNameSuffix = "-trainer"
         }
+        create("lite") {
+            dimension = "version"
+            applicationId = "com.develop.traiscore.lite"
+            versionNameSuffix = "-lite"
+            minSdk = 24 // Compatible con Android 7+
+        }
     }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
@@ -94,125 +101,114 @@ android {
 }
 
 dependencies {
-    implementation(libs.androidx.scenecore)
-    val activity_version = "1.10.1"
-    val camerax_version = "1.5.0"
-    val composeBom = platform("androidx.compose:compose-bom:2025.08.00")
-    implementation(composeBom)
-    testImplementation(composeBom)
-    androidTestImplementation(composeBom)
-
-    implementation("androidx.compose.foundation:foundation")
-    testImplementation("androidx.compose.ui:ui-test-junit4")
-    androidTestImplementation("androidx.compose.ui:ui-test")
-
-
-
-    implementation("androidx.camera:camera-core:${camerax_version}")
-    implementation("androidx.camera:camera-camera2:${camerax_version}")
-    implementation("androidx.camera:camera-lifecycle:${camerax_version}")
-    implementation("androidx.camera:camera-video:${camerax_version}")
-    implementation("androidx.camera:camera-view:${camerax_version}")
-    implementation("androidx.camera:camera-mlkit-vision:${camerax_version}")
-    implementation("androidx.camera:camera-extensions:${camerax_version}")
-
-
-    implementation("com.google.guava:guava:33.4.8-android")
-
-    implementation("androidx.activity:activity:$activity_version")
-    implementation("io.coil-kt.coil3:coil-compose:3.2.0")
-    implementation("io.coil-kt.coil3:coil-network-okhttp:3.2.0")
-
-    implementation ("androidx.datastore:datastore-preferences:1.1.7")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")
-    implementation("androidx.compose.runtime:runtime-livedata:1.8.2")
-
-    implementation("io.coil-kt.coil3:coil-compose:3.2.0")
-    implementation(libs.gson)
-    implementation("androidx.credentials:credentials:1.5.0")
-    implementation(libs.androidx.credentials.play.services.auth)
-    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
-    implementation("com.google.android.gms:play-services-auth:21.3.0")
-    implementation(libs.androidx.paging.common.android)
-    implementation(libs.firebase.crashlytics)
-    implementation (platform("com.google.firebase:firebase-bom:33.12.0"))
-    implementation ("com.google.firebase:firebase-auth")
-    implementation ("com.google.firebase:firebase-firestore")
+    // ---------------------------------------------------------------------------------------------
+    // ANDROIDX CORE
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.collection:collection-ktx:1.5.0")
-    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
-    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
-    implementation("androidx.navigation:navigation-runtime-ktx:2.8.9")
-    implementation("androidx.navigation:navigation-fragment-ktx:2.8.9")
-    implementation("androidx.navigation:navigation-ui-ktx:2.8.9")
-    implementation("androidx.lifecycle:lifecycle-reactivestreams-ktx:2.8.7")
     implementation("androidx.palette:palette-ktx:1.0.0")
     implementation("androidx.sqlite:sqlite-ktx:2.4.0")
-    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
+
+    // ---------------------------------------------------------------------------------------------
+    // COMPOSE UI
+    val composeBom = platform("androidx.compose:compose-bom:2025.08.00")
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
+    testImplementation(composeBom)
+
+    implementation("androidx.compose.foundation:foundation:1.9.3")
     implementation("androidx.compose.material3:material3:1.3.2")
-    implementation("androidx.compose.material:material:1.8.1")
-    implementation(libs.play.services.fido)
-    implementation(libs.firebase.storage.ktx)
+    implementation("androidx.compose.material:material:1.9.1")
+    implementation("androidx.activity:activity-compose:1.10.1")
+    implementation("androidx.compose.material3:material3-window-size-class:1.3.2")
+    implementation("androidx.compose.ui:ui-tooling:1.8.2")
 
-    val lifecycle_version = "2.8.7"
+    debugImplementation(libs.androidx.ui.tooling)
+    debugImplementation(libs.androidx.ui.test.manifest)
 
-    val room_version = "2.6.1"
+    // ---------------------------------------------------------------------------------------------
+    // NAVIGATION + LIFECYCLE
+    implementation("androidx.navigation:navigation-compose:2.8.9")
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.9.1")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:2.8.7")
+    implementation("androidx.compose.runtime:runtime-livedata:1.8.2")
+
+    // ---------------------------------------------------------------------------------------------
+    // ROOM
     implementation(libs.androidx.room.runtime)
-    // If this project uses any Kotlin source, use Kotlin Symbol Processing (KSP)
+    implementation(libs.androidx.room.ktx)
+    implementation(libs.androidx.room.common)
     ksp(libs.androidx.room.compiler)
 
-    // optional - Kotlin Extensions and Coroutines support for Room
-    implementation(libs.androidx.room.ktx)
-
-    val nav_version = "2.9.4"
-    implementation(libs.androidx.material3.window.size)
-    // ViewModel
-    implementation(libs.androidx.lifecycle.viewmodel.ktx)
-    // ViewModel utilities for Compose
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    // Lifecycle utilities for Compose
-    implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.core.splashscreen)
-    //La mierda de abajo no acepta la palabra 'class'
-    implementation(libs.androidx.material3.window.size)
-    implementation("androidx.compose.material:material:1.9.1")
-    //Hilt
+    // ---------------------------------------------------------------------------------------------
+    // HILT
     implementation("com.google.dagger:hilt-android:2.51.1")
     kapt("com.google.dagger:hilt-android-compiler:2.51.1")
     implementation("androidx.hilt:hilt-navigation-compose:1.2.0")
 
-    implementation(libs.hilt.android)
-    implementation(libs.androidx.core.ktx)
-    implementation(libs.androidx.lifecycle.runtime.ktx)
-    implementation(libs.androidx.activity.compose)
-    implementation(platform(libs.androidx.compose.bom))
-    implementation(libs.androidx.ui)
-    implementation(libs.androidx.ui.graphics)
-    implementation(libs.androidx.ui.tooling.preview)
-    implementation(libs.androidx.material3)
-    implementation (libs.ui)
-    implementation(libs.androidx.room.common)
+    // ---------------------------------------------------------------------------------------------
+    // FIREBASE
+    implementation(platform("com.google.firebase:firebase-bom:34.3.0"))
+    implementation("com.google.firebase:firebase-auth")
+    implementation("com.google.firebase:firebase-firestore")
+    implementation("com.google.firebase:firebase-storage-ktx:21.0.1")
+    implementation("com.google.firebase:firebase-crashlytics")
 
-    implementation(libs.google.pay.api)
-    implementation(libs.tasks.api.coroutines)
+    // ---------------------------------------------------------------------------------------------
+    // GOOGLE AUTH & IDENTITY
+    implementation("com.google.android.gms:play-services-auth:21.3.0")
+    implementation("androidx.credentials:credentials:1.5.0")
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation("com.google.android.libraries.identity.googleid:googleid:1.1.1")
+
+    // ---------------------------------------------------------------------------------------------
+    // CAMERA + MLKIT
+    val cameraxVersion = "1.5.0"
+    implementation("androidx.camera:camera-core:$cameraxVersion")
+    implementation("androidx.camera:camera-camera2:$cameraxVersion")
+    implementation("androidx.camera:camera-lifecycle:$cameraxVersion")
+    implementation("androidx.camera:camera-video:$cameraxVersion")
+    implementation("androidx.camera:camera-view:$cameraxVersion")
+    implementation("androidx.camera:camera-extensions:$cameraxVersion")
+    implementation("androidx.camera:camera-mlkit-vision:$cameraxVersion")
+    implementation("com.google.mlkit:text-recognition:16.0.1")
+
+    // ---------------------------------------------------------------------------------------------
+    // IMAGE & NETWORK
+    implementation("io.coil-kt.coil3:coil-compose:3.2.0")
+    implementation("io.coil-kt.coil3:coil-network-okhttp:3.2.0")
+
+    // ---------------------------------------------------------------------------------------------
+    // DATASTORE
+    implementation("androidx.datastore:datastore-preferences:1.1.7")
+
+    // ---------------------------------------------------------------------------------------------
+    // BILLING / PAYMENTS
     implementation("com.google.android.gms:play-services-wallet:19.4.0")
     implementation("com.google.pay.button:compose-pay-button:1.1.0")
     implementation("com.android.billingclient:billing-ktx:8.0.0")
+    implementation(libs.google.pay.api)
+    implementation(libs.tasks.api.coroutines)
 
-    implementation ("com.google.mlkit:text-recognition:16.0.1")
-    implementation("com.google.firebase:firebase-ai")
-    implementation("com.google.ai.edge.aicore:aicore:0.0.1-exp01")
-    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
-    implementation(platform("com.google.firebase:firebase-bom:34.3.0"))
-    implementation("androidx.compose.foundation:foundation:1.9.3")
+    // ---------------------------------------------------------------------------------------------
+    // UTILS
+    implementation("com.google.guava:guava:33.4.8-android")
+    implementation(libs.gson)
 
+    // ---------------------------------------------------------------------------------------------
+    // IA / GEMINI (solo para non-Lite flavors)
+    listOf("athlete", "trainer", "production").forEach { flavor ->
+        add("${flavor}Implementation", "com.google.firebase:firebase-ai")
+        add("${flavor}Implementation", "com.google.ai.edge.aicore:aicore:0.0.1-exp01")
+        add("${flavor}Implementation", "com.google.ai.client.generativeai:generativeai:0.9.0")
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // TESTS
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
     androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
 }
-

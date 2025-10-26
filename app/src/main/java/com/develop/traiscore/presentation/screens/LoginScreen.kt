@@ -5,6 +5,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -22,6 +23,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ButtonDefaults
@@ -54,6 +57,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.ElevatedButton
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -65,8 +69,10 @@ import com.develop.traiscore.presentation.theme.Black
 import com.develop.traiscore.presentation.theme.Roboto
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBlue
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import java.time.LocalDate
-
 @Composable
 fun LoginScreen(
     errorMsg: String?,
@@ -82,131 +88,224 @@ fun LoginScreen(
     onEmailSignUp: () -> Unit = {},
     onBackToLogin: () -> Unit = {},
     onForgotPassword: (String) -> Unit = {},
-    // ✅ NUEVOS PARÁMETROS
     prefilledFirstName: String = "",
     prefilledLastName: String = "",
     isGoogleSignIn: Boolean = false
 ) {
-    var showDatePicker by remember { mutableStateOf(false) }
-    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
-    var isRegistering by remember { mutableStateOf(false) }
+    var showOnboarding by remember { mutableStateOf(true) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .navigationBarsPadding()
+            .background(Color.Black)
+            .navigationBarsPadding(),
+        contentAlignment = Alignment.Center
     ) {
-        Surface {
-            Column(modifier = Modifier.fillMaxSize()) {
-
-                TopSection(
-                    title = if (isNewUser || isRegistering) "Registro" else "Login",
-                    showBackButton = isNewUser || isRegistering,
-                    onBackClick = {
-                        isRegistering = false
-                        onBackToLogin()
-                    }
+        if (showOnboarding) {
+            OnboardingSection(
+                onFinish = { showOnboarding = false },
+                onGoogleClick = onGoogleClick
+            )
+        } else {
+            // Solo el botón de Google
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 32.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.tslogo),
+                    contentDescription = "Logo TraiScore",
+                    modifier = Modifier.size(120.dp),
+                    tint = Color.Unspecified
                 )
-                Spacer(modifier = Modifier.height(15.dp))
-                Column(
+                Spacer(modifier = Modifier.height(24.dp))
+                Text(
+                    text = "Bienvenido a TraiScore",
+                    color = Color.White,
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold
+                )
+                Spacer(modifier = Modifier.height(48.dp))
+                ElevatedButton(
+                    onClick = onGoogleClick,
                     modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 30.dp)
+                        .fillMaxWidth()
+                        .height(55.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.elevatedButtonElevation(6.dp),
+                    colors = ButtonDefaults.elevatedButtonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black
+                    ),
+                    contentPadding = PaddingValues(horizontal = 16.dp)
                 ) {
-                    if (!isNewUser) {
-                        SocialMediaSection(
-                            onGoogleClick = onGoogleClick,
-                            email = email,
-                            password = password,
-                            onEmailChange = onEmailChange,
-                            onPasswordChange = onPasswordChange,
-                            onEmailSignIn = onEmailSignIn,
-                            onEmailSignUp = {
-                                isRegistering = true
-                                onEmailSignUp()
-                            },
-                            onForgotPassword = {
-                                onForgotPassword(email)
-                            }
-                        )
-
-                        val uiColor = if (isSystemInDarkTheme()) Color.White else Black
-
-                        Box(
-                            modifier = Modifier
-                                .fillMaxHeight(fraction = 0.8f)
-                                .fillMaxWidth(),
-                            contentAlignment = Alignment.BottomCenter
-                        ) {
-                            Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                                Text(
-                                    text = "¿No tienes una cuenta?",
-                                    color = Color(0xFF94A3B8),
-                                    fontSize = 14.sp,
-                                    fontFamily = Roboto,
-                                    fontWeight = FontWeight.Normal
-                                )
-
-                                Text(
-                                    text = "Créala ahora",
-                                    color = traiBlue,
-                                    fontSize = 14.sp,
-                                    fontFamily = Roboto,
-                                    fontWeight = FontWeight.Medium,
-                                    modifier = Modifier
-                                        .clickable {
-                                            isRegistering = true
-                                            onRegisterClick()
-                                        }
-                                        .padding(vertical = 8.dp)
-                                )
-                            }
-                        }
-                    } else {
-                        // ✅ Pantalla de Registro con datos prellenados
-                        RegistrationSection(
-                            onCompleteRegistration = onCompleteRegistration,
-                            errorMsg = errorMsg,
-                            selectedDate = selectedDate,
-                            onDateSelected = { selectedDate = it },
-                            onShowDatePicker = { showDatePicker = true },
-                            initialEmail = email,
-                            initialPassword = password,
-                            onEmailChange = onEmailChange,
-                            onPasswordChange = onPasswordChange,
-                            // ✅ NUEVOS: Datos prellenados de Google
-                            prefilledFirstName = prefilledFirstName,
-                            prefilledLastName = prefilledLastName,
-                            isGoogleSignIn = isGoogleSignIn
-                        )
-                    }
+                    Image(
+                        painter = painterResource(id = R.drawable.google),
+                        contentDescription = "Google sign-in",
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Accede con Google",
+                        color = Color.Black,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
                 }
             }
         }
+    }
+}
 
-        // DatePicker de pantalla completa
-        AnimatedVisibility(
-            visible = showDatePicker,
-            enter = slideInVertically(
-                initialOffsetY = { it },
-                animationSpec = tween(300)
-            ),
-            exit = slideOutVertically(
-                targetOffsetY = { it },
-                animationSpec = tween(300)
-            ),
+@Composable
+fun OnboardingSection(onFinish: () -> Unit, onGoogleClick: () -> Unit = {}) {
+    val pagerState = rememberPagerState(pageCount = { 3 })
+    val scope = rememberCoroutineScope()
+
+    val pages = listOf(
+        Triple(R.drawable.onboarding1, "Registra tus entrenamientos", "Guarda tus sesiones y mejora cada día."),
+        Triple(R.drawable.onboarding2, "Analiza tu progreso", "Visualiza tu rendimiento en gráficos inteligentes."),
+        Triple(R.drawable.onboarding3, "Alcanza tus metas", "Organiza tus rutinas y logra tus objetivos.")
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color.Black),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
             modifier = Modifier
                 .fillMaxSize()
-                .zIndex(1000f)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
         ) {
-            FullScreenDatePicker(
-                selectedDate = selectedDate,
-                onDateSelected = { date ->
-                    selectedDate = date
-                    showDatePicker = false
-                },
-                onDismiss = { showDatePicker = false }
-            )
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // 🔹 Horizontal Pager con las 3 pantallas
+            HorizontalPager(
+                state = pagerState,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+            ) { page ->
+                val current = pages[page]
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.Top,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Image(
+                        painter = painterResource(id = current.first),
+                        contentDescription = null,
+                        modifier = Modifier
+                            .size(450.dp),
+                        contentScale = ContentScale.Fit
+                    )
+                    Text(
+                        text = current.second,
+                        color = Color.Cyan,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = current.third,
+                        color = Color.White.copy(alpha = 0.8f),
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 🔹 Indicadores
+            Row(
+                horizontalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                repeat(pages.size) { index ->
+                    val color = if (index == pagerState.currentPage) traiBlue else Color.Gray
+                    Box(
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .size(10.dp)
+                            .background(color, shape = RoundedCornerShape(50))
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // 🔹 Botones inferiores: Siguiente / Comenzar + Google
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ElevatedButton(
+                    onClick = {
+                        scope.launch {
+                            if (pagerState.currentPage < pages.lastIndex) {
+                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
+                            } else {
+                                onFinish()
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.elevatedButtonColors(
+                        containerColor = traiBlue,
+                        contentColor = Color.Black
+                    ),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = if (pagerState.currentPage == pages.lastIndex) "Comenzar" else "Siguiente",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+
+                // 🔹 Botón de Google visible desde la primera onboarding
+                ElevatedButton(
+                    onClick = onGoogleClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    elevation = ButtonDefaults.elevatedButtonElevation(6.dp),
+                    colors = ButtonDefaults.elevatedButtonColors(
+                        containerColor = Color.White,
+                        contentColor = Color.Black
+                    ),
+                    contentPadding = PaddingValues(horizontal = 16.dp)
+                ) {
+                    Image(
+                        painter = painterResource(id = R.drawable.google),
+                        contentDescription = "Google sign-in",
+                        modifier = Modifier.size(22.dp)
+                    )
+                    Spacer(modifier = Modifier.width(10.dp))
+                    Text(
+                        text = "Accede con Google",
+                        color = Color.Black,
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
         }
     }
 }

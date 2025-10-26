@@ -182,7 +182,6 @@ fun RoutineScreen(
                     containerColor = Color.Yellow,
                     contentColor = Color.Black,
                     modifier = Modifier
-                        .navigationBarsPadding()
                 ) {
                     Icon(
                         imageVector = Icons.Default.Email,
@@ -197,8 +196,7 @@ fun RoutineScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding),
-            contentPadding = PaddingValues(bottom = 60.dp)
+                .padding(innerPadding)
         ) {
             // Encabezado general de la rutina
 

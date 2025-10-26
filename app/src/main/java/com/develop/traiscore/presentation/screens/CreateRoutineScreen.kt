@@ -338,7 +338,6 @@ fun CreateRoutineScreen(
                 .fillMaxSize()
                 .padding(innerPadding)
                 .background(MaterialTheme.colorScheme.background)
-                .navigationBarsPadding()
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -439,8 +438,7 @@ fun CreateRoutineScreen(
                                 updateExerciseField(exerciseIndex, columnType, newValue)
                             },
                             enableSwipe = true,
-                            validateInput = routineVM::validateInput,
-                            bottomPadding = 20.dp
+                            validateInput = routineVM::validateInput
                         )
                     }
                 } else {

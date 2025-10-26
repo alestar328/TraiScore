@@ -78,8 +78,7 @@ fun YearViewScreen(
             columns = GridCells.Fixed(2),
             modifier = Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(bottom = 100.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             items(months) { month ->
                 MonthCard(

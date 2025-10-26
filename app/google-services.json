@@ -111,6 +111,58 @@
     },
     {
       "client_info": {
+        "mobilesdk_app_id": "1:484079628970:android:4c99cbb631527628add6d3",
+        "android_client_info": {
+          "package_name": "com.develop.traiscore.lite"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "484079628970-494l0tsup2mpci86am5s72suqrp718eb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.develop.traiscore.lite",
+            "certificate_hash": "9a8929d49c2c125265589f1d073c54c9ffdc495b"
+          }
+        },
+        {
+          "client_id": "484079628970-jcbupta2pbqv8vi5te2athn05omjdf88.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.develop.traiscore.lite",
+            "certificate_hash": "0ceb53f773b4897cb2da4fef10e65ca054486d46"
+          }
+        },
+        {
+          "client_id": "484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAR0La4VtX2N5YjM3fHGy2Qw4XKOnFKD0k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "484079628970-q14he89eamfs963luqkrqganuftqqeob.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "484079628970-3qlirfeifa19gn3ba2d062ienbu2jakj.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.bellon.TraiScore"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:484079628970:android:1235b810ef0ab2ecadd6d3",
         "android_client_info": {
           "package_name": "com.develop.traiscore.trainer"
