@@ -225,7 +225,6 @@ fun OnboardingSection(onFinish: () -> Unit, onGoogleClick: () -> Unit = {}) {
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
 
             // 🔹 Indicadores
             Row(
@@ -250,32 +249,6 @@ fun OnboardingSection(onFinish: () -> Unit, onGoogleClick: () -> Unit = {}) {
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                ElevatedButton(
-                    onClick = {
-                        scope.launch {
-                            if (pagerState.currentPage < pages.lastIndex) {
-                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                            } else {
-                                onFinish()
-                            }
-                        }
-                    },
-                    colors = ButtonDefaults.elevatedButtonColors(
-                        containerColor = traiBlue,
-                        contentColor = Color.Black
-                    ),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(50.dp),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Text(
-                        text = if (pagerState.currentPage == pages.lastIndex) "Comenzar" else "Siguiente",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-
                 // 🔹 Botón de Google visible desde la primera onboarding
                 ElevatedButton(
                     onClick = onGoogleClick,

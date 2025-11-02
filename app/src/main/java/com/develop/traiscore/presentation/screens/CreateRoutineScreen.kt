@@ -6,11 +6,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -158,7 +156,7 @@ fun CreateRoutineScreen(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                    .padding(horizontal = 16.dp),
                 horizontalArrangement = Arrangement.SpaceEvenly
             ) {
                 if (isTrainerVersion && canSave()) {
@@ -389,7 +387,6 @@ fun CreateRoutineScreen(
                     ),
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
             }
 
 
@@ -458,7 +455,6 @@ fun CreateRoutineScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(20.dp)) // Espacio para los FABs
             }
             item {
                 // ✅ Carousel de grupos musculares - SIEMPRE VISIBLE
@@ -480,7 +476,6 @@ fun CreateRoutineScreen(
                         Log.d("CreateRoutineScreen", "Imagen seleccionada: $imageRes -> ${selectedCategoryEnum?.name}")
                     }
                 )
-                Spacer(modifier = Modifier.height(100.dp))
             }
 
 

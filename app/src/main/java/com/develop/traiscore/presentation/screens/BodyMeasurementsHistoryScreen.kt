@@ -25,7 +25,6 @@ import com.develop.traiscore.presentation.components.bodyMeasurements.NoResultsC
 import com.develop.traiscore.presentation.components.bodyMeasurements.QuickStatsCard
 import com.develop.traiscore.presentation.components.bodyMeasurements.formatDate
 import com.develop.traiscore.presentation.components.bodyMeasurements.loadHistoryData
-import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.theme.*
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import com.google.firebase.Timestamp

@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExtendedFloatingActionButton
@@ -261,8 +260,7 @@ fun BodyMeasurementsScreen(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(bottom = 75.dp),
+                        .navigationBarsPadding(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     if (!bodyStatsViewModel.isEditMode) {
@@ -321,7 +319,6 @@ fun BodyMeasurementsScreen(
                 Column(
                     modifier = modifier
                         .fillMaxSize()
-                        .navigationBarsPadding()
                         .background(MaterialTheme.colorScheme.background)
                         .padding(inner)
                         .padding(16.dp), // ✅ MOVIDO: padding del contenido

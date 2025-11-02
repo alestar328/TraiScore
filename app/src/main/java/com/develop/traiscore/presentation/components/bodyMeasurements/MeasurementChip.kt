@@ -8,6 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.develop.traiscore.presentation.theme.*
@@ -16,7 +17,8 @@ import com.develop.traiscore.presentation.theme.*
 fun MeasurementChip(
     label: String,
     value: String,
-    icon: ImageVector
+    icon: ImageVector? = null,
+    drawableRes: Int? = null // 👈 permite pasar un drawable
 ) {
     Surface(
         color = traiBlue.copy(alpha = 0.15f),
@@ -26,12 +28,25 @@ fun MeasurementChip(
             modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Icon(
-                icon,
-                contentDescription = null,
-                tint = traiBlue,
-                modifier = Modifier.size(16.dp)
-            )
+            when {
+                icon != null -> {
+                    Icon(
+                        icon,
+                        contentDescription = null,
+                        tint = traiBlue,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+                drawableRes != null -> {
+                    Icon(
+                        painter = painterResource(id = drawableRes),
+                        contentDescription = null,
+                        tint = traiBlue,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
+            }
+
             Spacer(modifier = Modifier.width(6.dp))
             Column {
                 Text(

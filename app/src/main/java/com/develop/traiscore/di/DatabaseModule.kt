@@ -3,6 +3,7 @@ package com.develop.traiscore.di
 import android.content.Context
 import androidx.room.Room
 import com.develop.traiscore.data.local.AppDatabase
+import com.develop.traiscore.data.local.dao.SessionDao
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -33,4 +34,7 @@ class DatabaseModule {
     @Provides
     fun provideExerciseDao(db: AppDatabase) = db.exerciseDao() // Proveer ExerciseDao
 
+    @Singleton
+    @Provides
+    fun provideSessionDao(db: AppDatabase): SessionDao = db.sessionDao()
 }

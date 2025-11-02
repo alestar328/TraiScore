@@ -76,6 +76,7 @@ fun ProfileScreen(
     // Estado para controlar el listener de Firestore
     var firestoreListener by remember { mutableStateOf<ListenerRegistration?>(null) }
     val isAthlete = BuildConfig.FLAVOR == "athlete"
+    val isLite = BuildConfig.FLAVOR == "lite"
     val isProduction = BuildConfig.FLAVOR == "production"
     val isTrainer = BuildConfig.FLAVOR == "trainer"
     var showLogoutDialog by remember { mutableStateOf(false) }
@@ -122,7 +123,7 @@ fun ProfileScreen(
             profileViewModel.clearError()
         }
     }
-    if (isAthlete || isProduction) {
+    if (isAthlete || isProduction || isLite) {
         LaunchedEffect(Unit) {
             val currentUser = auth.currentUser ?: return@LaunchedEffect
             isLoading = true
@@ -216,7 +217,6 @@ fun ProfileScreen(
             Column(
                 modifier = Modifier
                     .padding(padding)
-                    .navigationBarsPadding()
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background),
                 horizontalAlignment = Alignment.CenterHorizontally
@@ -281,7 +281,7 @@ fun ProfileScreen(
                 }
 
                 // Botones principales
-                if (isAthlete || isProduction) {
+                if (isAthlete || isProduction || isLite) {
                   /*  TrainerSection(
                         trainerInfo = trainerInfo,
                         isLoading = isLoading,
