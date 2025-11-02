@@ -215,8 +215,6 @@ fun RoutineMenuScreen(
         return
     }
 
-
-
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -300,7 +298,8 @@ fun RoutineMenuScreen(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding),
+                    .padding(innerPadding)
+                    .padding(top = 8.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 itemsIndexed(

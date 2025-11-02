@@ -6,9 +6,14 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,6 +21,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,6 +32,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -148,34 +155,195 @@ fun CreateRoutineScreen(
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
-                )
+                ),
+                modifier = Modifier.height(56.dp)
             )
         },
+        contentWindowInsets = ScaffoldDefaults.contentWindowInsets
+            .exclude(WindowInsets.navigationBars),
         containerColor = MaterialTheme.colorScheme.background,
-        floatingActionButton = {
+
+    ) { innerPadding ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+        ) {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(top = innerPadding.calculateTopPadding())
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(horizontal = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                item {
+                    // Campo de nombre de la rutina
+                    Text(
+                        text = "Nombre de la rutina",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 4.dp)
+                    )
+
+                    OutlinedTextField(
+                        value = workoutName,
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions.Default.copy(
+                            capitalization = KeyboardCapitalization.Sentences,
+                            imeAction = ImeAction.Done
+                        ),
+                        onValueChange = { onNameChange(it) },
+                        isError = nameError != null,
+                        placeholder = { Text("Ej: Push Day, Rutina Piernas, Día 1...") },
+                        supportingText = {
+                            nameError?.let { error ->
+                                Text(
+                                    text = error,
+                                    color = Color.Red,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            } ?: run {
+                                Text(
+                                    text = "${workoutName.length}/50 caracteres",
+                                    color = Color.Gray,
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = traiBlue,
+                            unfocusedBorderColor = traiBlue,
+                            focusedTextColor = Color.Black,
+                            unfocusedTextColor = Color.Black,
+                            focusedContainerColor = Color.White,
+                            unfocusedContainerColor = Color.White,
+                            cursorColor = Color.Black
+                        ),
+                    )
+
+                }
+                item {
+                    // Sección de ejercicios
+                    Text(
+                        text = "Ejercicios",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
+                    )
+
+                    if (exercises.isNotEmpty()) {
+                        // Mostrar tabla de ejercicios
+                        Box(
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            RoutineTable(
+                                exercises = exercises,
+                                onDeleteExercise = { index ->
+                                    exercises = exercises.toMutableList().apply {
+                                        removeAt(index)
+                                    }
+                                },
+                                onDuplicateExercise = { index ->
+                                    val exerciseToDuplicate = exercises[index]
+                                    exercises = exercises.toMutableList().apply {
+                                        add(index + 1, exerciseToDuplicate.copy())
+                                    }
+                                },
+                                onSeriesChanged = { index, newSeries ->
+                                    updateExerciseField(index, ColumnType.SERIES, newSeries)
+                                },
+                                onWeightChanged = { index, newWeight ->
+                                    updateExerciseField(index, ColumnType.WEIGHT, newWeight)
+                                },
+                                onRepsChanged = { index, newReps ->
+                                    updateExerciseField(index, ColumnType.REPS, newReps)
+                                },
+                                onRirChanged = { index, newRir ->
+                                    updateExerciseField(index, ColumnType.RIR, newRir)
+                                },
+                                onFieldChanged = { exerciseIndex, columnType, newValue ->
+                                    updateExerciseField(exerciseIndex, columnType, newValue)
+                                },
+                                enableSwipe = true,
+                                validateInput = routineVM::validateInput
+                            )
+                        }
+                    } else {
+                        // Mensaje cuando no hay ejercicios
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(100.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No hay ejercicios agregados.\nToca el botón + para agregar ejercicios.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Gray,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center
+                            )
+                        }
+                    }
+
+                }
+                item {
+                    // ✅ Carousel de grupos musculares - SIEMPRE VISIBLE
+                    Text(
+                        text = "Selecciona el grupo muscular principal",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onBackground,
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp)
+                    )
+
+                    MuscleGroupCarousel(
+                        modifier = Modifier.fillMaxWidth(),
+                        onImageSelected = { imageRes ->
+                            selectedMuscleGroupImage = imageRes
+                            selectedCategoryEnum = resToEnum(imageRes) // 👈 guarda el enum
+                            showSelectedImage = true
+                            Log.d(
+                                "CreateRoutineScreen",
+                                "Imagen seleccionada: $imageRes -> ${selectedCategoryEnum?.name}"
+                            )
+                        }
+                    )
+                    Spacer(modifier = Modifier.height(50.dp))
+                }
+            }
             Row(
                 modifier = Modifier
+                    .align(Alignment.BottomCenter) // 👈 Clave: ahora sí están abajo
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.SpaceEvenly
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .background(Color.Transparent),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
             ) {
+                // 🔸 BOTÓN EXPORTAR (solo entrenador)
                 if (isTrainerVersion && canSave()) {
                     FloatingActionButton(
                         onClick = {
                             try {
                                 val routineToExport =
                                     com.develop.traiscore.data.firebaseData.RoutineDocument(
-                                        userId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid
-                                            ?: "",
-                                        trainerId = com.google.firebase.auth.FirebaseAuth.getInstance().currentUser?.uid,
+                                        userId = FirebaseAuth.getInstance().currentUser?.uid ?: "",
+                                        trainerId = FirebaseAuth.getInstance().currentUser?.uid,
                                         documentId = "",
-                                        type = selectedCategoryEnum?.name ?: "CUSTOM", // 👈 en vez de "CUSTOM" fijo
+                                        type = selectedCategoryEnum?.name ?: "CUSTOM",
                                         createdAt = com.google.firebase.Timestamp.now(),
                                         clientName = workoutName,
                                         routineName = workoutName,
                                         sections = listOf(
                                             com.develop.traiscore.data.firebaseData.RoutineSection(
-                                                type = workoutName, // Usar el nombre como tipo
+                                                type = workoutName,
                                                 exercises = exercises
                                             )
                                         )
@@ -224,19 +392,27 @@ fun CreateRoutineScreen(
                     }
                 }
 
+                // 🔸 BOTÓN GUARDAR
                 ExtendedFloatingActionButton(
                     onClick = {
                         if (!canSave()) {
                             when {
-                                workoutName.trim().isEmpty() -> {
-                                    Toast.makeText(context, "Ingresa un nombre para la rutina", Toast.LENGTH_SHORT).show()
-                                }
-                                nameError != null -> {
+                                workoutName.trim().isEmpty() ->
+                                    Toast.makeText(
+                                        context,
+                                        "Ingresa un nombre para la rutina",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
+
+                                nameError != null ->
                                     Toast.makeText(context, nameError, Toast.LENGTH_SHORT).show()
-                                }
-                                exercises.isEmpty() -> {
-                                    Toast.makeText(context, "Agrega al menos un ejercicio", Toast.LENGTH_SHORT).show()
-                                }
+
+                                exercises.isEmpty() ->
+                                    Toast.makeText(
+                                        context,
+                                        "Agrega al menos un ejercicio",
+                                        Toast.LENGTH_SHORT
+                                    ).show()
                             }
                             return@ExtendedFloatingActionButton
                         }
@@ -245,7 +421,8 @@ fun CreateRoutineScreen(
                             viewModel.createRoutineForUser(
                                 userId = effectiveUserId,
                                 clientName = workoutName,
-                                trainerId = if (targetClientId != null) FirebaseAuth.getInstance().currentUser?.uid else null,
+                                trainerId = if (targetClientId != null)
+                                    FirebaseAuth.getInstance().currentUser?.uid else null,
                                 routineType = selectedCategoryEnum?.name
                             ) { newRoutineId, createError ->
                                 if (createError != null || newRoutineId == null) {
@@ -257,21 +434,19 @@ fun CreateRoutineScreen(
                                     return@createRoutineForUser
                                 }
 
-                                // Guardar todos los ejercicios en una sola sección
                                 viewModel.saveSectionToRoutineForUser(
                                     userId = effectiveUserId,
                                     routineId = newRoutineId,
-                                    sectionName = selectedCategoryEnum?.name ?: "CUSTOM", // 👈 Usa categoría, no nombre libre
+                                    sectionName = selectedCategoryEnum?.name ?: "CUSTOM",
                                     exercises = exercises
                                 ) { success, errorMsg ->
                                     if (success) {
                                         Toast.makeText(
                                             context,
-                                            if (targetClientId != null) {
+                                            if (targetClientId != null)
                                                 "Rutina creada para $clientName exitosamente"
-                                            } else {
-                                                "Rutina guardada con éxito"
-                                            },
+                                            else
+                                                "Rutina guardada con éxito",
                                             Toast.LENGTH_SHORT
                                         ).show()
                                         onBack()
@@ -286,31 +461,29 @@ fun CreateRoutineScreen(
                             }
                         }
                     },
-                    icon = {
-                        Icon(
-                            Icons.Default.Check,
-                            contentDescription = "Guardar rutina"
-                        )
-                    },
+                    icon = { Icon(Icons.Default.Check, contentDescription = "Guardar rutina") },
                     text = {
-                        Text(
-                            if (targetClientId != null) "Crear para cliente" else "Guardar rutina"
-                        )
+                        Text(if (targetClientId != null) "Crear para cliente" else "Guardar rutina")
                     },
                     containerColor = if (canSave()) Color.Green else Color.Gray,
                     contentColor = Color.Black
                 )
 
-                AddRestButton(
-                    onAdd = { showDialog = true },
-                    onRemove = {
-                        if (exercises.isNotEmpty()) {
-                            exercises = exercises.dropLast(1)
-                        }
-                    }
-                )
+                // 🔸 BOTÓN + / -
+                FloatingActionButton(
+                    onClick = { showDialog = true },
+                    backgroundColor = traiBlue,
+                    contentColor = Color.White,
+                    modifier = Modifier.size(56.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Agregar ejercicio"
+                    )
+                }
             }
 
+            // 🔹 DIALOGO DE NUEVO EJERCICIO
             if (showDialog) {
                 LaunchedEffect(Unit) { exerciseCategory = null }
 
@@ -329,156 +502,6 @@ fun CreateRoutineScreen(
                     }
                 )
             }
-        }
-    ) { innerPadding ->
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .background(MaterialTheme.colorScheme.background)
-                .padding(16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            item {
-                // Campo de nombre de la rutina
-                Text(
-                    text = "Nombre de la rutina",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 4.dp)
-                )
-
-                OutlinedTextField(
-                    value = workoutName,
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    keyboardOptions = KeyboardOptions.Default.copy(
-                        capitalization = KeyboardCapitalization.Sentences,
-                        imeAction = ImeAction.Done
-                    ),
-                    onValueChange = { onNameChange(it) },
-                    isError = nameError != null,
-                    placeholder = { Text("Ej: Push Day, Rutina Piernas, Día 1...") },
-                    supportingText = {
-                        nameError?.let { error ->
-                            Text(
-                                text = error,
-                                color = Color.Red,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        } ?: run {
-                            Text(
-                                text = "${workoutName.length}/50 caracteres",
-                                color = Color.Gray,
-                                style = MaterialTheme.typography.bodySmall
-                            )
-                        }
-                    },
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = traiBlue,
-                        unfocusedBorderColor = traiBlue,
-                        focusedTextColor = Color.Black,
-                        unfocusedTextColor = Color.Black,
-                        focusedContainerColor = Color.White,
-                        unfocusedContainerColor = Color.White,
-                        cursorColor = Color.Black
-                    ),
-                )
-
-            }
-
-
-            item {
-                // Sección de ejercicios
-                Text(
-                    text = "Ejercicios",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp)
-                )
-
-                if (exercises.isNotEmpty()) {
-                    // Mostrar tabla de ejercicios
-                    Box(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        RoutineTable(
-                            exercises = exercises,
-                            onDeleteExercise = { index ->
-                                exercises = exercises.toMutableList().apply {
-                                    removeAt(index)
-                                }
-                            },
-                            onDuplicateExercise = { index ->
-                                val exerciseToDuplicate = exercises[index]
-                                exercises = exercises.toMutableList().apply {
-                                    add(index + 1, exerciseToDuplicate.copy())
-                                }
-                            },
-                            onSeriesChanged = { index, newSeries ->
-                                updateExerciseField(index, ColumnType.SERIES, newSeries)
-                            },
-                            onWeightChanged = { index, newWeight ->
-                                updateExerciseField(index, ColumnType.WEIGHT, newWeight)
-                            },
-                            onRepsChanged = { index, newReps ->
-                                updateExerciseField(index, ColumnType.REPS, newReps)
-                            },
-                            onRirChanged = { index, newRir ->
-                                updateExerciseField(index, ColumnType.RIR, newRir)
-                            },
-                            onFieldChanged = { exerciseIndex, columnType, newValue ->
-                                updateExerciseField(exerciseIndex, columnType, newValue)
-                            },
-                            enableSwipe = true,
-                            validateInput = routineVM::validateInput
-                        )
-                    }
-                } else {
-                    // Mensaje cuando no hay ejercicios
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(100.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No hay ejercicios agregados.\nToca el botón + para agregar ejercicios.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.Gray,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-                        )
-                    }
-                }
-
-            }
-            item {
-                // ✅ Carousel de grupos musculares - SIEMPRE VISIBLE
-                Text(
-                    text = "Selecciona el grupo muscular principal",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp)
-                )
-
-                MuscleGroupCarousel(
-                    modifier = Modifier.fillMaxWidth(),
-                    onImageSelected = { imageRes ->
-                        selectedMuscleGroupImage = imageRes
-                        selectedCategoryEnum = resToEnum(imageRes) // 👈 guarda el enum
-                        showSelectedImage = true
-                        Log.d("CreateRoutineScreen", "Imagen seleccionada: $imageRes -> ${selectedCategoryEnum?.name}")
-                    }
-                )
-            }
-
-
         }
     }
 }

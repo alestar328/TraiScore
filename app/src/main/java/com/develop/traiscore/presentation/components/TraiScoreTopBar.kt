@@ -51,13 +51,14 @@ fun TraiScoreTopBar(
                         withStyle( style = SpanStyle( color = traiBlue )) { append("Trai")}
                         withStyle( style = SpanStyle(   color = Color.White ) ) { append("Score") }
                     },
-                    style = MaterialTheme.typography.headlineLarge.copy(
+                    style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.Bold
                     )
                 )
             }
         },
         navigationIcon = { leftIcon() },
+        modifier = Modifier.height(56.dp),
         actions = { rightIcon() },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.background

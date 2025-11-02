@@ -212,7 +212,7 @@ fun ExercisesScreen(
                                 )
                         )
                     }
-                    AnimatedVisibility(
+            /*        AnimatedVisibility(
                         visible = showSearchBar.value,
                         enter = slideInVertically(
                             initialOffsetY = { -it },
@@ -234,7 +234,7 @@ fun ExercisesScreen(
                                     horizontal = TraiScoreTheme.dimens.paddingMedium
                                 )
                         )
-                    }
+                    }*/
 
                     // Contenido principal según el modo de vista seleccionado
                     AnimatedContent(
@@ -248,7 +248,9 @@ fun ExercisesScreen(
                                 animationSpec = tween(300)
                             )
                         },
-                        label = "ViewModeTransition"
+                        label = "ViewModeTransition",
+                        modifier = Modifier
+                        .padding(top = 8.dp)
                     ) { viewMode ->
                         when (viewMode) {
                             ViewMode.YEAR -> {
