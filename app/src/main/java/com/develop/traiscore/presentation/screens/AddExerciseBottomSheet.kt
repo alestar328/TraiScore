@@ -49,6 +49,7 @@ import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 import com.develop.traiscore.presentation.viewmodels.NewSessionViewModel
 import kotlinx.coroutines.launch
+import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -58,7 +59,7 @@ fun AddExerciseBottomSheet(
     workoutToEdit: WorkoutEntry? = null,
     isVisible: Boolean,
     onDismiss: () -> Unit,
-    onSave: (Map<String, Any>) -> Unit,
+    onSave: (WorkoutEntry) -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState(
         skipPartiallyExpanded = true // ✅ AÑADIR: Salta el estado parcial
     )
@@ -93,7 +94,7 @@ private fun AddExerciseBottomSheetContent(
     viewModel: AddExerciseViewModel,
     workoutToEdit: WorkoutEntry?,
     onDismiss: () -> Unit,
-    onSave: (Map<String, Any>) -> Unit
+    onSave: (WorkoutEntry) -> Unit
 ) {
     LaunchedEffect(Unit) {
         viewModel.refreshExercises()
@@ -275,27 +276,25 @@ private fun AddExerciseBottomSheetContent(
             ) {
                 Button(
                     onClick = {
-                        if (workoutToEdit == null) {
-                            val sessionData = newSessionViewModel.getSessionDataForWorkout()
-                            // Guardar nuevo
-                            viewModel.addExerciseToActiveSession(
-                                title = selectedExercise,
-                                reps = repsText.toIntOrNull() ?: 0,
-                                weight = weightText.toFloatOrNull()
-                                    ?: 0.0f, // Float en lugar de Double
-                                rir = rirValue
-                            )
-                        } else {
-                            // Editar existente
-                            val updated: Map<String, Any> = mapOf(
-                                "title" to selectedExercise as Any,
-                                "exerciseId" to exerciseId as Any,
-                                "reps" to (repsText.toIntOrNull() ?: 0) as Any,
-                                "weight" to (weightText.toDoubleOrNull() ?: 0.0) as Any,
-                                "rir" to rirValue as Any
-                            )
-                            onSave(updated)
-                        }
+                        val newWorkout = WorkoutEntry(
+                            id = workoutToEdit?.id ?: 0, // Si es nuevo, Room lo autogenera
+                            uid = workoutToEdit?.uid,
+                            exerciseId = exerciseId,
+                            title = selectedExercise,
+                            weight = weightText.toFloatOrNull() ?: 0f,
+                            series = workoutToEdit?.series ?: 0,
+                            reps = repsText.toIntOrNull() ?: 0,
+                            rir = rirValue,
+                            type = workoutToEdit?.type ?: "",
+                            timestamp = Date(),
+                            sessionId = workoutToEdit?.sessionId,
+                            sessionName = workoutToEdit?.sessionName,
+                            sessionColor = workoutToEdit?.sessionColor,
+                            isSynced = false,
+                            pendingAction = if (workoutToEdit == null) "CREATE" else "UPDATE"
+                        )
+
+                        onSave(newWorkout)
                         scope.launch {
                             snackbarHostState.showSnackbar(
                                 message = savedMessage, // ✅ USAR string obtenido fuera de la corrutina

@@ -315,14 +315,19 @@ fun BodyMeasurementsScreen(
             }
         },
         content = { inner ->
-            Box(modifier = Modifier.fillMaxSize()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(inner)
+                    .background(MaterialTheme.colorScheme.background),
+                contentAlignment = Alignment.Center
+            ){
                 Column(
-                    modifier = modifier
-                        .fillMaxSize()
-                        .background(MaterialTheme.colorScheme.background)
-                        .padding(inner)
-                        .padding(16.dp), // ✅ MOVIDO: padding del contenido
-                    verticalArrangement = Arrangement.spacedBy(24.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     // Mostrar información de suscripción
                     if (!bodyStatsViewModel.isEditMode) {
@@ -332,7 +337,7 @@ fun BodyMeasurementsScreen(
                     }
 
                     // 1) Selector de género
-                    Text("Género", style = MaterialTheme.typography.titleLarge)
+             /*       Text("Género", style = MaterialTheme.typography.titleLarge)
 
                     Row(
                         modifier = Modifier
@@ -363,7 +368,7 @@ fun BodyMeasurementsScreen(
                                 )
                             }
                         }
-                    }
+                    }*/
 
 
                     // ✅ CAMBIO: Campos de medida usando enum y strings resources
@@ -410,7 +415,6 @@ fun BodyMeasurementsScreen(
                         }
                     }
                     // Espacio extra abajo para que no tape la bottom bar
-                    Spacer(Modifier.height(80.dp))
                 }
 
                 // Indicador de carga inicial

@@ -39,10 +39,9 @@ fun TodayViewScreen(
     modifier: Modifier = Modifier,
     viewModel: NewSessionViewModel = hiltViewModel()
 ) {
-    val today = LocalDate.now()
+    //val today = LocalDate.now()
     val todayFormatted = remember {
         val calendar = Calendar.getInstance()
-        calendar.set(today.year, today.monthValue - 1, today.dayOfMonth)
         SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(calendar.time)
     }
 

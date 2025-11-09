@@ -7,8 +7,13 @@ import com.google.firebase.Firebase
 import com.google.firebase.firestore.firestore
 import java.util.Date
 import androidx.compose.runtime.State
+import androidx.lifecycle.viewModelScope
+import com.develop.traiscore.data.local.dao.WorkoutRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.Query
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
 import javax.inject.Inject
@@ -21,198 +26,100 @@ data class SessionWithWorkouts(
     val date: String
 )
 
-class WorkoutEntryViewModel @Inject constructor() : ViewModel() {
+@HiltViewModel
+class WorkoutEntryViewModel @Inject constructor(
+    private val workoutRepository: WorkoutRepository
+) : ViewModel() {
 
     private val _entries = mutableStateOf<List<WorkoutEntry>>(emptyList())
     val entries: State<List<WorkoutEntry>> = _entries
 
-    private val _sessionWorkouts = mutableStateOf<Map<String, List<SessionWithWorkouts>>>(emptyMap())
+    private val _sessionWorkouts =
+        mutableStateOf<Map<String, List<SessionWithWorkouts>>>(emptyMap())
     val sessionWorkouts: State<Map<String, List<SessionWithWorkouts>>> = _sessionWorkouts
 
     init {
-        listenToWorkoutEntries()
+        viewModelScope.launch {
+            initializeData()
+        }
     }
+
+    /** 🔁 Carga inicial: importa si Room está vacío y observa cambios locales */
+    private suspend fun initializeData() {
+        workoutRepository.importWorkoutsFromFirebaseToRoom()
+
+        viewModelScope.launch {
+            workoutRepository.workouts.collectLatest { localWorkouts ->
+                _entries.value = localWorkouts
+                updateSessionGrouping(localWorkouts)
+                println("📦 Cargados ${localWorkouts.size} workouts desde Room")
+            }
+        }
+    }
+
+    /** 🧠 Agrupa workouts por fecha y sesión para la UI */
     private fun updateSessionGrouping(workouts: List<WorkoutEntry>) {
         val dateFormatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
 
         val sessionGrouped = workouts
-            .groupBy { dateFormatter.format(it.timestamp) } // Agrupar por fecha
+            .groupBy { dateFormatter.format(it.timestamp) }
             .mapValues { (_, workoutsForDate) ->
-                // Dentro de cada fecha, agrupar por sesión
                 workoutsForDate
-                    .groupBy { workout ->
-                        // Si tiene sessionId, usar ese; sino crear uno temporal
-                        workout.sessionId ?: "legacy_${dateFormatter.format(workout.timestamp)}"
-                    }
+                    .groupBy { it.sessionId ?: "legacy_${dateFormatter.format(it.timestamp)}" }
                     .map { (sessionId, sessionWorkouts) ->
-                        val firstWorkout = sessionWorkouts.first()
+                        val first = sessionWorkouts.first()
                         SessionWithWorkouts(
                             sessionId = sessionId,
-                            sessionName = firstWorkout.sessionName ?: "Entrenamiento", // Default para datos legacy
-                            sessionColor = firstWorkout.sessionColor ?: "#43f4ff", // Default cyan
+                            sessionName = first.sessionName ?: "Entrenamiento",
+                            sessionColor = first.sessionColor ?: "#43f4ff",
                             workouts = sessionWorkouts,
-                            date = dateFormatter.format(firstWorkout.timestamp)
+                            date = dateFormatter.format(first.timestamp)
                         )
                     }
-                    .sortedByDescending { it.workouts.first().timestamp } // Ordenar por tiempo
+                    .sortedByDescending { it.workouts.first().timestamp }
             }
 
         _sessionWorkouts.value = sessionGrouped
     }
 
-    // ⭐ NUEVA FUNCIÓN: Añadir workout a sesión activa
-    fun addWorkoutToActiveSession(
-        title: String,
-        reps: Int,
-        weight: Float,
-        rir: Int,
-        activeSessionId: String,
-        activeSessionName: String,
-        activeSessionColor: String
-    ) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: run {
-            println("❌ Usuario no autenticado")
-            return
+    /** ➕ Añadir un nuevo workout */
+    fun addWorkout(workout: WorkoutEntry) {
+        viewModelScope.launch {
+            workoutRepository.addWorkout(workout)
+            println("✅ Workout añadido: ${workout.title}")
         }
-
-        val workoutData = mapOf(
-            "title" to title,
-            "reps" to reps,
-            "weight" to weight,
-            "rir" to rir,
-            "timestamp" to Date(),
-            "sessionId" to activeSessionId,        // ⭐ Asociar con sesión
-            "sessionName" to activeSessionName,    // ⭐ Nombre de la sesión
-            "sessionColor" to activeSessionColor   // ⭐ Color de la sesión
-        )
-
-        Firebase.firestore
-            .collection("users")
-            .document(userId)
-            .collection("workoutEntries")
-            .add(workoutData)
-            .addOnSuccessListener { documentReference ->
-                println("✅ Workout agregado a sesión: ${documentReference.id}")
-            }
-            .addOnFailureListener { e ->
-                println("❌ Error al agregar workout: ${e.message}")
-            }
     }
 
-
-    private fun listenToWorkoutEntries() {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid
-        if (userId == null) {
-            println("❌ Usuario no autenticado")
-            return
+    /** ✏️ Editar workout existente */
+    fun updateWorkout(workout: WorkoutEntry) {
+        viewModelScope.launch {
+            workoutRepository.updateWorkout(workout)
+            println("📝 Workout actualizado: ${workout.title}")
         }
-
-        Firebase.firestore.collection("users")
-            .document(userId)
-            .collection("workoutEntries")
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .addSnapshotListener { snapshot, error ->
-                if (error != null) {
-                    println("❌ Error escuchando workoutEntries: ${error.message}")
-                    return@addSnapshotListener
-                }
-
-                val result = snapshot?.documents?.mapNotNull { doc ->
-                    val title = doc.getString("title") ?: return@mapNotNull null
-                    val reps = doc.getLong("reps")?.toInt() ?: 0
-                    val weight = doc.getDouble("weight")?.toFloat() ?: 0.0f
-                    val rir = doc.getLong("rir")?.toInt() ?: 0
-                    val timestamp = doc.getDate("timestamp") ?: Date()
-
-                    // ⭐ NUEVOS CAMPOS - Con valores por defecto para compatibilidad
-                    val sessionId = doc.getString("sessionId")
-                    val sessionName = doc.getString("sessionName")
-                    val sessionColor = doc.getString("sessionColor")
-
-                    WorkoutEntry(
-                        uid = doc.id,
-                        id = doc.id.hashCode(),
-                        title = title,
-                        reps = reps,
-                        weight = weight,
-                        rir = rir,
-                        exerciseId = 0,
-                        series = 0,
-                        timestamp = timestamp,
-                        sessionId = sessionId,
-                        sessionName = sessionName,
-                        sessionColor = sessionColor
-                    )
-                } ?: emptyList()
-
-                _entries.value = result
-
-                // ⭐ Actualizar agrupación por sesiones
-                updateSessionGrouping(result)
-            }
     }
 
-
-    fun deleteWorkoutEntry(firebaseId: String) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: run {
-            println("❌ Usuario no autenticado")
-            return
+    /** 🗑️ Eliminar workout */
+    fun deleteWorkout(workout: WorkoutEntry) {
+        viewModelScope.launch {
+            workoutRepository.removeWorkout(workout)
+            println("🗑️ Workout eliminado: ${workout.title}")
         }
-
-        Firebase.firestore
-            .collection("users")
-            .document(userId)
-            .collection("workoutEntries")
-            .document(firebaseId)
-            .delete()
-            .addOnSuccessListener {
-                println("✅ Documento eliminado correctamente.")
-            }
-            .addOnFailureListener { e ->
-                println("❌ Error al eliminar el documento: ${e.message}")
-            }
     }
 
-    fun editWorkoutEntry(firebaseId: String, newData: Map<String, Any>) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid
-        if (userId == null) {
-            println("❌ Usuario no autenticado")
-            return
-        }
-        Firebase.firestore
-            .collection("users")
-            .document(userId)
-            .collection("workoutEntries")
-            .document(firebaseId)
-            .update(newData)
-            .addOnSuccessListener {
-                println("✅ Documento actualizado correctamente.")
-            }
-            .addOnFailureListener { e ->
-                println("❌ Error al actualizar el documento: ${e.message}")
-            }
+    /** 🔍 Agrupación filtrada por búsqueda */
+    fun groupWorkoutsByDateFiltered(
+        query: String
+    ): Map<String, List<WorkoutEntry>> {
+        val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+        return _entries.value
+            .filter { it.title.contains(query, ignoreCase = true) }
+            .groupBy { formatter.format(it.timestamp) }
     }
 
+    /** Agrupación estándar */
     fun groupWorkoutsByDate(workouts: List<WorkoutEntry>): Map<String, List<WorkoutEntry>> {
         val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
         return workouts.groupBy { formatter.format(it.timestamp) }
     }
 
-    // ⭐ NUEVA FUNCIÓN: Obtener sesiones para una fecha específica
-    fun getSessionsForDate(date: String): List<SessionWithWorkouts> {
-        return _sessionWorkouts.value[date] ?: emptyList()
-    }
-
-    // ⭐ NUEVA FUNCIÓN: Obtener todos los workouts de una sesión específica
-    fun getWorkoutsForSession(sessionId: String): List<WorkoutEntry> {
-        return _entries.value.filter { it.sessionId == sessionId }
-    }
-
-    fun groupWorkoutsByDateFiltered(entries: List<WorkoutEntry>, query: String): Map<String, List<WorkoutEntry>> {
-        return entries
-            .filter { it.title.contains(query, ignoreCase = true) }
-            .groupBy {
-                SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(it.timestamp)
-            }
-    }
 }

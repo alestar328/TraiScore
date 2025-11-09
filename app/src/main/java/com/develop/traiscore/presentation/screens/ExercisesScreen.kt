@@ -81,7 +81,7 @@ fun ExercisesScreen(
     val circularData by statViewModel.circularData.collectAsState()
     val (oneRepMax, maxReps, _) = circularData
     val filteredGrouped = if (selectedSearch.value.isNotBlank()) {
-        viewModel.groupWorkoutsByDateFiltered(entries, selectedSearch.value)
+        viewModel.groupWorkoutsByDateFiltered(selectedSearch.value)
     } else {
         groupedEntries
     }
@@ -101,8 +101,8 @@ fun ExercisesScreen(
     }
 
     val confirmDelete = {
-        workoutToDelete.value?.uid?.let { id ->
-            viewModel.deleteWorkoutEntry(id)
+        workoutToDelete.value?.let { workout ->
+            viewModel.deleteWorkout(workout)
         }
         showDeleteDialog.value = false
         workoutToDelete.value = null
@@ -300,12 +300,10 @@ fun ExercisesScreen(
             showBottomSheet.value = false
             selectedEntry.value = null
         },
-        onSave = { updatedData ->
-            selectedEntry.value?.uid?.let { id ->
-                viewModel.editWorkoutEntry(id, updatedData)
-                showBottomSheet.value = false
-                selectedEntry.value = null
-            }
+        onSave = { updatedWorkout ->
+            viewModel.updateWorkout(updatedWorkout)
+            showBottomSheet.value = false
+            selectedEntry.value = null
         }
     )
     DeleteConfirmationDialog(
@@ -339,43 +337,36 @@ fun ExercisesScreenPreview() {
         weight = 100.0f,
         reps = 10,
         rir = 2,
-        series = 0,
-        timestamp = Date()
-    )
-
-    val workoutModel = WorkoutModel(
-        id = 1,
-        exerciseId = 1,
-        title = workoutEntry.title,
-        reps = workoutEntry.reps,
-        weight = workoutEntry.weight,
-        series = 0,
-        timestamp = Date()
+        series = 4,
+        timestamp = Date(),
+        sessionId = "session_1",
+        sessionName = "Pierna y Core",
+        sessionColor = "#43f4ff"
     )
 
     val exerciseEntity = ExerciseEntity(
         id = 1,
         idIntern = "sentadillas",
         name = "Sentadillas",
-        isDefault = true
+        isDefault = true,
+        category = "Piernas"
     )
 
     val workoutWithExercise = WorkoutWithExercise(
-        workoutModel = workoutModel,
-        workoutEntry = workoutEntry,
-        exerciseEntity = exerciseEntity
+        workout = workoutEntry,
+        exercise = exerciseEntity
     )
 
     TraiScoreTheme {
         LazyColumn {
             items(
                 items = listOf(workoutWithExercise),
-                key = { it.workoutModel.id }
-            ) { exercise ->
+                key = { it.workout.id }
+            ) { item ->
                 WorkoutCard(
-                    workoutEntry = workoutEntry,
-                    onEditClick = { println("Edit ${exercise.exerciseEntity.name}") },
-                    onDeleteClick = { println("Delete ${exercise.exerciseEntity.name}") }
+                    workoutEntry = item.workout,
+                    onEditClick = { println("Edit ${item.exercise?.name}") },
+                    onDeleteClick = { println("Delete ${item.exercise?.name}") }
                 )
             }
         }

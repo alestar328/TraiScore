@@ -32,7 +32,7 @@ class DatabaseModule {
 
     @Singleton
     @Provides
-    fun provideExerciseDao(db: AppDatabase) = db.exerciseDao() // Proveer ExerciseDao
+    fun provideExerciseDao(db: AppDatabase) = db.exerciseDao()
 
     @Singleton
     @Provides

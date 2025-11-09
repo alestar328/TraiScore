@@ -82,70 +82,7 @@ class NewSessionViewModel @Inject constructor(
         }
     }
 
-    fun preloadSessions() {
-        if (!_hasSessionsLoaded.value) {
-            loadAvailableSessions()
-        }
-    }
 
-    /**
-     * Crear una nueva sesión
-     */
-    fun createSession(name: String, color: Color) {
-        viewModelScope.launch {
-            try {
-                _isLoading.value = true
-                _error.value = null
-
-                // Validaciones
-                if (name.isBlank()) {
-                    _error.value = "El nombre de la sesión no puede estar vacío"
-                    return@launch
-                }
-
-                val userId = FirebaseAuth.getInstance().currentUser?.uid
-                if (userId == null) {
-                    _error.value = "Usuario no autenticado"
-                    return@launch
-                }
-
-                // Crear sesión (ahora maneja local + sincronización)
-                val createRequest = CreateSessionRequest(
-                    name = name.trim(),
-                    color = colorToHex(color),
-                    userId = userId
-                )
-
-                val response = sessionRepository.createSession(createRequest)
-
-                if (response.success && response.session != null) {
-                    val session = response.session
-                    _activeSession.value = ActiveSession(
-                        id = session.sessionId,
-                        name = session.name,
-                        color = hexToColor(session.color),
-                        createdAt = session.createdAt.time,
-                        isActive = session.isActive
-                    )
-                    _hasActiveSession.value = true
-
-                    // NUEVO: Recargar sesiones para reflejar cambios locales
-                    loadAvailableSessions()
-
-                    println("✅ Sesión creada exitosamente: ${session.name}")
-                } else {
-                    _error.value = response.error ?: "Error desconocido al crear sesión"
-                    println("❌ Error creando sesión: ${response.error}")
-                }
-
-            } catch (e: Exception) {
-                _error.value = "Error al crear la sesión: ${e.message}"
-                println("❌ Excepción creando sesión: ${e.message}")
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
 
     fun createInactiveSession(name: String, color: Color) {
         viewModelScope.launch {
@@ -238,22 +175,16 @@ class NewSessionViewModel @Inject constructor(
     fun loadAvailableSessions() {
         viewModelScope.launch {
             try {
-                println("🔍 Iniciando carga de sesiones disponibles...")
+                println("🔍 Sincronizando y cargando sesiones disponibles...")
+                sessionRepository.syncPendingSessions() // 🔁 fuerza sincronización desde Firebase
 
-                // Cargar desde local (rápido)
                 val sessions = sessionRepository.getUserAvailableSessions()
-
-                println("🔍 Sesiones obtenidas: ${sessions.size}")
-                sessions.forEach { session ->
-                    println("🔍 Sesión: ${session["name"]} - ${session["sessionId"]} - Active: ${session["isActive"]}")
-                }
-
                 _availableSessions.value = sessions
                 _hasSessionsLoaded.value = true
-                println("🔍 Estado actualizado con ${sessions.size} sesiones")
 
+                println("✅ ${sessions.size} sesiones sincronizadas y cargadas")
             } catch (e: Exception) {
-                println("❌ Error al cargar sesiones viewmodel: ${e.message}")
+                println("❌ Error al cargar sesiones: ${e.message}")
                 _error.value = "Error al cargar sesiones: ${e.message}"
             }
         }
@@ -304,15 +235,15 @@ class NewSessionViewModel @Inject constructor(
                 val response = sessionRepository.endActiveSession()
 
                 if (response.success) {
-                    // Limpiar estados locales inmediatamente
                     _activeSession.value = null
                     _hasActiveSession.value = false
                     _error.value = null
 
-                    // Recargar sesiones disponibles (ahora desde local)
+                    // ✅ Recargar de Firebase, no solo local
+                    sessionRepository.syncPendingSessions()
                     loadAvailableSessions()
 
-                    println("✅ Sesión terminada exitosamente")
+                    println("✅ Sesión terminada exitosamente y sincronizada con Firebase")
                 } else {
                     _error.value = response.error ?: "Error al terminar sesión"
                 }
@@ -324,39 +255,6 @@ class NewSessionViewModel @Inject constructor(
         }
     }
 
-    // NUEVO: Función para forzar sincronización manual
-    fun forceSyncSessions() {
-        viewModelScope.launch {
-            try {
-                _isSyncing.value = true
-                sessionRepository.syncPendingSessions()
-                // Recargar después de sincronizar
-                loadAvailableSessions()
-                checkForActiveSession()
-            } catch (e: Exception) {
-                _error.value = "Error sincronizando: ${e.message}"
-            } finally {
-                _isSyncing.value = false
-            }
-        }
-    }
-
-    // El resto de funciones permanecen igual...
-
-    fun loadFinishedSessions() {
-        viewModelScope.launch {
-            try {
-                val result = sessionRepository.getUserFinishedSessions()
-                result.onSuccess { sessions ->
-                    _finishedSessions.value = sessions
-                }.onFailure { error ->
-                    _error.value = error.message ?: "Error al cargar sesiones"
-                }
-            } catch (e: Exception) {
-                _error.value = "Error al cargar sesiones: ${e.message}"
-            }
-        }
-    }
 
     private fun hexToColor(hex: String): Color {
         return try {
@@ -386,14 +284,6 @@ class NewSessionViewModel @Inject constructor(
         }
     }
 
-    fun getCurrentSessionInfo(): Triple<String, Color, Boolean> {
-        val session = _activeSession.value
-        return if (session != null) {
-            Triple(session.name, session.color, session.isActive)
-        } else {
-            Triple("", Color.Cyan, false)
-        }
-    }
 
     fun clearError() {
         _error.value = null

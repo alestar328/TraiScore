@@ -511,6 +511,7 @@ class SessionRepository @Inject constructor(
             val userId = auth.currentUser?.uid ?: return
             val unsyncedSessions = sessionDao.getUnsyncedSessions()
 
+            // 🔁 Primero: subir sesiones pendientes (como antes)
             unsyncedSessions.forEach { session ->
                 try {
                     when (session.pendingAction) {
@@ -525,7 +526,6 @@ class SessionRepository @Inject constructor(
                                 "isActive" to session.isActive,
                                 "workoutCount" to 0
                             )
-
                             firestore.collection("users")
                                 .document(userId)
                                 .collection("sessions")
@@ -533,15 +533,14 @@ class SessionRepository @Inject constructor(
                                 .set(sessionData)
                                 .await()
                         }
+
                         "UPDATE" -> {
                             val updates = hashMapOf<String, Any>(
                                 "isActive" to session.isActive,
                                 "updatedAt" to Date()
                             )
 
-                            session.endedAt?.let {
-                                updates["endedAt"] = it
-                            }
+                            session.endedAt?.let { updates["endedAt"] = it }
 
                             firestore.collection("users")
                                 .document(userId)
@@ -550,6 +549,7 @@ class SessionRepository @Inject constructor(
                                 .update(updates)
                                 .await()
                         }
+
                         "DELETE" -> {
                             firestore.collection("users")
                                 .document(userId)
@@ -557,23 +557,47 @@ class SessionRepository @Inject constructor(
                                 .document(session.sessionId)
                                 .delete()
                                 .await()
-
-                            // Eliminar localmente después de sincronizar
                             sessionDao.deleteSession(session)
                         }
                     }
-
                     sessionDao.markAsSynced(session.sessionId)
-
                 } catch (e: Exception) {
                     println("Error sincronizando sesión ${session.sessionId}: ${e.message}")
                 }
             }
+
+            // ✅ Segundo: descargar TODAS las sesiones desde Firebase y actualizar localmente
+            val snapshot = firestore.collection("users")
+                .document(userId)
+                .collection("sessions")
+                .get()
+                .await()
+
+            // Limpiar duplicados (opcional)
+            sessionDao.clearAllSessions(userId)
+
+            snapshot.documents.forEach { doc ->
+                val sessionEntity = SessionEntity(
+                    sessionId = doc.getString("sessionId") ?: doc.id,
+                    name = doc.getString("name") ?: "",
+                    color = doc.getString("color") ?: "#355E58",
+                    userId = userId,
+                    createdAt = doc.getDate("createdAt") ?: Date(),
+                    isActive = doc.getBoolean("isActive") ?: false,
+                    endedAt = doc.getDate("endedAt"),
+                    isSynced = true,
+                    isFinished = !(doc.getBoolean("isActive") ?: true),
+                    lastModified = System.currentTimeMillis()
+                )
+                sessionDao.insertSession(sessionEntity)
+            }
+
+            println("✅ Sincronización completa: ${snapshot.size()} sesiones actualizadas desde Firebase")
+
         } catch (e: Exception) {
             println("Error en sincronización general: ${e.message}")
         }
     }
-
     /**
      * Sincronizar desde Firebase a local (para recuperar datos)
      */

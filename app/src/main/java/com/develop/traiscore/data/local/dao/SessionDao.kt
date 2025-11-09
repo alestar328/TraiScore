@@ -47,4 +47,7 @@ interface SessionDao {
 
     @Query("SELECT * FROM sessions WHERE userId = :userId AND isFinished = 0 ORDER BY createdAt DESC")
     suspend fun getAvailableSessionsList(userId: String): List<SessionEntity>
+
+    @Query("DELETE FROM sessions WHERE userId = :userId")
+    suspend fun clearAllSessions(userId: String)
 }

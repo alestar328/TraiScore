@@ -68,7 +68,7 @@ android {
         }
         create("lite") {
             dimension = "version"
-            applicationId = "com.develop.traiscore.lite"
+            applicationId = "com.develop.traiscore"
             versionNameSuffix = "-lite"
             minSdk = 24 // Compatible con Android 7+
         }

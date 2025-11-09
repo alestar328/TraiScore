@@ -109,7 +109,7 @@ fun RoutineScreen(
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = traiBlue
+                    containerColor = MaterialTheme.colorScheme.background
                 ),
                 modifier = Modifier.height(56.dp)
             )

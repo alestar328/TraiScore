@@ -20,5 +20,8 @@ data class WorkoutEntry(
 
     val sessionId: String? = null,        // ID de la sesión a la que pertenece
     val sessionName: String? = null,      // Nombre de la sesión (ej: "Pecho y Tríceps")
-    val sessionColor: String? = null
+    val sessionColor: String? = null,
+    // 🔁 para sincronización
+    val isSynced: Boolean = false,
+    val pendingAction: String? = null, // CREATE, UPDATE, DELETE
 )

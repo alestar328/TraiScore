@@ -11,25 +11,26 @@ import com.develop.traiscore.domain.usecase.DeleteWorkoutUseCase
 import com.develop.traiscore.domain.usecase.GetAllWorkoutsUseCase
 import com.develop.traiscore.domain.usecase.SaveWorkoutUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import java.util.Date
 import javax.inject.Inject
 
 @HiltViewModel
 class ExercisesScreenViewModel @Inject constructor(
-    private val deleteWorkoutUseCase: DeleteWorkoutUseCase, // Caso de uso de eliminación
-    private val getAllWorkoutsUseCase: GetAllWorkoutsUseCase, // Caso de uso para obtener ejercicios
-    private val saveWorkoutUseCase: SaveWorkoutUseCase // Caso de uso para guardar ejercicios
-
+    private val deleteWorkoutUseCase: DeleteWorkoutUseCase,
+    private val getAllWorkoutsUseCase: GetAllWorkoutsUseCase,
+    private val saveWorkoutUseCase: SaveWorkoutUseCase
 ) : ViewModel() {
 
     private val _exercises = mutableStateListOf<WorkoutWithExercise>()
     val exercises: List<WorkoutWithExercise> get() = _exercises
-    // Función para obtener ejercicios
+
+    /** 🔹 Cargar todos los workouts (desde Room) */
     fun getExercises(onError: (String) -> Unit) {
         viewModelScope.launch {
             try {
-                val result = getAllWorkoutsUseCase().collect { resource ->
+                getAllWorkoutsUseCase().collectLatest { resource ->
                     when (resource) {
                         is Resource.Success -> {
                             _exercises.clear()
@@ -38,7 +39,7 @@ class ExercisesScreenViewModel @Inject constructor(
                         is Resource.Error -> {
                             onError(resource.message ?: "Error al obtener los ejercicios.")
                         }
-                        else -> {} // No hacer nada en caso de Loading
+                        else -> Unit
                     }
                 }
             } catch (e: Exception) {
@@ -46,27 +47,23 @@ class ExercisesScreenViewModel @Inject constructor(
             }
         }
     }
+
+    /** 🔹 Eliminar un workout localmente */
     fun deleteExercise(workoutId: Int, onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
-            deleteWorkoutUseCase(workoutId).collect { result ->
+            deleteWorkoutUseCase(workoutId).collectLatest { result ->
                 when (result) {
                     is Resource.Success -> {
-                        // Eliminar el ejercicio localmente si la operación fue exitosa
-                        _exercises.removeAll { it.workoutModel.id == workoutId }
+                        // ✅ Ahora usamos workout.id, no workoutModel.id
+                        _exercises.removeAll { it.workout.id == workoutId }
                         onSuccess()
                     }
-
                     is Resource.Error -> {
                         onError(result.message ?: "Error al eliminar el ejercicio.")
                     }
-
-                    else -> {}
+                    else -> Unit
                 }
             }
         }
     }
-
-
-
-
 }

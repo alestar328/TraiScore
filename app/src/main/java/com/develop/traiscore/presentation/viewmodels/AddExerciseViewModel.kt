@@ -37,7 +37,6 @@ data class ExerciseWithSource(
 @HiltViewModel
 class AddExerciseViewModel @Inject constructor(
     private val exerciseDao: ExerciseDao,
-    private val workoutEntryViewModel: WorkoutEntryViewModel,
     private val sessionRepository: SessionRepository,
 ) : ViewModel() {
     var exerciseNames by mutableStateOf<List<String>>(emptyList())
