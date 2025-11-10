@@ -66,7 +66,7 @@ fun ExercisesScreen(
     statViewModel: StatScreenViewModel = hiltViewModel(), // ✅ AGREGAR esta línea
     navController: NavController
 ) {
-    val entries = viewModel.entries.value
+    val entries = viewModel.entries.collectAsState().value
     val showBottomSheet = remember { mutableStateOf(false) }
     val selectedEntry = remember { mutableStateOf<WorkoutEntry?>(null) }
     val groupedEntries = viewModel.groupWorkoutsByDate(entries)

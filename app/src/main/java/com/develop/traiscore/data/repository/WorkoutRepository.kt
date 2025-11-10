@@ -1,5 +1,6 @@
-package com.develop.traiscore.data.local.dao
+package com.develop.traiscore.data.repository
 
+import com.develop.traiscore.data.local.dao.WorkoutDao
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -72,12 +73,9 @@ class WorkoutRepository @Inject constructor(
         println("✅ Importadas ${workouts.size} entradas desde Firebase a Room")
     }
     suspend fun removeWorkout(workout: WorkoutEntry) {
-        workoutDao.updateWorkout(
-            workout.copy(
-                pendingAction = "DELETE",
-                isSynced = false
-            )
-        )
+        // ✅ Eliminar directamente de Room
+        workoutDao.deleteWorkout(workout)
+
     }
 
     suspend fun syncPendingWorkouts() {

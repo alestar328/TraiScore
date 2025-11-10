@@ -8,11 +8,15 @@ import com.google.firebase.firestore.firestore
 import java.util.Date
 import androidx.compose.runtime.State
 import androidx.lifecycle.viewModelScope
-import com.develop.traiscore.data.local.dao.WorkoutRepository
+import com.develop.traiscore.data.repository.SessionRepository
+import com.develop.traiscore.data.repository.WorkoutRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.Query
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Locale
@@ -28,11 +32,17 @@ data class SessionWithWorkouts(
 
 @HiltViewModel
 class WorkoutEntryViewModel @Inject constructor(
-    private val workoutRepository: WorkoutRepository
+    private val workoutRepository: WorkoutRepository,
+    private val sessionRepository: SessionRepository
 ) : ViewModel() {
 
     private val _entries = mutableStateOf<List<WorkoutEntry>>(emptyList())
-    val entries: State<List<WorkoutEntry>> = _entries
+    val entries: StateFlow<List<WorkoutEntry>> = workoutRepository.workouts
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
     private val _sessionWorkouts =
         mutableStateOf<Map<String, List<SessionWithWorkouts>>>(emptyMap())
@@ -56,7 +66,42 @@ class WorkoutEntryViewModel @Inject constructor(
             }
         }
     }
+    fun addWorkout(workout: WorkoutEntry) {
+        viewModelScope.launch {
+            try {
+                // Obtener sesión activa si existe
+                val activeSession = sessionRepository.getActiveSession()
 
+                val workoutToSave = if (activeSession.success && activeSession.session != null) {
+                    val session = activeSession.session
+                    workout.copy(
+                        sessionId = session.sessionId,
+                        sessionName = session.name,
+                        sessionColor = session.color,
+                        isSynced = false,
+                        pendingAction = "CREATE"
+                    )
+                } else {
+                    workout.copy(
+                        isSynced = false,
+                        pendingAction = "CREATE"
+                    )
+                }
+
+                workoutRepository.addWorkout(workoutToSave)
+
+                // Incrementar contador de workouts en la sesión si existe
+                if (activeSession.success && activeSession.session != null) {
+                    sessionRepository.incrementWorkoutCount(activeSession.session.sessionId)
+                }
+
+                println("✅ Workout guardado localmente: ${workoutToSave.title}")
+            } catch (e: Exception) {
+                println("❌ Error guardando workout: ${e.message}")
+                e.printStackTrace()
+            }
+        }
+    }
     /** 🧠 Agrupa workouts por fecha y sesión para la UI */
     private fun updateSessionGrouping(workouts: List<WorkoutEntry>) {
         val dateFormatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
@@ -82,44 +127,46 @@ class WorkoutEntryViewModel @Inject constructor(
         _sessionWorkouts.value = sessionGrouped
     }
 
-    /** ➕ Añadir un nuevo workout */
-    fun addWorkout(workout: WorkoutEntry) {
-        viewModelScope.launch {
-            workoutRepository.addWorkout(workout)
-            println("✅ Workout añadido: ${workout.title}")
-        }
-    }
+
 
     /** ✏️ Editar workout existente */
     fun updateWorkout(workout: WorkoutEntry) {
         viewModelScope.launch {
-            workoutRepository.updateWorkout(workout)
-            println("📝 Workout actualizado: ${workout.title}")
+            try {
+                workoutRepository.updateWorkout(workout)
+                println("✅ Workout actualizado localmente: ${workout.title}")
+            } catch (e: Exception) {
+                println("❌ Error actualizando workout: ${e.message}")
+                e.printStackTrace()
+            }
         }
     }
 
     /** 🗑️ Eliminar workout */
     fun deleteWorkout(workout: WorkoutEntry) {
         viewModelScope.launch {
-            workoutRepository.removeWorkout(workout)
-            println("🗑️ Workout eliminado: ${workout.title}")
+            try {
+                workoutRepository.removeWorkout(workout)
+                println("✅ Workout marcado para eliminación: ${workout.title}")
+            } catch (e: Exception) {
+                println("❌ Error eliminando workout: ${e.message}")
+                e.printStackTrace()
+            }
         }
     }
-
     /** 🔍 Agrupación filtrada por búsqueda */
-    fun groupWorkoutsByDateFiltered(
-        query: String
-    ): Map<String, List<WorkoutEntry>> {
-        val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-        return _entries.value
-            .filter { it.title.contains(query, ignoreCase = true) }
-            .groupBy { formatter.format(it.timestamp) }
+    fun groupWorkoutsByDateFiltered(exerciseName: String): Map<String, List<WorkoutEntry>> {
+        val filtered = entries.value.filter {
+            it.title.contains(exerciseName, ignoreCase = true)
+        }
+        return groupWorkoutsByDate(filtered)
     }
 
     /** Agrupación estándar */
     fun groupWorkoutsByDate(workouts: List<WorkoutEntry>): Map<String, List<WorkoutEntry>> {
-        val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
-        return workouts.groupBy { formatter.format(it.timestamp) }
+        val sdf = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        return workouts
+            .sortedByDescending { it.timestamp }
+            .groupBy { sdf.format(it.timestamp) }
     }
-
 }

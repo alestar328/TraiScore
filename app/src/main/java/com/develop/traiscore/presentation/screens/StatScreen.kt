@@ -92,11 +92,8 @@ fun StatScreen(
     var showChronoScreen by remember { mutableStateOf(false) }
     val rirData by viewModel.rirProgress.collectAsState()
     val (oneRepMax, maxReps, averageRIR) = circularData
-    val weightByReps = remember(weightData) {
-        weightData.map { (_, peso) ->
-            peso.toInt().toString() to peso
-        }
-    }
+    val weightByReps = weightData
+
     var bodyMeasurementData by remember { mutableStateOf<BodyMeasurementProgressData?>(null) }
     var availableBodyMetrics by remember { mutableStateOf<List<BodyMeasurementType>>(emptyList()) }
     var selectedBodyMetric by remember { mutableStateOf<BodyMeasurementType?>(null) }
