@@ -77,7 +77,7 @@ fun ExercisesScreen(
     // Estados para el nuevo sistema de vistas
     val showViewModeSelector = remember { mutableStateOf(false) }
     val currentViewMode = remember { mutableStateOf(ViewMode.TODAY) }
-    val selectedMonth = remember { mutableStateOf<YearMonth?>(null) }
+    val selectedMonth = remember { mutableStateOf<MonthYear?>(null) } // ✅ CAMBIO
     val circularData by statViewModel.circularData.collectAsState()
     val (oneRepMax, maxReps, _) = circularData
     val filteredGrouped = if (selectedSearch.value.isNotBlank()) {
@@ -256,8 +256,8 @@ fun ExercisesScreen(
                             ViewMode.YEAR -> {
                                 YearViewScreen(
                                     groupedEntries = filteredGrouped,
-                                    onMonthSelected = { month ->
-                                        selectedMonth.value = month
+                                    onMonthSelected = { monthYear  ->
+                                        selectedMonth.value = monthYear
                                         currentViewMode.value = ViewMode.MONTH
                                     }
                                 )
@@ -301,7 +301,7 @@ fun ExercisesScreen(
             selectedEntry.value = null
         },
         onSave = { updatedWorkout ->
-            viewModel.updateWorkout(updatedWorkout)
+            // ✅ YA NO NECESARIO - el BottomSheet maneja todo internamente
             showBottomSheet.value = false
             selectedEntry.value = null
         }

@@ -27,8 +27,8 @@ import com.develop.traiscore.presentation.components.SessionWorkoutCard
 import com.develop.traiscore.presentation.components.general.NewSessionUX
 import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.NewSessionViewModel
+import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.text.SimpleDateFormat
-import java.time.LocalDate
 import java.util.*
 
 @Composable
@@ -37,35 +37,60 @@ fun TodayViewScreen(
     onEditClick: (WorkoutEntry) -> Unit,
     onDeleteClick: (WorkoutEntry) -> Unit,
     modifier: Modifier = Modifier,
-    viewModel: NewSessionViewModel = hiltViewModel()
+    sessionViewModel: NewSessionViewModel = hiltViewModel(),
+    workoutViewModel: WorkoutEntryViewModel = hiltViewModel()
 ) {
-    //val today = LocalDate.now()
+    // ✅ CORREGIDO - Usar el mismo formato que WorkoutEntryViewModel
     val todayFormatted = remember {
         val calendar = Calendar.getInstance()
-        SimpleDateFormat("dd MMM yyyy", Locale.getDefault()).format(calendar.time)
+        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(calendar.time)
     }
 
-    // Estados del ViewModel
-    val hasActiveSession by viewModel.hasActiveSession.collectAsState()
-    val activeSession by viewModel.activeSession.collectAsState()
-    val isLoading by viewModel.isLoading.collectAsState()
-    val error by viewModel.error.collectAsState()
-    val finishedSessions by viewModel.finishedSessions.collectAsState()
-    val availableSessions by viewModel.availableSessions.collectAsState() // NUEVO
+    // ✅ OBSERVAR DATOS REACTIVOS desde WorkoutEntryViewModel
+    val allWorkouts by workoutViewModel.entries.collectAsState()
+    val sessionWorkouts by workoutViewModel.sessionWorkouts
+
+    // Estados del SessionViewModel
+    val hasActiveSession by sessionViewModel.hasActiveSession.collectAsState()
+    val activeSession by sessionViewModel.activeSession.collectAsState()
+    val isLoading by sessionViewModel.isLoading.collectAsState()
+    val error by sessionViewModel.error.collectAsState()
+    val availableSessions by sessionViewModel.availableSessions.collectAsState()
 
     var showEndSessionDialog by remember { mutableStateOf(false) }
 
-    val todayWorkouts = groupedEntries[todayFormatted] ?: emptyList()
+    // ✅ USAR sessionWorkouts agrupados del ViewModel
+    val todaySessions = remember(sessionWorkouts, todayFormatted) {
+        sessionWorkouts[todayFormatted] ?: emptyList()
+    }
+
+    // ✅ Workouts de hoy para las estadísticas
+    val todayWorkouts = remember(allWorkouts, todayFormatted) {
+        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+        allWorkouts.filter { workout ->
+            val workoutDate = formatter.format(workout.timestamp)
+            workoutDate == todayFormatted
+        }
+    }
+
+    // ✅ DEBUG - Ver datos
+    LaunchedEffect(todayFormatted, sessionWorkouts) {
+        println("🔍 DEBUG TodayViewScreen:")
+        println("   todayFormatted: $todayFormatted")
+        println("   sessionWorkouts keys: ${sessionWorkouts.keys.joinToString()}")
+        println("   todaySessions: ${todaySessions.size}")
+        println("   todayWorkouts: ${todayWorkouts.size}")
+    }
 
     LaunchedEffect(Unit) {
-        viewModel.checkForActiveSession()
-        viewModel.loadAvailableSessions()
+        sessionViewModel.checkForActiveSession()
+        sessionViewModel.loadAvailableSessions()
     }
 
     error?.let { errorMessage ->
         LaunchedEffect(errorMessage) {
             println("Error: $errorMessage")
-            viewModel.clearError()
+            sessionViewModel.clearError()
         }
     }
 
@@ -96,7 +121,7 @@ fun TodayViewScreen(
             )
         }
 
-        // QuickStats solo si hay sesión activa y workouts de hoy
+        // ✅ QuickStats de la sesión activa
         if (hasActiveSession && todayWorkouts.isNotEmpty()) {
             val activeSessionWorkouts = todayWorkouts.filter {
                 it.sessionId == activeSession?.id
@@ -119,12 +144,12 @@ fun TodayViewScreen(
             }
         }
 
-        // Lista principal
+        // ✅ Lista principal reactiva
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Sesiones terminadas (solo mostrar si no hay sesión activa)
+            // Sesiones disponibles (solo si no hay sesión activa)
             if (availableSessions.isNotEmpty() && !hasActiveSession) {
                 item {
                     Text(
@@ -144,12 +169,12 @@ fun TodayViewScreen(
                     SessionCard(
                         title = sessionName,
                         accent = hexToColor(sessionColor),
-                        sessionId = sessionId, // ✅ Pasar sessionId
+                        sessionId = sessionId,
                         onClick = {
-                            viewModel.activateSession(sessionId)
+                            sessionViewModel.activateSession(sessionId)
                         },
-                        onDelete = { id -> // ✅ Añadir callback de borrado
-                            viewModel.deleteSession(id)
+                        onDelete = { id ->
+                            sessionViewModel.deleteSession(id)
                         }
                     )
                 }
@@ -159,48 +184,32 @@ fun TodayViewScreen(
                 }
             }
 
-            // Workouts agrupados por sesión (solo del día actual)
-            if (hasActiveSession && todayWorkouts.isNotEmpty()) {
-                val workoutsBySession = todayWorkouts.groupBy { workout ->
-                    workout.sessionId ?: "legacy_session"
-                }
+            // ✅ Workouts de hoy agrupados por sesión (ACTUALIZACIÓN EN TIEMPO REAL)
+            if (hasActiveSession && todaySessions.isNotEmpty()) {
+                val activeSessionData = todaySessions.find { it.sessionId == activeSession?.id }
 
-
-                val activeSessionWorkouts = workoutsBySession.filter { (sessionId, _) ->
-                    sessionId == activeSession?.id
-                }
-
-                if (activeSessionWorkouts.isNotEmpty()) {
-                    items(activeSessionWorkouts.entries.toList()) { (sessionId, sessionWorkouts) ->
-                        val firstWorkout = sessionWorkouts.first()
-                        val sessionName = firstWorkout.sessionName ?: "Entrenamiento"
-                        val sessionColor = firstWorkout.sessionColor ?: "#43f4ff"
-
+                if (activeSessionData != null) {
+                    item {
                         SessionWorkoutCard(
-                            sessionName = sessionName,
-                            sessionColor = sessionColor,
-                            workouts = sessionWorkouts,
+                            sessionName = activeSessionData.sessionName,
+                            sessionColor = activeSessionData.sessionColor,
+                            workouts = activeSessionData.workouts,
                             isActive = true,
                             onEditClick = onEditClick,
                             onDeleteClick = onDeleteClick,
                             modifier = Modifier.padding(horizontal = 4.dp)
                         )
-
                     }
                 }
             } else if (!hasActiveSession && availableSessions.isEmpty()) {
-                    item {
-                        EmptyTodayState(
-                            viewModel = viewModel,
-                            availableSessionsCount = availableSessions.size
-
-                        )
-                    }
-
+                item {
+                    EmptyTodayState(
+                        viewModel = sessionViewModel,
+                        availableSessionsCount = availableSessions.size
+                    )
+                }
             }
         }
-
-
     }
 
     // Dialog de confirmación
@@ -217,7 +226,7 @@ fun TodayViewScreen(
             confirmButton = {
                 TextButton(
                     onClick = {
-                        viewModel.endCurrentSession()
+                        sessionViewModel.endCurrentSession()
                         showEndSessionDialog = false
                     },
                     colors = ButtonDefaults.textButtonColors(contentColor = Color.Red)
@@ -233,6 +242,7 @@ fun TodayViewScreen(
         )
     }
 }
+
 // ⭐ COMPONENTE SEPARADO para el header inteligente
 @Composable
 private fun TodayHeaderSection(
@@ -241,7 +251,6 @@ private fun TodayHeaderSection(
     onEndSession: () -> Unit = {}
 ) {
     if (hasActiveSession && activeSession != null) {
-        // ✅ Mostrar sesión activa con color personalizado
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -258,7 +267,6 @@ private fun TodayHeaderSection(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                // Icono de pesa en negro
                 Icon(
                     painter = painterResource(id = R.drawable.pesa_icon),
                     contentDescription = stringResource(id = R.string.today_session_active),
@@ -267,7 +275,6 @@ private fun TodayHeaderSection(
                 )
 
                 Column(modifier = Modifier.weight(1f)) {
-                    // Nombre de la sesión
                     Text(
                         text = activeSession.name,
                         style = MaterialTheme.typography.titleLarge,
@@ -275,7 +282,6 @@ private fun TodayHeaderSection(
                         fontWeight = FontWeight.Bold
                     )
 
-                    // Fecha actual
                     Text(
                         text = SimpleDateFormat("EEEE, dd MMMM yyyy", Locale.getDefault())
                             .format(Calendar.getInstance().time),
@@ -284,7 +290,6 @@ private fun TodayHeaderSection(
                     )
                 }
 
-                // ⭐ NUEVO: Botón para terminar sesión
                 IconButton(
                     onClick = onEndSession,
                     modifier = Modifier.size(40.dp)
@@ -299,7 +304,6 @@ private fun TodayHeaderSection(
             }
         }
     } else {
-        // ❌ Mostrar header normal
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -342,6 +346,7 @@ private fun TodayHeaderSection(
         }
     }
 }
+
 // ⭐ EmptyState actualizado para usar el ViewModel
 @Composable
 private fun EmptyTodayState(
@@ -350,7 +355,6 @@ private fun EmptyTodayState(
 ) {
     var showNewSessionDialog by remember { mutableStateOf(false) }
     val canAddMoreSessions = availableSessionsCount < 6
-
 
     Card(
         modifier = Modifier

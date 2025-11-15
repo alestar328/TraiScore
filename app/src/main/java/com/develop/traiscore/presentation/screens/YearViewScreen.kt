@@ -19,24 +19,27 @@ import com.develop.traiscore.R
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.presentation.theme.tsColors
 import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.YearMonth
 import java.util.*
 
 @Composable
 fun YearViewScreen(
     groupedEntries: Map<String, List<WorkoutEntry>>,
-    onMonthSelected: (YearMonth) -> Unit,
+    onMonthSelected: (MonthYear) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val currentYear = remember { LocalDate.now().year }
+    // ✅ Usar Calendar en lugar de LocalDate.now()
+    val currentYear = remember {
+        Calendar.getInstance().get(Calendar.YEAR)
+    }
+
+    // ✅ Generar lista de meses usando MonthYear
     val months = remember {
         (1..12).map { month ->
-            YearMonth.of(currentYear, month)
+            MonthYear(year = currentYear, month = month)
         }
     }
 
-    // Convertir las fechas de groupedEntries a LocalDate para análisis
+    // ✅ Convertir fechas de groupedEntries a formato yyyy-MM-dd usando Calendar
     val workoutDates = remember(groupedEntries) {
         val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
         groupedEntries.keys.mapNotNull { dateString ->
@@ -45,7 +48,8 @@ fun YearViewScreen(
                 date?.let {
                     val calendar = Calendar.getInstance()
                     calendar.time = it
-                    LocalDate.of(
+                    String.format(
+                        "%04d-%02d-%02d",
                         calendar.get(Calendar.YEAR),
                         calendar.get(Calendar.MONTH) + 1,
                         calendar.get(Calendar.DAY_OF_MONTH)
@@ -64,7 +68,7 @@ fun YearViewScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = stringResource(id = R.string.calendar_year)  +" $currentYear",
+            text = stringResource(id = R.string.calendar_year) + " $currentYear",
             style = MaterialTheme.typography.headlineMedium,
             color = MaterialTheme.colorScheme.onBackground,
             fontWeight = FontWeight.Bold,
@@ -80,11 +84,11 @@ fun YearViewScreen(
             horizontalArrangement = Arrangement.spacedBy(12.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(months) { month ->
-                MonthCard(
-                    month = month,
+            items(months) { monthYear ->
+                MonthCardCompat(
+                    monthYear = monthYear,
                     workoutDates = workoutDates,
-                    onClick = { onMonthSelected(month) }
+                    onClick = { onMonthSelected(monthYear) }
                 )
             }
         }
@@ -92,24 +96,33 @@ fun YearViewScreen(
 }
 
 @Composable
-private fun MonthCard(
-    month: YearMonth,
-    workoutDates: Set<LocalDate>,
+private fun MonthCardCompat(
+    monthYear: MonthYear,
+    workoutDates: Set<String>, // ✅ Ahora es Set<String> en formato yyyy-MM-dd
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val monthName = month.month.getDisplayName(
-        java.time.format.TextStyle.FULL,
-        Locale.getDefault()
-    ).replaceFirstChar { it.uppercase() }
-
-    // Calcular días del mes que tienen entrenamientos
-    val daysInMonth = (1..month.lengthOfMonth()).map { day ->
-        month.atDay(day)
+    // ✅ Obtener nombre del mes usando Calendar
+    val monthName = remember(monthYear) {
+        val calendar = Calendar.getInstance()
+        calendar.set(Calendar.MONTH, monthYear.month - 1)
+        SimpleDateFormat("MMMM", Locale.getDefault())
+            .format(calendar.time)
+            .replaceFirstChar { it.uppercase() }
     }
 
-    val workoutDaysInMonth = daysInMonth.filter { date ->
-        workoutDates.contains(date)
+    // ✅ Calcular días del mes que tienen entrenamientos
+    val daysInMonth = remember(monthYear) {
+        val maxDay = monthYear.lengthOfMonth()
+        (1..maxDay).map { day ->
+            monthYear.atDay(day) // Devuelve String en formato yyyy-MM-dd
+        }
+    }
+
+    val workoutDaysInMonth = remember(daysInMonth, workoutDates) {
+        daysInMonth.filter { dateString ->
+            workoutDates.contains(dateString)
+        }
     }
 
     val totalWorkouts = workoutDaysInMonth.size
@@ -144,7 +157,7 @@ private fun MonthCard(
                 Column(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    // Puntos indicadores (máximo 10 visibles)
+                    // Puntos indicadores (máximo 28 visibles para representar el mes)
                     LazyVerticalGrid(
                         columns = GridCells.Fixed(7),
                         modifier = Modifier
@@ -154,8 +167,8 @@ private fun MonthCard(
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         items(minOf(28, daysInMonth.size)) { index ->
-                            val day = daysInMonth[index]
-                            val hasWorkout = workoutDates.contains(day)
+                            val dayString = daysInMonth[index]
+                            val hasWorkout = workoutDates.contains(dayString)
 
                             Box(
                                 modifier = Modifier

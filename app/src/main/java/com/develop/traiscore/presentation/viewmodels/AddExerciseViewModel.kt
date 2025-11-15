@@ -483,64 +483,7 @@ class AddExerciseViewModel @Inject constructor(
         }
     }
 
-    fun addExerciseToActiveSession(
-        title: String,
-        reps: Int,
-        weight: Float,
-        rir: Int
-    ) {
-        viewModelScope.launch {
-            try {
-                val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return@launch
 
-                val activeSessionResponse = sessionRepository.getActiveSession()
-
-                val workoutData = if (activeSessionResponse.success && activeSessionResponse.session != null) {
-                    val session = activeSessionResponse.session
-                    hashMapOf(
-                        "title" to title,
-                        "reps" to reps,
-                        "weight" to weight,
-                        "rir" to rir,
-                        "timestamp" to Date(),
-                        "sessionId" to session.sessionId,
-                        "sessionName" to session.name,
-                        "sessionColor" to session.color
-                    )
-                } else {
-                    hashMapOf(
-                        "title" to title,
-                        "reps" to reps,
-                        "weight" to weight,
-                        "rir" to rir,
-                        "timestamp" to Date()
-                    )
-                }
-
-                Firebase.firestore
-                    .collection("users")
-                    .document(userId)
-                    .collection("workoutEntries")
-                    .add(workoutData)
-                    .await()
-
-                if (activeSessionResponse.success && activeSessionResponse.session != null) {
-                    sessionRepository.incrementWorkoutCount(activeSessionResponse.session.sessionId)
-                }
-
-                _lastUsedExerciseName.value = title
-
-                println("✅ Ejercicio agregado correctamente")
-
-                // 🔹 Emitir evento de actualización
-                _onExerciseAdded.emit(Unit)
-
-            } catch (e: Exception) {
-                println("❌ Error agregando ejercicio: ${e.message}")
-                e.printStackTrace()
-            }
-        }
-    }
 
     private fun addWorkoutWithoutSession(
         title: String,
@@ -629,56 +572,6 @@ class AddExerciseViewModel @Inject constructor(
 
     fun refreshExercises() {
         loadAllExercises() // Reutilizar la función que ya carga ambas fuentes
-    }
-    fun createRoutine(
-        clientName: String,
-        trainerId: String? = null,
-        onComplete: (routineId: String?, error: String?) -> Unit
-    ) {
-        val docRef = routinesRef.document()
-        val base = mapOf(
-            "userId"     to userId,
-            "trainerId"  to trainerId,
-            "clientName" to clientName,
-            "routineName" to clientName, // AGREGAR ESTE CAMPO
-            "createdAt"  to com.google.firebase.Timestamp.now(),
-            "sections"   to emptyList<Map<String,Any>>()
-        )
-        docRef.set(base)
-            .addOnSuccessListener { onComplete(docRef.id, null) }
-            .addOnFailureListener { e -> onComplete(null, e.message) }
-    }
-
-
-
-    fun saveSectionToRoutine(
-        routineId: String,
-        sectionType: DefaultCategoryExer,
-        exercises: List<SimpleExercise>,
-        onComplete: (success: Boolean, errorMsg: String?) -> Unit
-    ) {
-        val sectionObject = mapOf(
-            "type" to sectionType.name,
-            "exercises" to exercises.map { exe ->
-                mapOf(
-                    "name"   to exe.name,
-                    "series" to exe.series,
-                    "weight" to exe.weight,
-                    "reps"   to exe.reps,
-                    "rir"    to exe.rir
-                )
-            }
-        )
-        // 2) Hacemos update con arrayUnion para no borrar secciones previas
-        routinesRef
-            .document(routineId)
-            .update("sections", FieldValue.arrayUnion(sectionObject))
-            .addOnSuccessListener {
-                onComplete(true, null)
-            }
-            .addOnFailureListener { e ->
-                onComplete(false, e.localizedMessage)
-            }
     }
 
 }

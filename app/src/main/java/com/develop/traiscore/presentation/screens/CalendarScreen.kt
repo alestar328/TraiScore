@@ -4,16 +4,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -31,7 +21,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
-import java.time.format.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -43,38 +32,72 @@ import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.SessionWithWorkouts
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.text.SimpleDateFormat
-import java.time.LocalDate
-import java.time.YearMonth
-import java.util.Locale
+import java.util.*
+
+data class MonthYear(
+    val year: Int,
+    val month: Int // 1-12 (Enero = 1, Diciembre = 12)
+) {
+    companion object {
+        fun now(): MonthYear {
+            val calendar = Calendar.getInstance()
+            return MonthYear(
+                year = calendar.get(Calendar.YEAR),
+                month = calendar.get(Calendar.MONTH) + 1 // Calendar usa 0-11
+            )
+        }
+    }
+
+    fun atDay(day: Int): String {
+        return String.format("%04d-%02d-%02d", year, month, day)
+    }
+
+    fun lengthOfMonth(): Int {
+        val calendar = Calendar.getInstance()
+        calendar.set(year, month - 1, 1)
+        return calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+    }
+}
 
 @Composable
 fun CalendarScreen(
     groupedEntries: Map<String, List<WorkoutEntry>>,
-    selectedMonth: YearMonth?,
+    selectedMonth: MonthYear?, // ✅ CAMBIO: YearMonth → MonthYear
     onEditClick: (WorkoutEntry) -> Unit,
     onDeleteClick: (WorkoutEntry) -> Unit,
     modifier: Modifier = Modifier,
     workoutEntryViewModel: WorkoutEntryViewModel = hiltViewModel()
 ) {
+    // ✅ Usar Calendar en lugar de LocalDate para compatibilidad API 24+
     val selectedDate = remember { mutableStateOf("") }
-
-    // ⭐ Obtener sesiones agrupadas del ViewModel
     val sessionWorkouts = workoutEntryViewModel.sessionWorkouts.value
 
+    // ✅ CALCULADO usando Calendar y SimpleDateFormat (API 24+)
     val selectedDayWorkouts = remember(selectedDate.value, groupedEntries) {
         if (selectedDate.value.isNotEmpty()) {
-            val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
             try {
-                val selectedLocalDate = LocalDate.parse(selectedDate.value)
-                val calendar = java.util.Calendar.getInstance()
-                calendar.set(
-                    selectedLocalDate.year,
-                    selectedLocalDate.monthValue - 1,
-                    selectedLocalDate.dayOfMonth
-                )
-                val formattedDate = formatter.format(calendar.time)
-                groupedEntries[formattedDate] ?: emptyList()
+                // Parsear yyyy-MM-dd
+                val parts = selectedDate.value.split("-")
+                if (parts.size == 3) {
+                    val year = parts[0].toInt()
+                    val month = parts[1].toInt() - 1
+                    val day = parts[2].toInt()
+
+                    val calendar = Calendar.getInstance()
+                    calendar.set(year, month, day, 0, 0, 0)
+                    calendar.set(Calendar.MILLISECOND, 0)
+
+                    // ✅ Formatear como dd/MM/yyyy
+                    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                    val formattedDate = formatter.format(calendar.time)
+
+                    println("🔍 Buscando fecha: $formattedDate en keys: ${groupedEntries.keys}")
+                    groupedEntries[formattedDate] ?: emptyList()
+                } else {
+                    emptyList()
+                }
             } catch (e: Exception) {
+                println("❌ Error parseando fecha: ${e.message}")
                 emptyList()
             }
         } else {
@@ -82,20 +105,28 @@ fun CalendarScreen(
         }
     }
 
-    // ⭐ Obtener sesiones del día seleccionado
+    // ✅ Sesiones del día seleccionado
     val selectedDaySessions = remember(selectedDate.value, sessionWorkouts) {
         if (selectedDate.value.isNotEmpty()) {
-            val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
             try {
-                val selectedLocalDate = LocalDate.parse(selectedDate.value)
-                val calendar = java.util.Calendar.getInstance()
-                calendar.set(
-                    selectedLocalDate.year,
-                    selectedLocalDate.monthValue - 1,
-                    selectedLocalDate.dayOfMonth
-                )
-                val formattedDate = formatter.format(calendar.time)
-                sessionWorkouts[formattedDate] ?: emptyList()
+                val parts = selectedDate.value.split("-")
+                if (parts.size == 3) {
+                    val year = parts[0].toInt()
+                    val month = parts[1].toInt() - 1
+                    val day = parts[2].toInt()
+
+                    val calendar = Calendar.getInstance()
+                    calendar.set(year, month, day, 0, 0, 0)
+                    calendar.set(Calendar.MILLISECOND, 0)
+
+                    // ✅ Formatear como dd/MM/yyyy
+                    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+                    val formattedDate = formatter.format(calendar.time)
+
+                    sessionWorkouts[formattedDate] ?: emptyList()
+                } else {
+                    emptyList()
+                }
             } catch (e: Exception) {
                 emptyList()
             }
@@ -104,6 +135,7 @@ fun CalendarScreen(
         }
     }
 
+    // ✅ Estadísticas del día
     val totalExercises = remember(selectedDayWorkouts) {
         if (selectedDayWorkouts.isNotEmpty()) {
             selectedDayWorkouts
@@ -126,10 +158,10 @@ fun CalendarScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        HorizontalDaysScroll(
+        HorizontalDaysScrollCompat(
             selectedDate = selectedDate,
             selectedMonth = selectedMonth,
-            sessionWorkouts = sessionWorkouts, // ⭐ Pasar sesiones en lugar de entries
+            sessionWorkouts = sessionWorkouts,
             onDateSelected = { date ->
                 selectedDate.value = date
             },
@@ -138,6 +170,7 @@ fun CalendarScreen(
                 .padding(vertical = 8.dp)
         )
 
+        // ✅ QuickStats (ahora debería mostrarse)
         if (selectedDayWorkouts.isNotEmpty()) {
             QuickStats(
                 totalExercises = totalExercises,
@@ -153,7 +186,7 @@ fun CalendarScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             if (selectedDaySessions.isNotEmpty()) {
-                // ⭐ MOSTRAR POR SESIONES
+                // Mostrar por sesiones
                 items(selectedDaySessions) { session ->
                     SessionDayCard(
                         session = session,
@@ -162,16 +195,15 @@ fun CalendarScreen(
                     )
                 }
             } else if (selectedDayWorkouts.isNotEmpty()) {
-                // ⭐ DATOS LEGACY (sin sesiones)
+                // Datos legacy (sin sesiones)
                 item {
-                    val selectedLocalDate = try {
-                        LocalDate.parse(selectedDate.value)
-                    } catch (e: Exception) {
-                        LocalDate.now()
+                    val parts = selectedDate.value.split("-")
+                    val calendar = Calendar.getInstance()
+                    if (parts.size == 3) {
+                        calendar.set(parts[0].toInt(), parts[1].toInt() - 1, parts[2].toInt())
                     }
+
                     val dayFormatter = SimpleDateFormat("EEEE, dd MMMM yyyy", Locale.getDefault())
-                    val calendar = java.util.Calendar.getInstance()
-                    calendar.set(selectedLocalDate.year, selectedLocalDate.monthValue - 1, selectedLocalDate.dayOfMonth)
 
                     Text(
                         text = "Ejercicios de ${dayFormatter.format(calendar.time)}",
@@ -189,13 +221,9 @@ fun CalendarScreen(
                     )
                 }
             } else {
-                // SIN EJERCICIOS
+                // Sin ejercicios
                 item {
-                    val selectedLocalDate = try {
-                        LocalDate.parse(selectedDate.value)
-                    } catch (e: Exception) {
-                        LocalDate.now()
-                    }
+                    val isToday = selectedDate.value == getTodayDateString()
 
                     Box(
                         modifier = Modifier
@@ -207,7 +235,7 @@ fun CalendarScreen(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = if (selectedLocalDate == LocalDate.now()) {
+                                text = if (isToday) {
                                     stringResource(id = R.string.calendar_month_no_data)
                                 } else {
                                     stringResource(id = R.string.calendar_month_no_data_that_day)
@@ -223,6 +251,17 @@ fun CalendarScreen(
     }
 }
 
+// ✅ Función helper para obtener fecha de hoy en formato yyyy-MM-dd
+private fun getTodayDateString(): String {
+    val calendar = Calendar.getInstance()
+    return String.format(
+        "%04d-%02d-%02d",
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH) + 1,
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
+}
+
 @Composable
 private fun SessionDayCard(
     session: SessionWithWorkouts,
@@ -230,19 +269,18 @@ private fun SessionDayCard(
     onDeleteClick: (WorkoutEntry) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // ⭐ SOLUCIÓN: Obtener color por defecto fuera del try-catch
     val defaultCyanColor = MaterialTheme.tsColors.ledCyan
 
     val sessionColor = try {
         Color(android.graphics.Color.parseColor(session.sessionColor))
     } catch (e: Exception) {
-        defaultCyanColor  // ⭐ Usar variable en lugar de función @Composable
+        defaultCyanColor
     }
 
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding( vertical = 4.dp)
+            .padding(vertical = 4.dp)
     ) {
         // Header compacto de la sesión
         Row(
@@ -250,7 +288,6 @@ private fun SessionDayCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Indicador de color
             Box(
                 modifier = Modifier
                     .size(12.dp)
@@ -265,7 +302,6 @@ private fun SessionDayCard(
             )
         }
 
-        // Lista de workouts
         WorkoutCardList(
             workouts = session.workouts,
             onEditClick = onEditClick,
@@ -273,45 +309,58 @@ private fun SessionDayCard(
         )
     }
 }
+
 @Composable
-fun HorizontalDaysScroll(
+fun HorizontalDaysScrollCompat(
     selectedDate: MutableState<String>,
-    selectedMonth: YearMonth?,
+    selectedMonth: MonthYear?, // ✅ CAMBIO
     sessionWorkouts: Map<String, List<SessionWithWorkouts>>,
     onDateSelected: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val currentDate = remember { LocalDate.now() }
-    val currentMonth = remember(selectedMonth) { selectedMonth ?: YearMonth.now() }
+    val currentCalendar = remember { Calendar.getInstance() }
 
-    // ⭐ SOLUCIÓN: Obtener el color por defecto FUERA del remember
+    // ✅ CORREGIDO - Sin usar .year ni .monthValue
+    val displayCalendar = remember(selectedMonth) {
+        Calendar.getInstance().apply {
+            if (selectedMonth != null) {
+                set(Calendar.YEAR, selectedMonth.year)
+                set(Calendar.MONTH, selectedMonth.month - 1) // MonthYear usa 1-12
+                set(Calendar.DAY_OF_MONTH, 1)
+            }
+        }
+    }
+
     val defaultCyanColor = MaterialTheme.tsColors.ledCyan
 
-    // ⭐ Obtener días con sesiones y sus colores
+    // Obtener días con sesiones
     val sessionDates = remember(sessionWorkouts, defaultCyanColor) {
-        val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()) // ✅ CAMBIO
         sessionWorkouts.mapNotNull { (dateString, sessions) ->
             try {
                 val date = formatter.parse(dateString)
                 date?.let {
-                    val calendar = java.util.Calendar.getInstance()
+                    val calendar = Calendar.getInstance()
                     calendar.time = it
-                    val localDate = LocalDate.of(
-                        calendar.get(java.util.Calendar.YEAR),
-                        calendar.get(java.util.Calendar.MONTH) + 1,
-                        calendar.get(java.util.Calendar.DAY_OF_MONTH)
+
+                    val dateKey = String.format(
+                        "%04d-%02d-%02d",
+                        calendar.get(Calendar.YEAR),
+                        calendar.get(Calendar.MONTH) + 1,
+                        calendar.get(Calendar.DAY_OF_MONTH)
                     )
-                    // Si hay múltiples sesiones, usar el color de la primera
+
                     val sessionColor = if (sessions.isNotEmpty()) {
                         try {
                             Color(android.graphics.Color.parseColor(sessions.first().sessionColor))
                         } catch (e: Exception) {
-                            defaultCyanColor  // ⭐ Usar variable en lugar de función @Composable
+                            defaultCyanColor
                         }
                     } else {
-                        defaultCyanColor  // ⭐ Usar variable en lugar de función @Composable
+                        defaultCyanColor
                     }
-                    localDate to sessionColor
+
+                    dateKey to sessionColor
                 }
             } catch (e: Exception) {
                 null
@@ -319,45 +368,51 @@ fun HorizontalDaysScroll(
         }.toMap()
     }
 
-    // Generar todos los días del mes actual
-    val daysInMonth = remember(currentMonth, sessionDates) {
-        (1..currentMonth.lengthOfMonth()).map { day ->
-            val date = currentMonth.atDay(day)
-            DayInfo(
+    // Generar días del mes
+    val daysInMonth = remember(displayCalendar, sessionDates) {
+        val year = displayCalendar.get(Calendar.YEAR)
+        val month = displayCalendar.get(Calendar.MONTH)
+        val maxDay = displayCalendar.getActualMaximum(Calendar.DAY_OF_MONTH)
+
+        (1..maxDay).map { day ->
+            val dayCalendar = Calendar.getInstance()
+            dayCalendar.set(year, month, day, 0, 0, 0)
+            dayCalendar.set(Calendar.MILLISECOND, 0)
+
+            val dateKey = String.format("%04d-%02d-%02d", year, month + 1, day)
+            val dayOfWeek = SimpleDateFormat("EEE", Locale.getDefault()).format(dayCalendar.time)
+
+            val isToday = currentCalendar.get(Calendar.YEAR) == year &&
+                    currentCalendar.get(Calendar.MONTH) == month &&
+                    currentCalendar.get(Calendar.DAY_OF_MONTH) == day
+
+            DayInfoCompat(
                 dayNumber = day,
-                dayOfWeek = date.dayOfWeek.getDisplayName(TextStyle.SHORT, Locale.getDefault()),
-                date = date,
-                isToday = date == currentDate,
-                hasWorkouts = sessionDates.containsKey(date),
-                sessionColor = sessionDates[date] // ⭐ Color de la sesión
+                dayOfWeek = dayOfWeek,
+                dateKey = dateKey,
+                isToday = isToday,
+                hasWorkouts = sessionDates.containsKey(dateKey),
+                sessionColor = sessionDates[dateKey]
             )
         }
     }
 
-    LaunchedEffect(currentMonth) {
-        if (selectedDate.value.isEmpty() || selectedMonth != null) {
-            val initialDate = if (selectedMonth != null) {
-                selectedMonth.atDay(1)
-            } else {
-                currentDate
-            }
-            selectedDate.value = initialDate.toString()
+    // Inicializar fecha seleccionada
+    LaunchedEffect(Unit) {
+        if (selectedDate.value.isEmpty()) {
+            selectedDate.value = getTodayDateString()
         }
     }
 
     val listState = rememberLazyListState()
 
-    LaunchedEffect(daysInMonth, currentMonth) {
-        if (currentMonth == YearMonth.now()) {
-            val todayIndex = daysInMonth.indexOfFirst { it.isToday }
-            if (todayIndex != -1) {
-                listState.animateScrollToItem(
-                    index = maxOf(0, todayIndex - 3),
-                    scrollOffset = 0
-                )
-            }
-        } else {
-            listState.animateScrollToItem(0)
+    LaunchedEffect(daysInMonth) {
+        val todayIndex = daysInMonth.indexOfFirst { it.isToday }
+        if (todayIndex != -1) {
+            listState.animateScrollToItem(
+                index = maxOf(0, todayIndex - 3),
+                scrollOffset = 0
+            )
         }
     }
 
@@ -368,41 +423,40 @@ fun HorizontalDaysScroll(
         contentPadding = PaddingValues(horizontal = 0.dp)
     ) {
         items(daysInMonth) { dayInfo ->
-            DayCard(
+            DayCardCompat(
                 dayInfo = dayInfo,
-                isSelected = selectedDate.value == dayInfo.date.toString(),
+                isSelected = selectedDate.value == dayInfo.dateKey,
                 onClick = {
-                    selectedDate.value = dayInfo.date.toString()
-                    onDateSelected(dayInfo.date.toString())
+                    selectedDate.value = dayInfo.dateKey
+                    onDateSelected(dayInfo.dateKey)
                 }
             )
         }
     }
 }
 
-data class DayInfo(
+data class DayInfoCompat(
     val dayNumber: Int,
     val dayOfWeek: String,
-    val date: LocalDate,
+    val dateKey: String, // Formato: yyyy-MM-dd
     val isToday: Boolean,
     val hasWorkouts: Boolean = false,
-    val sessionColor: Color? = null // ⭐ Color de la sesión del día
+    val sessionColor: Color? = null
 )
 
 @Composable
-fun DayCard(
-    dayInfo: DayInfo,
+fun DayCardCompat(
+    dayInfo: DayInfoCompat,
     isSelected: Boolean,
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    // ⭐ SOLUCIÓN: Obtener colores FUERA de las condiciones
     val cyanColor = MaterialTheme.tsColors.ledCyan
     val onSurfaceColor = MaterialTheme.colorScheme.onSurface
 
     val backgroundColor = when {
-        isSelected && dayInfo.sessionColor != null -> dayInfo.sessionColor!! // ⭐ USAR COLOR DE SESIÓN cuando está seleccionado
-        isSelected -> cyanColor // ⭐ Fallback al cyan por defecto
+        isSelected && dayInfo.sessionColor != null -> dayInfo.sessionColor!!
+        isSelected -> cyanColor
         else -> Color.Transparent
     }
 
@@ -421,7 +475,6 @@ fun DayCard(
                 color = backgroundColor,
                 shape = RoundedCornerShape(12.dp)
             )
-            // ⭐ Borde con color de sesión si tiene workouts
             .let { modifierBox ->
                 if (dayInfo.hasWorkouts && dayInfo.sessionColor != null && !isSelected) {
                     modifierBox.border(

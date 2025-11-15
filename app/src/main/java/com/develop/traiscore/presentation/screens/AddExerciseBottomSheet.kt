@@ -47,7 +47,7 @@ import com.develop.traiscore.presentation.components.RIRSlider
 import com.develop.traiscore.presentation.theme.primaryWhite
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
-import com.develop.traiscore.presentation.viewmodels.NewSessionViewModel
+import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import kotlinx.coroutines.launch
 import java.util.Date
 
@@ -56,31 +56,34 @@ import java.util.Date
 fun AddExerciseBottomSheet(
     modifier: Modifier = Modifier,
     viewModel: AddExerciseViewModel = hiltViewModel(),
+    workoutEntryViewModel: WorkoutEntryViewModel = hiltViewModel(), // ✅ NUEVO
     workoutToEdit: WorkoutEntry? = null,
     isVisible: Boolean,
     onDismiss: () -> Unit,
     onSave: (WorkoutEntry) -> Unit,
     sheetState: SheetState = rememberModalBottomSheetState(
-        skipPartiallyExpanded = true // ✅ AÑADIR: Salta el estado parcial
+        skipPartiallyExpanded = true
     )
 ) {
     LaunchedEffect(isVisible) {
         println("🔍 DEBUG: isVisible = $isVisible")
         Log.d("AddExerciseSheet", "📩 isVisible cambió a $isVisible")
     }
+
     if (isVisible) {
         ModalBottomSheet(
             onDismissRequest = {
                 Log.d("AddExerciseSheet", "❌ onDismissRequest ejecutado")
                 onDismiss()
-            },            sheetState = sheetState,
+            },
+            sheetState = sheetState,
             containerColor = Color.Gray,
             contentColor = Color.White,
             modifier = modifier
-
         ) {
             AddExerciseBottomSheetContent(
                 viewModel = viewModel,
+                workoutEntryViewModel = workoutEntryViewModel, // ✅ PASAR ViewModel
                 workoutToEdit = workoutToEdit,
                 onDismiss = onDismiss,
                 onSave = onSave
@@ -92,6 +95,7 @@ fun AddExerciseBottomSheet(
 @Composable
 private fun AddExerciseBottomSheetContent(
     viewModel: AddExerciseViewModel,
+    workoutEntryViewModel: WorkoutEntryViewModel, // ✅ NUEVO
     workoutToEdit: WorkoutEntry?,
     onDismiss: () -> Unit,
     onSave: (WorkoutEntry) -> Unit
@@ -99,6 +103,7 @@ private fun AddExerciseBottomSheetContent(
     LaunchedEffect(Unit) {
         viewModel.refreshExercises()
     }
+
     val exerciseNames = viewModel.exerciseNames
     var selectedExercise by remember {
         mutableStateOf(
@@ -109,7 +114,6 @@ private fun AddExerciseBottomSheetContent(
     var exerciseId by remember { mutableStateOf(workoutToEdit?.exerciseId ?: 0) }
     var weightText by remember { mutableStateOf(workoutToEdit?.weight?.toString() ?: "") }
     var rirValue by remember { mutableStateOf(workoutToEdit?.rir ?: 2) }
-    val newSessionViewModel: NewSessionViewModel = hiltViewModel()
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
@@ -118,7 +122,6 @@ private fun AddExerciseBottomSheetContent(
     // ✅ OBTENER strings fuera del scope de corrutina
     val savedMessage = stringResource(id = R.string.add_exer_saved)
 
-    // ✅ USAR Box con Modifier correcto
     Box(modifier = Modifier.fillMaxWidth()) {
         Column(
             modifier = Modifier
@@ -176,12 +179,8 @@ private fun AddExerciseBottomSheetContent(
                     OutlinedTextField(
                         value = weightText,
                         onValueChange = { newValue ->
-                            if (newValue.length <= 6 && !newValue.startsWith("-") && !newValue.startsWith(
-                                    "."
-                                )
-                                && !newValue.contains("-") && !newValue.contains(" ") && !newValue.contains(
-                                    ".."
-                                )
+                            if (newValue.length <= 6 && !newValue.startsWith("-") && !newValue.startsWith(".")
+                                && !newValue.contains("-") && !newValue.contains(" ") && !newValue.contains("..")
                                 && !(newValue.startsWith("0") && newValue.length > 1)
                             ) {
                                 weightText = newValue
@@ -224,12 +223,8 @@ private fun AddExerciseBottomSheetContent(
                     OutlinedTextField(
                         value = repsText,
                         onValueChange = { newValue ->
-                            if (newValue.length <= 2 && !newValue.startsWith("-") && !newValue.startsWith(
-                                    "0"
-                                )
-                                && !newValue.contains("-") && !newValue.contains(".") && !newValue.contains(
-                                    " "
-                                )
+                            if (newValue.length <= 2 && !newValue.startsWith("-") && !newValue.startsWith("0")
+                                && !newValue.contains("-") && !newValue.contains(".") && !newValue.contains(" ")
                                 && !(newValue.startsWith("0") && newValue.length > 1)
                             ) {
                                 repsText = newValue
@@ -276,28 +271,44 @@ private fun AddExerciseBottomSheetContent(
             ) {
                 Button(
                     onClick = {
-                        val newWorkout = WorkoutEntry(
-                            id = workoutToEdit?.id ?: 0, // Si es nuevo, Room lo autogenera
-                            uid = workoutToEdit?.uid,
-                            exerciseId = exerciseId,
-                            title = selectedExercise,
-                            weight = weightText.toFloatOrNull() ?: 0f,
-                            series = workoutToEdit?.series ?: 0,
-                            reps = repsText.toIntOrNull() ?: 0,
-                            rir = rirValue,
-                            type = workoutToEdit?.type ?: "",
-                            timestamp = Date(),
-                            sessionId = workoutToEdit?.sessionId,
-                            sessionName = workoutToEdit?.sessionName,
-                            sessionColor = workoutToEdit?.sessionColor,
-                            isSynced = false,
-                            pendingAction = if (workoutToEdit == null) "CREATE" else "UPDATE"
-                        )
+                        // ✅ LÓGICA CORREGIDA
+                        if (workoutToEdit == null) {
+                            // NUEVO WORKOUT - usar addWorkout()
+                            val newWorkout = WorkoutEntry(
+                                id = 0, // Room lo autogenera
+                                uid = null,
+                                exerciseId = exerciseId,
+                                title = selectedExercise,
+                                weight = weightText.toFloatOrNull() ?: 0f,
+                                series = 0,
+                                reps = repsText.toIntOrNull() ?: 0,
+                                rir = rirValue,
+                                type = "",
+                                timestamp = Date(),
+                                isSynced = false,
+                                pendingAction = "CREATE"
+                            )
 
-                        onSave(newWorkout)
+                            // ✅ Guardar localmente con sesión activa
+                            workoutEntryViewModel.addWorkout(newWorkout)
+
+                        } else {
+                            // EDITAR WORKOUT existente - usar updateWorkout()
+                            val updatedWorkout = workoutToEdit.copy(
+                                title = selectedExercise,
+                                weight = weightText.toFloatOrNull() ?: 0f,
+                                reps = repsText.toIntOrNull() ?: 0,
+                                rir = rirValue,
+                                isSynced = false,
+                                pendingAction = "UPDATE"
+                            )
+
+                            workoutEntryViewModel.updateWorkout(updatedWorkout)
+                        }
+
                         scope.launch {
                             snackbarHostState.showSnackbar(
-                                message = savedMessage, // ✅ USAR string obtenido fuera de la corrutina
+                                message = savedMessage,
                                 duration = SnackbarDuration.Short
                             )
                         }
@@ -322,11 +333,9 @@ private fun AddExerciseBottomSheetContent(
                 }
             }
 
-            // Espaciado inferior para evitar que se corte con la navegación
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // ✅ SNACKBARHOST fuera de la Column, usando Alignment.BottomCenter del Box
         SnackbarHost(
             hostState = snackbarHostState,
             modifier = Modifier

@@ -19,14 +19,18 @@ class WorkoutRepository @Inject constructor(
 
     val workouts: Flow<List<WorkoutEntry>> = workoutDao.getAllWorkoutsFlow()
 
+    /** ✅ GUARDAR SOLO LOCAL - Sin sincronización inmediata */
     suspend fun addWorkout(workout: WorkoutEntry) {
         val workoutWithPending = workout.copy(
             isSynced = false,
             pendingAction = "CREATE"
         )
+        // ✅ Solo guardar en Room - Firebase se sincroniza después
         workoutDao.insertWorkout(workoutWithPending)
+        println("📝 Workout guardado localmente (ID: ${workoutWithPending.id})")
     }
 
+    /** ✅ ACTUALIZAR SOLO LOCAL */
     suspend fun updateWorkout(workout: WorkoutEntry) {
         workoutDao.updateWorkout(
             workout.copy(
@@ -34,9 +38,20 @@ class WorkoutRepository @Inject constructor(
                 pendingAction = "UPDATE"
             )
         )
+        println("✏️ Workout actualizado localmente (ID: ${workout.id})")
     }
+
+    /** ✅ IMPORTAR desde Firebase (solo al inicio) */
     suspend fun importWorkoutsFromFirebaseToRoom() {
         val userId = auth.currentUser?.uid ?: return
+
+        // Verificar si ya hay datos locales
+        val localCount = workoutDao.getAllWorkoutsWithExercise().size
+        if (localCount > 0) {
+            println("📦 Ya hay $localCount workouts locales, saltando importación")
+            return
+        }
+
         val snapshot = firestore.collection("users")
             .document(userId)
             .collection("workoutEntries")
@@ -72,53 +87,77 @@ class WorkoutRepository @Inject constructor(
         workoutDao.insertWorkouts(workouts)
         println("✅ Importadas ${workouts.size} entradas desde Firebase a Room")
     }
-    suspend fun removeWorkout(workout: WorkoutEntry) {
-        // ✅ Eliminar directamente de Room
-        workoutDao.deleteWorkout(workout)
 
+    /** ✅ ELIMINAR SOLO LOCAL */
+    suspend fun removeWorkout(workout: WorkoutEntry) {
+        workoutDao.deleteWorkout(workout)
+        println("🗑️ Workout eliminado localmente (ID: ${workout.id})")
     }
 
+    /** 🔄 SINCRONIZACIÓN MANUAL - Se llamará 1 vez al día */
     suspend fun syncPendingWorkouts() {
         val userId = auth.currentUser?.uid ?: return
-        val unsynced = workoutDao.getAllWorkoutsWithExercise() // o getUnsyncedWorkouts()
+        val unsynced = workoutDao.getAllWorkoutsWithExercise()
+            .filter { !it.workout.isSynced }
 
-        unsynced.forEach { workout ->
+        println("🔄 Sincronizando ${unsynced.size} workouts pendientes...")
+
+        unsynced.forEach { workoutWithExercise ->
+            val workout = workoutWithExercise.workout
             try {
-                when (workout.workout.pendingAction) {
+                when (workout.pendingAction) {
                     "CREATE", "UPDATE" -> {
                         val data = hashMapOf(
-                            "id" to workout.workout.id,
-                            "exerciseId" to workout.workout.exerciseId,
-                            "title" to workout.workout.title,
-                            "weight" to workout.workout.weight,
-                            "series" to workout.workout.series,
-                            "reps" to workout.workout.reps,
-                            "rir" to workout.workout.rir,
-                            "timestamp" to workout.workout.timestamp
+                            "title" to workout.title,
+                            "weight" to workout.weight,
+                            "series" to workout.series,
+                            "reps" to workout.reps,
+                            "rir" to workout.rir,
+                            "timestamp" to workout.timestamp,
+                            "sessionId" to workout.sessionId,
+                            "sessionName" to workout.sessionName,
+                            "sessionColor" to workout.sessionColor
                         )
+
+                        // ✅ Usar UID de Firebase si existe, sino crear nuevo
+                        val docId = workout.uid ?: "workout_${System.currentTimeMillis()}_${workout.id}"
+
                         firestore.collection("users")
                             .document(userId)
-                            .collection("workouts")
-                            .document(workout.workout.id.toString())
+                            .collection("workoutEntries")
+                            .document(docId)
                             .set(data)
                             .await()
+
+                        // Actualizar con el UID de Firebase
+                        workoutDao.updateWorkout(
+                            workout.copy(
+                                uid = docId,
+                                isSynced = true,
+                                pendingAction = null
+                            )
+                        )
+                        println("✅ Workout ${workout.id} sincronizado")
                     }
+
                     "DELETE" -> {
-                        firestore.collection("users")
-                            .document(userId)
-                            .collection("workouts")
-                            .document(workout.workout.id.toString())
-                            .delete()
-                            .await()
-                        workoutDao.deleteWorkout(workout.workout)
+                        workout.uid?.let { firebaseId ->
+                            firestore.collection("users")
+                                .document(userId)
+                                .collection("workoutEntries")
+                                .document(firebaseId)
+                                .delete()
+                                .await()
+                        }
+                        workoutDao.deleteWorkout(workout)
+                        println("🗑️ Workout ${workout.id} eliminado de Firebase")
                     }
                 }
-                workoutDao.updateWorkout(
-                    workout.workout.copy(isSynced = true, pendingAction = null)
-                )
             } catch (e: Exception) {
-                println("Error sincronizando workout ${workout.workout.id}: ${e.message}")
+                println("❌ Error sincronizando workout ${workout.id}: ${e.message}")
             }
         }
+
+        println("✅ Sincronización completada")
     }
 }
