@@ -69,7 +69,7 @@ fun ExercisesScreen(
     val entries = viewModel.entries.collectAsState().value
     val showBottomSheet = remember { mutableStateOf(false) }
     val selectedEntry = remember { mutableStateOf<WorkoutEntry?>(null) }
-    val groupedEntries = viewModel.groupWorkoutsByDate(entries)
+    val groupedEntries = viewModel.groupedByDate.collectAsState().value
     val showSearchBar = remember { mutableStateOf(false) }
     val selectedSearch = remember { mutableStateOf("") }
     val context = LocalContext.current

@@ -161,7 +161,13 @@ fun TodayViewScreen(
                     )
                 }
 
-                items(availableSessions) { session ->
+                items(
+                    items = availableSessions,
+                    key = { session ->
+                        (session["sessionId"] as? String) ?: ""
+                    }
+                ) { session ->
+
                     val sessionName = session["name"] as? String ?: "Sesión"
                     val sessionColor = session["color"] as? String ?: "#355E58"
                     val sessionId = session["sessionId"] as? String ?: ""

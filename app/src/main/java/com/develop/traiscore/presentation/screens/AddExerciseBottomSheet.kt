@@ -291,6 +291,8 @@ private fun AddExerciseBottomSheetContent(
 
                             // ✅ Guardar localmente con sesión activa
                             workoutEntryViewModel.addWorkout(newWorkout)
+                            viewModel.setLastUsedExercise(selectedExercise)
+
 
                         } else {
                             // EDITAR WORKOUT existente - usar updateWorkout()

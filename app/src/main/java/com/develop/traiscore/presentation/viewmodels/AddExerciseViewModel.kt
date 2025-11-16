@@ -87,6 +87,9 @@ class AddExerciseViewModel @Inject constructor(
 
         loadAllExercises()
     }
+    fun setLastUsedExercise(name: String) {
+        _lastUsedExerciseName.value = name
+    }
     fun deleteUserExercise(
         documentId: String,
         onComplete: (Boolean, String?) -> Unit

@@ -97,6 +97,11 @@ class StatScreenViewModel @Inject constructor(
     private val _currentMonthTrainingDays = MutableStateFlow(0)
     val currentMonthTrainingDays: StateFlow<Int> = _currentMonthTrainingDays
 
+    private val _bestWeight = MutableStateFlow(0f)
+    val bestWeight: StateFlow<Float> = _bestWeight
+
+    private val _percentOfRm = MutableStateFlow(0f)
+    val percentOfRm: StateFlow<Float> = _percentOfRm
 
 
     fun getCurrentMonthTrainingDays(): Int {
@@ -424,8 +429,44 @@ class StatScreenViewModel @Inject constructor(
         _rirProgress.value = rirData
 
         // Calcular datos circulares (máximos y promedio)
-        val oneRm = wData.maxOfOrNull { it.second } ?: 0f
-        val maxRp = rData.maxOfOrNull { it.second }?.toInt() ?: 0
+        val oneRm = sorted.maxOfOrNull { entry ->
+
+            val weight = entry.weight
+            val reps = entry.reps
+            val rir = entry.rir ?: 0
+
+            // === Fórmulas clásicas ===
+            val epley = weight * (1 + reps / 30f)
+            val brzycki = if (reps < 36) weight * (36f / (37f - reps)) else epley
+
+            val rmRaw = (epley + brzycki) / 2f
+
+            // === Ajuste por RIR ===
+            val rirFactor = when (rir) {
+                0 -> 1.00f  // fallo
+                1 -> 0.97f
+                2 -> 0.94f
+                3 -> 0.92f
+                else -> 0.90f // lejos del fallo
+            }
+
+            rmRaw * rirFactor
+
+        } ?: 0f
+
+        val bestWeightValue = sorted.maxOfOrNull { it.weight } ?: 0f
+        _bestWeight.value = bestWeightValue
+
+// ⭐ Intensidad relativa (%1RM)
+        val percent = if (oneRm > 0f) bestWeightValue / oneRm else 0f
+        _percentOfRm.value = percent
+
+// ⭐ MR: reps totales posibles
+        val maxRp = sorted.maxOfOrNull { entry ->
+            entry.reps + (entry.rir ?: 0)
+        } ?: 0
+
+// ⭐ RIR promedio
         val avgRir = if (allRir.isNotEmpty()) allRir.average().roundToInt() else 0
 
         _circularData.value = Triple(oneRm, maxRp, avgRir)

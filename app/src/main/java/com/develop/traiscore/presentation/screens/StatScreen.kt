@@ -47,7 +47,11 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -93,7 +97,8 @@ fun StatScreen(
     val rirData by viewModel.rirProgress.collectAsState()
     val (oneRepMax, maxReps, averageRIR) = circularData
     val weightByReps = weightData
-
+    val bestWeight by viewModel.bestWeight.collectAsState()
+    val percentOfRm by viewModel.percentOfRm.collectAsState()
     var bodyMeasurementData by remember { mutableStateOf<BodyMeasurementProgressData?>(null) }
     var availableBodyMetrics by remember { mutableStateOf<List<BodyMeasurementType>>(emptyList()) }
     var selectedBodyMetric by remember { mutableStateOf<BodyMeasurementType?>(null) }
@@ -327,15 +332,28 @@ fun StatScreen(
                                             modifier = Modifier.padding(8.dp)
                                         ) {
                                             Text(
-                                                text = "MR: $maxReps",
+                                                text = buildAnnotatedString {
+                                                    // Aplica un estilo solo al símbolo 'Φ'
+                                                    withStyle(
+                                                        style = SpanStyle(
+                                                            fontSize = 18.sp, // Hazlo significativamente más grande
+                                                            fontWeight = FontWeight.Bold // Opcional: para darle más énfasis
+                                                        )
+                                                    ) {
+                                                        append("Φ")
+                                                    }
+
+                                                    // El resto del texto hereda el estilo del componente Text (bodyLarge)
+                                                    append(": ${(percentOfRm * 100).toInt()}% ")
+                                                },
                                                 style = MaterialTheme.typography.bodyLarge,
-                                                color = traiBlue
+                                                color = traiBlue// Usa tu color 'traiBlue' real aquí
                                             )
-                                            Spacer(modifier = Modifier.height(8.dp))
+                                            Spacer(modifier = Modifier.height(7.7.dp))
 
                                             CircularProgressView(
-                                                progress = (maxReps / 15f).coerceIn(0f, 1f),
-                                                maxLabel = "$maxReps reps",
+                                                progress = percentOfRm.coerceIn(0f, 1f),
+                                                maxLabel = "${"%.1f".format(bestWeight)}kg",
                                                 modifier = Modifier.size(80.dp),
                                                 strokeColor = Color.Cyan,
                                                 backgroundColor = traiOrange

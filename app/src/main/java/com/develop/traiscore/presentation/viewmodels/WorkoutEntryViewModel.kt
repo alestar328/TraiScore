@@ -11,6 +11,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -30,6 +31,7 @@ class WorkoutEntryViewModel @Inject constructor(
     private val workoutRepository: WorkoutRepository,
     private val sessionRepository: SessionRepository
 ) : ViewModel() {
+
 
     private val _entries = mutableStateOf<List<WorkoutEntry>>(emptyList())
     val entries: StateFlow<List<WorkoutEntry>> = workoutRepository.workouts
@@ -65,6 +67,9 @@ class WorkoutEntryViewModel @Inject constructor(
             }
         }
     }
+    val groupedByDate: StateFlow<Map<String, List<WorkoutEntry>>> =
+        entries.map { list -> groupWorkoutsByDate(list) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
 
     fun addWorkout(workout: WorkoutEntry) {
         viewModelScope.launch {

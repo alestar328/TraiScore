@@ -187,7 +187,10 @@ fun CalendarScreen(
         ) {
             if (selectedDaySessions.isNotEmpty()) {
                 // Mostrar por sesiones
-                items(selectedDaySessions) { session ->
+                items( items = selectedDaySessions,
+                    key = { session -> session.sessionId }
+                ) {
+                    session ->
                     SessionDayCard(
                         session = session,
                         onEditClick = onEditClick,
@@ -422,7 +425,9 @@ fun HorizontalDaysScrollCompat(
         horizontalArrangement = Arrangement.spacedBy(0.dp),
         contentPadding = PaddingValues(horizontal = 0.dp)
     ) {
-        items(daysInMonth) { dayInfo ->
+        items( items = daysInMonth,
+            key = { dayInfo -> dayInfo.dateKey }
+        ) { dayInfo ->
             DayCardCompat(
                 dayInfo = dayInfo,
                 isSelected = selectedDate.value == dayInfo.dateKey,
