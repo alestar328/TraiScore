@@ -42,10 +42,8 @@ import androidx.navigation.NavController
 import com.develop.traiscore.R
 import com.develop.traiscore.data.firebaseData.calculateTodayDataAndNavigate
 import com.develop.traiscore.data.local.entity.ExerciseEntity
-import com.develop.traiscore.domain.model.WorkoutModel
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.data.local.entity.WorkoutWithExercise
-import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.components.WorkoutCard
 import com.develop.traiscore.presentation.components.general.DeleteConfirmationDialog
@@ -57,7 +55,6 @@ import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import java.util.Date
 import com.develop.traiscore.presentation.viewmodels.ViewMode
 import com.develop.traiscore.presentation.viewmodels.ViewModeSelector
-import java.time.YearMonth
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalAnimationApi::class)
 @Composable

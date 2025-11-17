@@ -62,8 +62,7 @@ class NewSessionViewModel @Inject constructor(
         checkForActiveSession()
         // NUEVO: Cargar sesiones disponibles al iniciar
         loadAvailableSessions()
-        // NUEVO: Sincronizar en background al iniciar
-        syncInBackground()
+
     }
 
     // NUEVO: Función para sincronizar en background
@@ -175,17 +174,36 @@ class NewSessionViewModel @Inject constructor(
     fun loadAvailableSessions() {
         viewModelScope.launch {
             try {
-                println("🔍 Sincronizando y cargando sesiones disponibles...")
-                sessionRepository.syncPendingSessions() // 🔁 fuerza sincronización desde Firebase
+                println("🔍 Cargando sesiones disponibles...")
 
+                // PRIMERO: Cargar sesiones locales siempre
                 val sessions = sessionRepository.getUserAvailableSessions()
                 _availableSessions.value = sessions
                 _hasSessionsLoaded.value = true
+                println("✅ ${sessions.size} sesiones cargadas desde local")
 
-                println("✅ ${sessions.size} sesiones sincronizadas y cargadas")
+                // DESPUÉS: Intentar sincronizar en background si hay red
+                try {
+                    sessionRepository.syncPendingSessions()
+                    // Recargar después de sincronizar
+                    val updatedSessions = sessionRepository.getUserAvailableSessions()
+                    _availableSessions.value = updatedSessions
+                    println("✅ Sesiones sincronizadas con Firebase")
+                } catch (syncError: Exception) {
+                    // No es crítico si falla la sincronización
+                    println("⚠️ No se pudo sincronizar con Firebase: ${syncError.message}")
+                }
+
             } catch (e: Exception) {
                 println("❌ Error al cargar sesiones: ${e.message}")
                 _error.value = "Error al cargar sesiones: ${e.message}"
+                // Intentar cargar al menos las locales
+                try {
+                    val localSessions = sessionRepository.getUserAvailableSessionsOffline()
+                    _availableSessions.value = localSessions
+                } catch (localError: Exception) {
+                    _availableSessions.value = emptyList()
+                }
             }
         }
     }

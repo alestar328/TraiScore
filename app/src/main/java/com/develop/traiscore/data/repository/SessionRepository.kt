@@ -108,34 +108,12 @@ class SessionRepository @Inject constructor(
     }
 
 
-    suspend fun getUserAvailableSessions(): List<Map<String, Any>> {
+    // Nuevo método para cargar solo desde local
+    suspend fun getUserAvailableSessionsOffline(): List<Map<String, Any>> {
         return try {
             val userId = auth.currentUser?.uid ?: return emptyList()
-
-            // Primero obtener de la base de datos local
             val localSessions = sessionDao.getAvailableSessionsList(userId)
 
-            // Si no hay datos locales y hay red, sincronizar desde Firebase
-            if (localSessions.isEmpty() && isNetworkAvailable()) {
-                syncFromFirebase()
-                // Volver a obtener después de sincronizar
-                return sessionDao.getAvailableSessionsList(userId).map { session ->
-                    mapOf(
-                        "sessionId" to session.sessionId,
-                        "name" to session.name,
-                        "color" to session.color,
-                        "createdAt" to session.createdAt,
-                        "isActive" to session.isActive
-                    )
-                }
-            }
-
-            // Sincronizar en background si hay red (no bloquear)
-            if (isNetworkAvailable()) {
-                syncPendingSessions()
-            }
-
-            // Convertir a formato esperado
             localSessions.map { session ->
                 mapOf(
                     "sessionId" to session.sessionId,
@@ -145,7 +123,42 @@ class SessionRepository @Inject constructor(
                     "isActive" to session.isActive
                 )
             }
+        } catch (e: Exception) {
+            println("❌ Error obteniendo sesiones offline: ${e.message}")
+            emptyList()
+        }
+    }
 
+    // Modificar getUserAvailableSessions para ser más robusto
+    suspend fun getUserAvailableSessions(): List<Map<String, Any>> {
+        return try {
+            val userId = auth.currentUser?.uid ?: return emptyList()
+
+            // SIEMPRE obtener primero de la base de datos local
+            val localSessions = sessionDao.getAvailableSessionsList(userId)
+
+            // Solo intentar sincronizar si hay red Y es necesario
+            if (isNetworkAvailable()) {
+                try {
+                    // Sincronizar pero no bloquear si falla
+                    syncFromFirebase()
+                } catch (e: Exception) {
+                    println("⚠️ No se pudo sincronizar desde Firebase: ${e.message}")
+                }
+            }
+
+            // Siempre retornar las sesiones locales (actualizadas o no)
+            val finalSessions = sessionDao.getAvailableSessionsList(userId)
+
+            finalSessions.map { session ->
+                mapOf(
+                    "sessionId" to session.sessionId,
+                    "name" to session.name,
+                    "color" to session.color,
+                    "createdAt" to session.createdAt,
+                    "isActive" to session.isActive
+                )
+            }
         } catch (e: Exception) {
             println("❌ Error obteniendo sesiones disponibles: ${e.message}")
             emptyList()
@@ -505,9 +518,13 @@ class SessionRepository @Inject constructor(
         }
     }
     suspend fun syncPendingSessions() {
-        if (!isNetworkAvailable()) return
-
         try {
+        if (!isNetworkAvailable()) {
+            println("⚠️ Sin conexión a internet, trabajando offline")
+            return
+        }
+
+
             val userId = auth.currentUser?.uid ?: return
             val unsyncedSessions = sessionDao.getUnsyncedSessions()
 

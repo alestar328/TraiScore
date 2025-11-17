@@ -1,5 +1,8 @@
 package com.develop.traiscore.presentation.screens
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -8,16 +11,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.R
 import com.develop.traiscore.data.local.entity.WorkoutEntry
@@ -56,8 +62,20 @@ fun TodayViewScreen(
     val isLoading by sessionViewModel.isLoading.collectAsState()
     val error by sessionViewModel.error.collectAsState()
     val availableSessions by sessionViewModel.availableSessions.collectAsState()
-
+    val isSyncing by sessionViewModel.isSyncing.collectAsState()
     var showEndSessionDialog by remember { mutableStateOf(false) }
+
+    // ✅ NUEVO: Estado de conexión
+    val context = LocalContext.current
+    val isOffline = remember { mutableStateOf(!isNetworkAvailable(context)) }
+
+    // ✅ NUEVO: Verificar conexión periódicamente
+    LaunchedEffect(Unit) {
+        while (true) {
+            isOffline.value = !isNetworkAvailable(context)
+            kotlinx.coroutines.delay(5000) // Verificar cada 5 segundos
+        }
+    }
 
     // ✅ USAR sessionWorkouts agrupados del ViewModel
     val todaySessions = remember(sessionWorkouts, todayFormatted) {
@@ -74,12 +92,14 @@ fun TodayViewScreen(
     }
 
     // ✅ DEBUG - Ver datos
-    LaunchedEffect(todayFormatted, sessionWorkouts) {
+    LaunchedEffect(todayFormatted, sessionWorkouts, availableSessions) {
         println("🔍 DEBUG TodayViewScreen:")
         println("   todayFormatted: $todayFormatted")
         println("   sessionWorkouts keys: ${sessionWorkouts.keys.joinToString()}")
         println("   todaySessions: ${todaySessions.size}")
         println("   todayWorkouts: ${todayWorkouts.size}")
+        println("   availableSessions: ${availableSessions.size}")
+        println("   isOffline: ${isOffline.value}")
     }
 
     LaunchedEffect(Unit) {
@@ -114,7 +134,58 @@ fun TodayViewScreen(
             onEndSession = { showEndSessionDialog = true }
         )
 
-        if (isLoading) {
+        // ✅ NUEVO: Indicador de modo offline
+        if (isOffline.value) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = Color(0xFFFFF3CD) // Color amarillo claro
+                ),
+                shape = RoundedCornerShape(8.dp)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(12.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Sin conexión",
+                        tint = Color(0xFF856404), // Color amarillo oscuro
+                        modifier = Modifier.size(20.dp)
+                    )
+
+                    Text(
+                        text = "Modo offline - Los datos se sincronizarán cuando haya conexión",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = Color(0xFF856404),
+                        modifier = Modifier.weight(1f)
+                    )
+
+                    if (isSyncing) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(16.dp),
+                            strokeWidth = 2.dp,
+                            color = Color(0xFF856404)
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(4.dp))
+        }
+
+        // ✅ NUEVO: Indicador de sincronización cuando hay conexión
+        if (!isOffline.value && isSyncing) {
+            LinearProgressIndicator(
+                modifier = Modifier.fillMaxWidth(),
+                color = MaterialTheme.tsColors.ledCyan
+            )
+        } else if (isLoading) {
             LinearProgressIndicator(
                 modifier = Modifier.fillMaxWidth(),
                 color = MaterialTheme.tsColors.ledCyan
@@ -147,18 +218,34 @@ fun TodayViewScreen(
         // ✅ Lista principal reactiva
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            contentPadding = PaddingValues(bottom = 16.dp)
         ) {
             // Sesiones disponibles (solo si no hay sesión activa)
             if (availableSessions.isNotEmpty() && !hasActiveSession) {
                 item {
-                    Text(
-                        text = stringResource(id = R.string.exer_screen_my_sessions),
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.onBackground,
-                        fontWeight = FontWeight.SemiBold,
-                        modifier = Modifier.padding(bottom = 8.dp)
-                    )
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(id = R.string.exer_screen_my_sessions),
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            fontWeight = FontWeight.SemiBold
+                        )
+
+                        // ✅ NUEVO: Contador de sesiones
+                        Text(
+                            text = "${availableSessions.size}/10",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f),
+                            fontSize = 12.sp
+                        )
+                    }
                 }
 
                 items(
@@ -167,7 +254,6 @@ fun TodayViewScreen(
                         (session["sessionId"] as? String) ?: ""
                     }
                 ) { session ->
-
                     val sessionName = session["name"] as? String ?: "Sesión"
                     val sessionColor = session["color"] as? String ?: "#355E58"
                     val sessionId = session["sessionId"] as? String ?: ""
@@ -177,7 +263,9 @@ fun TodayViewScreen(
                         accent = hexToColor(sessionColor),
                         sessionId = sessionId,
                         onClick = {
-                            sessionViewModel.activateSession(sessionId)
+                            if (!isOffline.value || true) { // Permitir activar incluso offline
+                                sessionViewModel.activateSession(sessionId)
+                            }
                         },
                         onDelete = { id ->
                             sessionViewModel.deleteSession(id)
@@ -207,7 +295,7 @@ fun TodayViewScreen(
                         )
                     }
                 }
-            } else if (!hasActiveSession && availableSessions.isEmpty()) {
+            } else if (!hasActiveSession && availableSessions.isEmpty() && !isLoading) {
                 item {
                     EmptyTodayState(
                         viewModel = sessionViewModel,
@@ -225,7 +313,7 @@ fun TodayViewScreen(
             title = { Text(stringResource(id = R.string.today_end_session)) },
             text = {
                 Text(
-                    stringResource(id = R.string.today_closing_message) + "${activeSession?.name ?: ""}\"?\n\n" +
+                    stringResource(id = R.string.today_closing_message) + " \"${activeSession?.name ?: ""}\"?\n\n" +
                             stringResource(id = R.string.today_closing_message2)
                 )
             },
@@ -247,6 +335,14 @@ fun TodayViewScreen(
             }
         )
     }
+}
+
+// ✅ NUEVO: Función helper para verificar conexión
+private fun isNetworkAvailable(context: Context): Boolean {
+    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+    val network = connectivityManager.activeNetwork
+    val capabilities = connectivityManager.getNetworkCapabilities(network)
+    return capabilities?.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET) == true
 }
 
 // ⭐ COMPONENTE SEPARADO para el header inteligente

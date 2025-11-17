@@ -39,11 +39,14 @@ fun YearViewScreen(
         }
     }
 
-    // ✅ Convertir fechas de groupedEntries a formato yyyy-MM-dd usando Calendar
+    // ✅ FIX: Usar el mismo formato que WorkoutEntryViewModel
     val workoutDates = remember(groupedEntries) {
-        val formatter = SimpleDateFormat("dd MMM yyyy", Locale.getDefault())
+        // CAMBIO CLAVE: usar el formato correcto "dd/MM/yyyy"
+        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
+
         groupedEntries.keys.mapNotNull { dateString ->
             try {
+                // El dateString ya viene en formato "dd/MM/yyyy"
                 val date = formatter.parse(dateString)
                 date?.let {
                     val calendar = Calendar.getInstance()
@@ -56,9 +59,12 @@ fun YearViewScreen(
                     )
                 }
             } catch (e: Exception) {
+                println("❌ Error parseando fecha: $dateString - ${e.message}")
                 null
             }
-        }.toSet()
+        }.toSet().also {
+            println("📅 YearViewScreen - Fechas procesadas: ${it.size} días con entrenamientos")
+        }
     }
 
     Column(
@@ -122,6 +128,10 @@ private fun MonthCardCompat(
     val workoutDaysInMonth = remember(daysInMonth, workoutDates) {
         daysInMonth.filter { dateString ->
             workoutDates.contains(dateString)
+        }.also { matchingDays ->
+            if (matchingDays.isNotEmpty()) {
+                println("📅 ${monthName}: ${matchingDays.size} días con entrenamientos")
+            }
         }
     }
 
