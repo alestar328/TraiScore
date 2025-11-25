@@ -155,14 +155,7 @@ fun StatScreen(
             }
         }
     }
-    LaunchedEffect(Unit) {
-        addExerciseViewModel.onExerciseAdded.collect {
-            println("🔄 Refrescando datos de estadísticas tras nuevo ejercicio")
-            viewModel.loadRadarChartData()
-            viewModel.calculateCurrentMonthTrainingDays()
-            viewModel.onExerciseSelected(viewModel.selectedExercise.value ?: "")
-        }
-    }
+
     LaunchedEffect(selectedBodyMetric, bodyMeasurementData) {
         selectedBodyMetric?.let { metric ->
             bodyMeasurementData?.let { data ->

@@ -19,10 +19,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -108,48 +108,58 @@ class StatScreenViewModel @Inject constructor(
         return _currentMonthTrainingDays.value
     }
     init {
+        // ✅ BLOQUE INICIAL (ya lo tienes)
         viewModelScope.launch {
-            // Inicializar con el usuario actual si no se especifica otro
             if (_targetUserId.value == null) {
                 _targetUserId.value = FirebaseAuth.getInstance().currentUser?.uid
             }
-
-            // Cargar ejercicios primero
             fetchExerciseOptions()
             loadRadarChartData()
             calculateCurrentMonthTrainingDays()
-            // Esperar a que se carguen los ejercicios antes de seleccionar el último
             _exerciseOptions
                 .filter { it.isNotEmpty() }
-                .take(1) // Solo la primera emisión con datos
+                .take(1)
                 .collect {
                     fetchLastWorkoutEntry()
                 }
         }
 
-        // Observar cambios en ejercicio seleccionado
+        // ✅ BLOQUE 1 (ya lo tienes)
         viewModelScope.launch {
             _selectedExercise
                 .filterNotNull()
                 .distinctUntilChanged()
                 .collect { exercise ->
-                    // Ejecutar en paralelo para mejor performance
                     launch { loadAllProgressFor(exercise) }
                     launch { calculateTotalWeightLifted(exercise) }
+                }
+        }
+
+        // 🆕 BLOQUE 2 (AÑADIR ESTE)
+        viewModelScope.launch {
+            workoutRepository.workouts
+                .collect { allWorkouts ->
+                    val currentExercise = _selectedExercise.value
+                    if (currentExercise != null) {
+                        Log.d("StatsVM", "🔄 Detectados ${allWorkouts.size} workouts - Refrescando $currentExercise")
+                        val entries = allWorkouts.filter { it.title == currentExercise }
+                        processLocalWorkoutData(entries)
+                    }
                 }
         }
     }
     fun calculateCurrentMonthTrainingDays() {
         viewModelScope.launch {
-            workoutRepository.workouts.collect { allWorkouts ->
+            try {
+                // ✅ Usar first() en lugar de collect
+                val allWorkouts = workoutRepository.workouts.first()
+
                 if (allWorkouts.isEmpty()) {
                     _currentMonthTrainingDays.value = 0
-                    return@collect
+                    return@launch
                 }
 
                 val calendar = Calendar.getInstance()
-
-                // Primer día del mes
                 calendar.set(Calendar.DAY_OF_MONTH, 1)
                 calendar.set(Calendar.HOUR_OF_DAY, 0)
                 calendar.set(Calendar.MINUTE, 0)
@@ -157,7 +167,6 @@ class StatScreenViewModel @Inject constructor(
                 calendar.set(Calendar.MILLISECOND, 0)
                 val startOfMonth = calendar.time
 
-                // Último día del mes
                 calendar.add(Calendar.MONTH, 1)
                 calendar.set(Calendar.DAY_OF_MONTH, 1)
                 calendar.add(Calendar.DATE, -1)
@@ -167,7 +176,6 @@ class StatScreenViewModel @Inject constructor(
                 calendar.set(Calendar.MILLISECOND, 999)
                 val endOfMonth = calendar.time
 
-                // Filtramos las fechas únicas dentro del mes actual
                 val trainingDays = allWorkouts.mapNotNull { entry ->
                     entry.timestamp.takeIf { it.after(startOfMonth) && it.before(endOfMonth) }?.let {
                         val c = Calendar.getInstance().apply { time = it }
@@ -176,30 +184,32 @@ class StatScreenViewModel @Inject constructor(
                 }.toSet().size
 
                 _currentMonthTrainingDays.value = trainingDays
-                Log.d("StatsVM", "📅 Días únicos de entrenamiento local: $trainingDays")
+                Log.d("StatsVM", "📅 Días únicos de entrenamiento: $trainingDays")
+            } catch (e: Exception) {
+                Log.e("StatsVM", "Error calculando días de entrenamiento", e)
+                _currentMonthTrainingDays.value = 0
             }
         }
     }
     fun calculateSocialShareData(callback: (SocialShareData?) -> Unit) {
         viewModelScope.launch {
-            workoutRepository.workouts.collect { allWorkouts ->
+            try {
+                // ✅ Usar first() en lugar de collect
+                val allWorkouts = workoutRepository.workouts.first()
+
                 if (allWorkouts.isEmpty()) {
-                    callback(
-                        SocialShareData(
-                            topExercise = context.getString(R.string.filter_no_main_exercise),
-                            maxRepsExercise = context.getString(R.string.filter_no_max_reps),
-                            topWeight = 0f,
-                            maxReps = 0,
-                            totalWeight = 0.0,
-                            trainingDays = _currentMonthTrainingDays.value
-                        )
-                    )
-                    return@collect
+                    callback(SocialShareData(
+                        topExercise = context.getString(R.string.filter_no_main_exercise),
+                        maxRepsExercise = context.getString(R.string.filter_no_max_reps),
+                        topWeight = 0f,
+                        maxReps = 0,
+                        totalWeight = 0.0,
+                        trainingDays = _currentMonthTrainingDays.value
+                    ))
+                    return@launch
                 }
 
-                // Calcular rango del día actual
                 val calendar = Calendar.getInstance()
-
                 calendar.set(Calendar.HOUR_OF_DAY, 0)
                 calendar.set(Calendar.MINUTE, 0)
                 calendar.set(Calendar.SECOND, 0)
@@ -212,20 +222,20 @@ class StatScreenViewModel @Inject constructor(
                 calendar.set(Calendar.MILLISECOND, 999)
                 val endOfDay = calendar.time
 
-                val todayEntries = allWorkouts.filter { it.timestamp.after(startOfDay) && it.timestamp.before(endOfDay) }
+                val todayEntries = allWorkouts.filter {
+                    it.timestamp.after(startOfDay) && it.timestamp.before(endOfDay)
+                }
 
                 if (todayEntries.isEmpty()) {
-                    callback(
-                        SocialShareData(
-                            topExercise = context.getString(R.string.filter_no_main_exercise),
-                            maxRepsExercise = context.getString(R.string.filter_no_max_reps),
-                            topWeight = 0f,
-                            maxReps = 0,
-                            totalWeight = 0.0,
-                            trainingDays = _currentMonthTrainingDays.value
-                        )
-                    )
-                    return@collect
+                    callback(SocialShareData(
+                        topExercise = context.getString(R.string.filter_no_main_exercise),
+                        maxRepsExercise = context.getString(R.string.filter_no_max_reps),
+                        topWeight = 0f,
+                        maxReps = 0,
+                        totalWeight = 0.0,
+                        trainingDays = _currentMonthTrainingDays.value
+                    ))
+                    return@launch
                 }
 
                 var topExercise = ""
@@ -246,16 +256,17 @@ class StatScreenViewModel @Inject constructor(
                     totalWeight += entry.weight
                 }
 
-                callback(
-                    SocialShareData(
-                        topExercise = topExercise,
-                        maxRepsExercise = maxRepsExercise,
-                        topWeight = topWeight,
-                        maxReps = maxReps,
-                        totalWeight = totalWeight,
-                        trainingDays = _currentMonthTrainingDays.value
-                    )
-                )
+                callback(SocialShareData(
+                    topExercise = topExercise,
+                    maxRepsExercise = maxRepsExercise,
+                    topWeight = topWeight,
+                    maxReps = maxReps,
+                    totalWeight = totalWeight,
+                    trainingDays = _currentMonthTrainingDays.value
+                ))
+            } catch (e: Exception) {
+                Log.e("StatsVM", "Error calculando social share data", e)
+                callback(null)
             }
         }
     }
@@ -265,30 +276,27 @@ class StatScreenViewModel @Inject constructor(
         _isLoadingRadarData.value = true
         viewModelScope.launch {
             try {
-                workoutRepository.workouts.collect { allWorkouts ->
-                    if (allWorkouts.isEmpty()) {
-                        _radarChartData.value =
-                            ExerciseProgressCalculator.generateRadarChartData(emptyList())
-                        _isLoadingRadarData.value = false
-                        return@collect
-                    }
+                // ✅ Usar first() para obtener datos una vez
+                val allWorkouts = workoutRepository.workouts.first()
 
-                    Log.d("StatsVM", "📊 ${allWorkouts.size} workouts obtenidos del almacenamiento local")
-
-                    // Agrupar por ejercicio
-                    val uniqueExercises = allWorkouts.map { it.title }.distinct()
-                    val progressDataList = uniqueExercises.map { name ->
-                        ExerciseProgressCalculator.calculateProgressScore(allWorkouts, name)
-                    }
-
-                    _radarChartData.value =
-                        ExerciseProgressCalculator.generateRadarChartData(progressDataList)
+                if (allWorkouts.isEmpty()) {
+                    _radarChartData.value = ExerciseProgressCalculator.generateRadarChartData(emptyList())
                     _isLoadingRadarData.value = false
+                    return@launch
                 }
+
+                Log.d("StatsVM", "📊 ${allWorkouts.size} workouts obtenidos del almacenamiento local")
+
+                val uniqueExercises = allWorkouts.map { it.title }.distinct()
+                val progressDataList = uniqueExercises.map { name ->
+                    ExerciseProgressCalculator.calculateProgressScore(allWorkouts, name)
+                }
+
+                _radarChartData.value = ExerciseProgressCalculator.generateRadarChartData(progressDataList)
+                _isLoadingRadarData.value = false
             } catch (e: Exception) {
                 Log.e("StatsVM", "Error cargando radar chart local", e)
-                _radarChartData.value =
-                    ExerciseProgressCalculator.generateRadarChartData(emptyList())
+                _radarChartData.value = ExerciseProgressCalculator.generateRadarChartData(emptyList())
                 _isLoadingRadarData.value = false
             }
         }
@@ -376,16 +384,46 @@ class StatScreenViewModel @Inject constructor(
     }
 
     private fun fetchExerciseOptions() {
-        // Queremos tanto logging como un posible estado de error en UI
+        val currentUser = FirebaseAuth.getInstance().currentUser
+        if (currentUser == null) {
+            Log.e("StatsVM", "❌ Usuario no autenticado")
+            return
+        }
+
+        val userId = currentUser.uid
+        val allExercises = mutableListOf<String>()
+
+        // 🔧 PASO 1: Cargar ejercicios globales
         db.collection("exercises")
             .orderBy("name", Query.Direction.ASCENDING)
             .get()
-            .addOnSuccessListener { snap ->
-                _exerciseOptions.value = snap.documents
-                    .mapNotNull { it.getString("name") }
+            .addOnSuccessListener { globalSnapshot ->
+                val defaultExercises = globalSnapshot.documents.mapNotNull { it.getString("name") }
+                allExercises.addAll(defaultExercises)
+                Log.d("StatsVM", "📋 ${defaultExercises.size} ejercicios globales cargados")
+
+                // 🔧 PASO 2: Cargar ejercicios personalizados del usuario
+                db.collection("users")
+                    .document(userId)
+                    .collection("exercises")
+                    .get()
+                    .addOnSuccessListener { userSnapshot ->
+                        val userExercises = userSnapshot.documents.mapNotNull { it.getString("name") }
+                        allExercises.addAll(userExercises)
+                        Log.d("StatsVM", "📋 ${userExercises.size} ejercicios del usuario cargados")
+
+                        // 🔧 PASO 3: Combinar y eliminar duplicados
+                        _exerciseOptions.value = allExercises.distinct().sorted()
+                        Log.d("StatsVM", "✅ Total ejercicios disponibles: ${_exerciseOptions.value.size}")
+                    }
+                    .addOnFailureListener { e ->
+                        Log.e("StatsVM", "❌ Error cargando ejercicios del usuario: ${e.message}")
+                        // Si falla, al menos usar los ejercicios globales
+                        _exerciseOptions.value = defaultExercises.sorted()
+                    }
             }
             .addOnFailureListener { e ->
-                Log.e("StatsVM", "No se pudo cargar la lista de ejercicios", e)
+                Log.e("StatsVM", "❌ Error cargando ejercicios globales: ${e.message}")
             }
     }
 
@@ -395,13 +433,24 @@ class StatScreenViewModel @Inject constructor(
 
     private fun loadAllProgressFor(exerciseName: String) {
         viewModelScope.launch {
-            workoutRepository.workouts.collect { allWorkouts ->
+            try {
+                // ✅ Usar first() en lugar de collect para obtener datos una sola vez
+                val allWorkouts = workoutRepository.workouts.first()
                 val entries = allWorkouts.filter { it.title == exerciseName }
+
                 Log.d("StatsVM", "📈 ${entries.size} registros locales para $exerciseName")
                 processLocalWorkoutData(entries)
+            } catch (e: Exception) {
+                Log.e("StatsVM", "Error cargando progreso para $exerciseName", e)
+                // Resetear datos en caso de error
+                _weightProgress.value = emptyList()
+                _repsProgress.value = emptyList()
+                _rirProgress.value = emptyList()
+                _circularData.value = Triple(0f, 0, 0)
             }
         }
     }
+
     private fun processLocalWorkoutData(entries: List<WorkoutEntry>) {
         if (entries.isEmpty()) {
             _weightProgress.value = emptyList()
@@ -531,59 +580,56 @@ class StatScreenViewModel @Inject constructor(
 
     private fun calculateTotalWeightLifted(exerciseName: String) {
         viewModelScope.launch {
-            workoutRepository.workouts.collect { allWorkouts ->
+            try {
+                // ✅ Usar first() en lugar de collect
+                val allWorkouts = workoutRepository.workouts.first()
                 val total = allWorkouts
                     .filter { it.title == exerciseName }
                     .sumOf { it.weight.toDouble() }
                     .toFloat()
+
                 _totalWeightSum.value = total
-                Log.d("StatsVM", "✅ Peso total local calculado: $total kg para $exerciseName")
+                Log.d("StatsVM", "✅ Peso total calculado: $total kg para $exerciseName")
+            } catch (e: Exception) {
+                Log.e("StatsVM", "Error calculando peso total", e)
+                _totalWeightSum.value = 0f
             }
         }
     }
 
     private fun fetchLastWorkoutEntry() {
-        val userId = getTargetUserId()
-        if (userId == null) {
-            Log.e("StatsVM", "Usuario no identificado")
-            // Seleccionar primer ejercicio disponible como fallback
-            viewModelScope.launch {
-                _exerciseOptions.collect { options ->
-                    if (options.isNotEmpty() && _selectedExercise.value == null) {
-                        _selectedExercise.value = options.first()
+        viewModelScope.launch {
+            try {
+                // ✅ Obtener todos los workouts de Room
+                val allWorkouts = workoutRepository.workouts.first()
+
+                if (allWorkouts.isEmpty()) {
+                    Log.d("StatsVM", "No hay workouts locales, usando primer ejercicio disponible")
+                    _exerciseOptions.value.firstOrNull()?.let {
+                        _selectedExercise.value = it
                     }
+                    return@launch
                 }
-            }
-            return
-        }
 
-        Log.d("StatsVM", "Buscando último workout entry para usuario: $userId")
+                // ✅ Encontrar el workout más reciente
+                val lastWorkout = allWorkouts.maxByOrNull { it.timestamp }
 
-        db.collection("users")
-            .document(userId)
-            .collection("workoutEntries")
-            .orderBy("timestamp", Query.Direction.DESCENDING)
-            .limit(1)
-            .get()
-            .addOnSuccessListener { snap ->
-                val lastTitle = snap.documents.firstOrNull()?.getString("title")
-                if (lastTitle != null) {
-                    Log.d("StatsVM", "Último ejercicio encontrado: $lastTitle")
-                    _selectedExercise.value = lastTitle
+                if (lastWorkout != null) {
+                    Log.d("StatsVM", "✅ Último ejercicio encontrado en Room: ${lastWorkout.title}")
+                    _selectedExercise.value = lastWorkout.title
                 } else {
-                    Log.d("StatsVM", "No se encontraron ejercicios, usando fallback")
-                    // Fallback: usar primer ejercicio disponible
+                    Log.d("StatsVM", "No se pudo determinar último ejercicio, usando fallback")
                     _exerciseOptions.value.firstOrNull()?.let {
                         _selectedExercise.value = it
                     }
                 }
-            }
-            .addOnFailureListener { e ->
-                Log.e("StatsVM", "Error cargando último ejercicio", e)
+            } catch (e: Exception) {
+                Log.e("StatsVM", "Error obteniendo último workout de Room", e)
                 // Fallback en caso de error
                 _exerciseOptions.value.firstOrNull()?.let {
                     _selectedExercise.value = it
                 }
             }
+        }
     }
 }
