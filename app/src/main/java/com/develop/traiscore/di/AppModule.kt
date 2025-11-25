@@ -1,7 +1,9 @@
 package com.develop.traiscore.di
 
 import android.content.Context
+import com.develop.traiscore.data.local.dao.ExerciseDao
 import com.develop.traiscore.data.preferences.ThemePreferences
+import com.develop.traiscore.data.repository.ExerciseRepository
 import com.develop.traiscore.data.repository.InvitationRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
@@ -49,6 +51,16 @@ object AppModule {
         auth: FirebaseAuth
     ): InvitationRepository {
         return InvitationRepository(firestore, auth)
+    }
+
+    @Provides
+    @Singleton
+    fun provideExerciseRepository(
+        exerciseDao: ExerciseDao,
+        firestore: FirebaseFirestore,
+        auth: FirebaseAuth
+    ): ExerciseRepository {
+        return ExerciseRepository(exerciseDao, firestore, auth)
     }
 
     @Provides

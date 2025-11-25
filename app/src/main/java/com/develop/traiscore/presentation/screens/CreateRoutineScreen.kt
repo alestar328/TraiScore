@@ -38,6 +38,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -90,6 +91,7 @@ fun CreateRoutineScreen(
     var exerciseCategory by remember { mutableStateOf<DefaultCategoryExer?>(null) }
     var nameError by remember { mutableStateOf<String?>(null) }
     var showDialog by remember { mutableStateOf(false) }
+    val exerciseNames by exerciseVM.exerciseNames.collectAsState()
 
     // ✅ Estado para la imagen seleccionada del carousel
     var selectedMuscleGroupImage by remember { mutableStateOf<Int?>(null) }
@@ -493,7 +495,7 @@ fun CreateRoutineScreen(
                         exercises = exercises + SimpleExercise(name, 0, "", "", 0)
                         showDialog = false
                     },
-                    exerciseNames = exerciseVM.exerciseNames,
+                    exerciseNames = exerciseNames,
                     selectedCategory = exerciseCategory,
                     onExerciseSelected = { name ->
                         exerciseVM.fetchCategoryFor(name) { cat ->

@@ -25,6 +25,7 @@ import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.material3.Text
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -104,7 +105,7 @@ private fun AddExerciseBottomSheetContent(
         viewModel.refreshExercises()
     }
 
-    val exerciseNames = viewModel.exerciseNames
+    val exerciseNames by viewModel.exerciseNames.collectAsState()
     var selectedExercise by remember {
         mutableStateOf(
             workoutToEdit?.title ?: viewModel.lastUsedExerciseName.orEmpty()

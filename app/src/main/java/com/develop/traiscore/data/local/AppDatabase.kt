@@ -15,7 +15,7 @@ import com.develop.traiscore.data.local.entity.SessionEntity
 
 @Database(
     entities = [WorkoutEntry::class, ExerciseEntity::class, SessionEntity::class],
-    version = 4,
+    version = 5,
     exportSchema = false // Cambia según tus necesidades
 
 )

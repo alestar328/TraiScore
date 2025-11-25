@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,7 +18,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
@@ -30,7 +30,6 @@ import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavHostController
 import com.develop.traiscore.R
 import com.develop.traiscore.presentation.components.AddExerciseDialogToDB
-import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
@@ -44,54 +43,67 @@ fun MyExercisesUI(
     onBack: () -> Unit,
     addExerciseViewModel: AddExerciseViewModel = hiltViewModel()
 ) {
-    val exercisesWithSource by remember { derivedStateOf { addExerciseViewModel.exercisesWithSource } }
+    val exercisesWithSource by addExerciseViewModel.exercisesWithSource.collectAsState()
+    val filteredExercises by addExerciseViewModel.filteredExercisesWithSource.collectAsState()
+    val searchQuery by addExerciseViewModel.searchQuery.collectAsState()
+
     var showDialog by remember { mutableStateOf(false) }
     var selectedExercise by remember { mutableStateOf<ExerciseWithSource?>(null) }
 
-
-
-    // Cargar ejercicios cuando se inicia la pantalla
-    LaunchedEffect(Unit) {
-        addExerciseViewModel.loadAllExercisesWithSource()
-        // También cargar la lista original para compatibilidad
-        addExerciseViewModel.loadAllExercisesWithCategory()
-    }
-
+    // 🆕 Estado para controlar el modo búsqueda
+    var isSearchActive by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Texto "TraiScore"
-                        Text(
-                            text = buildAnnotatedString {
-                                withStyle( style = SpanStyle( color = traiBlue )) { append("Trai")}
-                                withStyle( style = SpanStyle(   color = Color.White ) ) { append("Score") }
-                            },
-                            style = MaterialTheme.typography.headlineLarge.copy(
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
+            if (isSearchActive) {
+                // 🆕 TopBar en modo búsqueda
+                SearchTopBar(
+                    searchQuery = searchQuery,
+                    onSearchQueryChange = { addExerciseViewModel.updateSearchQuery(it) },
+                    onCloseSearch = {
+                        isSearchActive = false
+                        addExerciseViewModel.clearSearch()
                     }
-                },
-                navigationIcon = {
-                    IconButton(onClick = {  onBack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    // 👇 Esto crea un espacio equivalente al icono izquierdo
-                    Spacer(modifier = Modifier.size(48.dp))
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
                 )
-            )
+            } else {
+                TopAppBar(
+                    title = {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            // Texto "TraiScore"
+                            Text(
+                                text = buildAnnotatedString {
+                                    withStyle(style = SpanStyle(color = traiBlue)) { append("Trai") }
+                                    withStyle(style = SpanStyle(color = Color.White)) { append("Score") }
+                                },
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    fontWeight = FontWeight.Bold
+                                )
+                            )
+                        }
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = { onBack() }) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    actions = {
+                        IconButton(onClick = { isSearchActive = true }) {
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = "Buscar",
+                                tint = traiBlue
+                            )
+                        }
+                    },
+                    colors = TopAppBarDefaults.topAppBarColors(
+                        containerColor = MaterialTheme.colorScheme.background
+                    )
+                )
+            }
         },
         floatingActionButton = {
             FloatingActionButton(
@@ -113,12 +125,16 @@ fun MyExercisesUI(
                 .background(MaterialTheme.colorScheme.background)
         ) {
             when {
-                exercisesWithSource.isEmpty() -> {
+                filteredExercises.isEmpty() && searchQuery.isNotBlank() -> {
+                    // 🆕 Estado cuando no hay resultados de búsqueda
+                    NoSearchResultsState(searchQuery)
+                }
+                filteredExercises.isEmpty() -> {
                     EmptyExercisesState()
                 }
                 else -> {
                     ExercisesListWithSource(
-                        exercises = exercisesWithSource,
+                        exercises = filteredExercises,
                         onExerciseClick = { exercise ->
                             if (exercise.isUserCreated) {
                                 selectedExercise = exercise
@@ -362,7 +378,89 @@ private fun ExercisesList(exercises: List<Pair<String, String>>) {
         }
     }
 }
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun SearchTopBar(
+    searchQuery: String,
+    onSearchQueryChange: (String) -> Unit,
+    onCloseSearch: () -> Unit
+) {
+    TopAppBar(
+        title = {
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(end = 8.dp),
+                placeholder = {
+                    Text(
+                        "Buscar ejercicio...",
+                        color = Color.Gray
+                    )
+                },
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = traiBlue,
+                    unfocusedBorderColor = Color.Gray,
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    cursorColor = traiBlue,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent
+                )
+            )
+        },
+        navigationIcon = {
+            IconButton(onClick = onCloseSearch) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Cerrar búsqueda",
+                    tint = traiBlue
+                )
+            }
+        },
+        colors = TopAppBarDefaults.topAppBarColors(
+            containerColor = MaterialTheme.colorScheme.background
+        )
+    )
+}
 
+@Composable
+private fun NoSearchResultsState(searchQuery: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Icon(
+                Icons.Default.Search,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp),
+                tint = Color.Gray
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Text(
+                text = "No se encontraron resultados",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "No hay ejercicios que coincidan con \"$searchQuery\"",
+                fontSize = 14.sp,
+                color = Color.Gray,
+                textAlign = TextAlign.Center
+            )
+        }
+    }
+}
 @Composable
 private fun ExerciseItem(exerciseName: String, category: String) {
     Row(

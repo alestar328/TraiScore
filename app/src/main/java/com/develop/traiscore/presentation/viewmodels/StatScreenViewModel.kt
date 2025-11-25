@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.develop.traiscore.R
 import com.develop.traiscore.core.TimeRange
 import com.develop.traiscore.data.local.entity.WorkoutEntry
+import com.develop.traiscore.data.repository.ExerciseRepository
 import com.develop.traiscore.data.repository.WorkoutRepository
 import com.develop.traiscore.domain.model.ExerciseProgressCalculator
 import com.develop.traiscore.domain.model.RadarChartData
@@ -18,11 +19,14 @@ import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
@@ -44,7 +48,8 @@ data class SocialShareData(
 @HiltViewModel
 class StatScreenViewModel @Inject constructor(
     private val context: Context,
-    private val workoutRepository: WorkoutRepository
+    private val workoutRepository: WorkoutRepository,
+    private val exerciseRepository: ExerciseRepository
 ) : ViewModel() {
     private val db = Firebase.firestore
 
@@ -60,8 +65,10 @@ class StatScreenViewModel @Inject constructor(
     val selectedTimeRange: StateFlow<TimeRange> = _selectedTimeRange
 
     // Opciones de ejercicios (para el dropdown)
-    private val _exerciseOptions = MutableStateFlow<List<String>>(emptyList())
-    val exerciseOptions: StateFlow<List<String>> = _exerciseOptions
+    val exerciseOptions: StateFlow<List<String>> =
+        exerciseRepository.exercises
+            .map { it.map { ex -> ex.name }.sorted() }
+            .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     // Datos para las gráficas
     private val _weightProgress = MutableStateFlow<List<Pair<String, Float>>>(emptyList())
@@ -113,16 +120,21 @@ class StatScreenViewModel @Inject constructor(
             if (_targetUserId.value == null) {
                 _targetUserId.value = FirebaseAuth.getInstance().currentUser?.uid
             }
-            fetchExerciseOptions()
+
+            // 🆕 AÑADIR importación de ejercicios
+            exerciseRepository.importGlobalExercisesIfNeeded()
+            exerciseRepository.importUserExercises()
             loadRadarChartData()
             calculateCurrentMonthTrainingDays()
-            _exerciseOptions
+
+            exerciseOptions
                 .filter { it.isNotEmpty() }
                 .take(1)
                 .collect {
                     fetchLastWorkoutEntry()
                 }
         }
+
 
         // ✅ BLOQUE 1 (ya lo tienes)
         viewModelScope.launch {
@@ -355,9 +367,12 @@ class StatScreenViewModel @Inject constructor(
 
         // Recargar datos para el nuevo usuario
         viewModelScope.launch {
-            fetchExerciseOptions()
+            exerciseRepository.importGlobalExercisesIfNeeded()
+            exerciseRepository.importUserExercises()
+
             loadRadarChartData()
             calculateCurrentMonthTrainingDays()
+
             _selectedExercise.value?.let { exercise ->
                 loadAllProgressFor(exercise)
                 calculateTotalWeightLifted(exercise)
@@ -383,49 +398,7 @@ class StatScreenViewModel @Inject constructor(
         }
     }
 
-    private fun fetchExerciseOptions() {
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        if (currentUser == null) {
-            Log.e("StatsVM", "❌ Usuario no autenticado")
-            return
-        }
 
-        val userId = currentUser.uid
-        val allExercises = mutableListOf<String>()
-
-        // 🔧 PASO 1: Cargar ejercicios globales
-        db.collection("exercises")
-            .orderBy("name", Query.Direction.ASCENDING)
-            .get()
-            .addOnSuccessListener { globalSnapshot ->
-                val defaultExercises = globalSnapshot.documents.mapNotNull { it.getString("name") }
-                allExercises.addAll(defaultExercises)
-                Log.d("StatsVM", "📋 ${defaultExercises.size} ejercicios globales cargados")
-
-                // 🔧 PASO 2: Cargar ejercicios personalizados del usuario
-                db.collection("users")
-                    .document(userId)
-                    .collection("exercises")
-                    .get()
-                    .addOnSuccessListener { userSnapshot ->
-                        val userExercises = userSnapshot.documents.mapNotNull { it.getString("name") }
-                        allExercises.addAll(userExercises)
-                        Log.d("StatsVM", "📋 ${userExercises.size} ejercicios del usuario cargados")
-
-                        // 🔧 PASO 3: Combinar y eliminar duplicados
-                        _exerciseOptions.value = allExercises.distinct().sorted()
-                        Log.d("StatsVM", "✅ Total ejercicios disponibles: ${_exerciseOptions.value.size}")
-                    }
-                    .addOnFailureListener { e ->
-                        Log.e("StatsVM", "❌ Error cargando ejercicios del usuario: ${e.message}")
-                        // Si falla, al menos usar los ejercicios globales
-                        _exerciseOptions.value = defaultExercises.sorted()
-                    }
-            }
-            .addOnFailureListener { e ->
-                Log.e("StatsVM", "❌ Error cargando ejercicios globales: ${e.message}")
-            }
-    }
 
     fun onExerciseSelected(name: String) {
         _selectedExercise.value = name
@@ -602,10 +575,9 @@ class StatScreenViewModel @Inject constructor(
             try {
                 // ✅ Obtener todos los workouts de Room
                 val allWorkouts = workoutRepository.workouts.first()
-
                 if (allWorkouts.isEmpty()) {
                     Log.d("StatsVM", "No hay workouts locales, usando primer ejercicio disponible")
-                    _exerciseOptions.value.firstOrNull()?.let {
+                    exerciseOptions.value.firstOrNull()?.let { // 🔄 CAMBIO AQUÍ
                         _selectedExercise.value = it
                     }
                     return@launch
@@ -613,20 +585,19 @@ class StatScreenViewModel @Inject constructor(
 
                 // ✅ Encontrar el workout más reciente
                 val lastWorkout = allWorkouts.maxByOrNull { it.timestamp }
-
                 if (lastWorkout != null) {
                     Log.d("StatsVM", "✅ Último ejercicio encontrado en Room: ${lastWorkout.title}")
                     _selectedExercise.value = lastWorkout.title
                 } else {
                     Log.d("StatsVM", "No se pudo determinar último ejercicio, usando fallback")
-                    _exerciseOptions.value.firstOrNull()?.let {
+                    exerciseOptions.value.firstOrNull()?.let { // 🔄 CAMBIO AQUÍ
                         _selectedExercise.value = it
                     }
                 }
             } catch (e: Exception) {
                 Log.e("StatsVM", "Error obteniendo último workout de Room", e)
                 // Fallback en caso de error
-                _exerciseOptions.value.firstOrNull()?.let {
+                exerciseOptions.value.firstOrNull()?.let { // 🔄 CAMBIO AQUÍ
                     _selectedExercise.value = it
                 }
             }
