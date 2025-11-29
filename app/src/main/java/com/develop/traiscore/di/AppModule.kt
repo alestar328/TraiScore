@@ -2,9 +2,11 @@ package com.develop.traiscore.di
 
 import android.content.Context
 import com.develop.traiscore.data.local.dao.ExerciseDao
+import com.develop.traiscore.data.local.dao.RoutineDao
 import com.develop.traiscore.data.preferences.ThemePreferences
 import com.develop.traiscore.data.repository.ExerciseRepository
 import com.develop.traiscore.data.repository.InvitationRepository
+import com.develop.traiscore.data.repository.RoutineRepository
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -68,5 +70,13 @@ object AppModule {
     fun provideThemePreferences(context: Context): ThemePreferences {
         return ThemePreferences(context)
     }
-
+    @Provides
+    @Singleton
+    fun provideRoutineRepository(
+        routineDao: RoutineDao,
+        firestore: FirebaseFirestore,
+        auth: FirebaseAuth
+    ): RoutineRepository {
+        return RoutineRepository(routineDao, firestore, auth)
+    }
 }

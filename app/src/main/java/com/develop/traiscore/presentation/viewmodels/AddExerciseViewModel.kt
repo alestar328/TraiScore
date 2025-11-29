@@ -45,12 +45,16 @@ data class ExerciseWithSource(
 class AddExerciseViewModel @Inject constructor(
     private val exerciseDao: ExerciseDao,
     private val sessionRepository: SessionRepository,
-    private val exerciseRepository: ExerciseRepository // 🆕 AÑADIR
+    private val exerciseRepository: ExerciseRepository
 
 ) : ViewModel() {
     val exerciseNames: StateFlow<List<String>> =
         exerciseRepository.exercises
-            .map { it.map { ex -> ex.name }.sorted() }
+            .map { list ->
+                list.map { it.name }
+                    .distinct()
+                    .sorted()
+            }
             .stateIn(viewModelScope, SharingStarted.Lazily, emptyList())
 
     private val userId = FirebaseAuth.getInstance().currentUser!!.uid
@@ -426,27 +430,7 @@ class AddExerciseViewModel @Inject constructor(
                 onComplete(false, exception.message)
             }
     }
-    fun createRoutineForUser(
-        userId: String,
-        clientName: String,
-        trainerId: String? = null,
-        routineType: String? = null, // 👈 nuevo opcional
-        onComplete: (String?, String?) -> Unit
-    ) {
-        val routineDocument = hashMapOf(
-            "clientName" to clientName,
-            "routineName" to clientName,
-            "type" to (routineType ?: "CUSTOM"), // 👈 guarda el tipo
-            "createdAt" to FieldValue.serverTimestamp(),
-            "trainerId" to trainerId,
-            "sections" to emptyList<Map<String, Any>>()
-        )
-        firestore.collection("users").document(userId)
-            .collection("routines")
-            .add(routineDocument)
-            .addOnSuccessListener { onComplete(it.id, null) }
-            .addOnFailureListener { ex -> onComplete(null, ex.message) }
-    }
+
 
     fun refreshExercises() {
         viewModelScope.launch {

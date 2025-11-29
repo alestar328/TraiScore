@@ -25,6 +25,9 @@ class DatabaseModule {
             .fallbackToDestructiveMigration() // Permite eliminar y recrear la base de datos
             .build()
     }
+    @Singleton
+    @Provides
+    fun provideRoutineDao(db: AppDatabase) = db.routineDao()
 
     @Singleton
     @Provides

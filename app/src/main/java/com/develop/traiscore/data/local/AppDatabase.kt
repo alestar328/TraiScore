@@ -7,15 +7,19 @@ import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.develop.traiscore.core.Converters
 import com.develop.traiscore.data.local.dao.ExerciseDao
+import com.develop.traiscore.data.local.dao.RoutineDao
 import com.develop.traiscore.data.local.dao.SessionDao
 import com.develop.traiscore.data.local.dao.WorkoutDao
 import com.develop.traiscore.data.local.entity.ExerciseEntity
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.data.local.entity.SessionEntity
+import com.develop.traiscore.data.local.entity.RoutineEntity
+import com.develop.traiscore.data.local.entity.RoutineSectionEntity
+import com.develop.traiscore.data.local.entity.RoutineExerciseEntity
 
 @Database(
-    entities = [WorkoutEntry::class, ExerciseEntity::class, SessionEntity::class],
-    version = 5,
+    entities = [WorkoutEntry::class, ExerciseEntity::class, SessionEntity::class, RoutineEntity::class, RoutineSectionEntity::class, RoutineExerciseEntity::class],
+    version = 6,
     exportSchema = false // Cambia según tus necesidades
 
 )
@@ -24,6 +28,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun exerciseDao(): ExerciseDao
     abstract fun workoutDao(): WorkoutDao
     abstract fun sessionDao(): SessionDao
+    abstract fun routineDao(): RoutineDao
+
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {

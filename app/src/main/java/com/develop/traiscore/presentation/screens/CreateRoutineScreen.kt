@@ -77,7 +77,9 @@ fun CreateRoutineScreen(
     navController: NavHostController,
     targetClientId: String? = null,
     clientName: String? = null,
-    viewModel: AddExerciseViewModel = hiltViewModel()
+    viewModel: AddExerciseViewModel = hiltViewModel(),
+    routineViewModel: RoutineViewModel = hiltViewModel()
+
 ) {
     val context = LocalContext.current
     val routineVM: RoutineViewModel = hiltViewModel()
@@ -420,7 +422,7 @@ fun CreateRoutineScreen(
                         }
 
                         if (effectiveUserId != null) {
-                            viewModel.createRoutineForUser(
+                            routineViewModel.createRoutineForUser(
                                 userId = effectiveUserId,
                                 clientName = workoutName,
                                 trainerId = if (targetClientId != null)
@@ -436,7 +438,7 @@ fun CreateRoutineScreen(
                                     return@createRoutineForUser
                                 }
 
-                                viewModel.saveSectionToRoutineForUser(
+                                routineViewModel.saveSectionToRoutineForUser(
                                     userId = effectiveUserId,
                                     routineId = newRoutineId,
                                     sectionName = selectedCategoryEnum?.name ?: "CUSTOM",
@@ -452,6 +454,9 @@ fun CreateRoutineScreen(
                                             Toast.LENGTH_SHORT
                                         ).show()
                                         onBack()
+                                        exercises = emptyList()
+                                        workoutName = ""
+                                        selectedCategoryEnum = null
                                     } else {
                                         Toast.makeText(
                                             context,
