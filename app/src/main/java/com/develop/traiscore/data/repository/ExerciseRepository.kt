@@ -20,6 +20,7 @@ class ExerciseRepository @Inject constructor(
     // ✅ Flow principal - UI observa esto (como WorkoutRepository)
     val exercises: Flow<List<ExerciseEntity>> = exerciseDao.getAllExercisesFlow()
 
+    private var userExercisesImported = false
 
 
     // ✅ Obtener ejercicios una sola vez (para operaciones puntuales)
@@ -101,6 +102,12 @@ class ExerciseRepository @Inject constructor(
      * Se ejecuta al login
      */
     suspend fun importUserExercises() {
+        if (userExercisesImported) {
+            Log.d("ExerciseRepo", "⏭️ Ejercicios del usuario ya importados")
+            return
+        }
+
+        userExercisesImported = true
         val userId = auth.currentUser?.uid ?: return
 
         try {
@@ -132,8 +139,13 @@ class ExerciseRepository @Inject constructor(
 
             firebaseExercises.forEach { fbExercise ->
                 val existing = exerciseDao.getExerciseByFirebaseId(fbExercise.idIntern)
-                if (existing == null) {
-                    // No existe localmente, añadir a la lista
+                val existingSameNameCategory =
+                    exerciseDao.getAllExercises().any {
+                        it.name == fbExercise.name &&
+                                it.category == fbExercise.category
+                    }
+
+                if (existing == null && !existingSameNameCategory) {
                     exercisesToInsert.add(fbExercise)
                 } else {
                     Log.d("ExerciseRepo", "⏭️ Ejercicio ya existe: ${fbExercise.name}")

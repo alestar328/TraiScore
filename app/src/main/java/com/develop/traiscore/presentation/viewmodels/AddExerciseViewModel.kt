@@ -133,7 +133,7 @@ class AddExerciseViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             // 🧹 Limpiar duplicados existentes (solo una vez)
-          //  exerciseRepository.cleanupDuplicates()
+            //exerciseRepository.cleanupDuplicates()
 
             exerciseRepository.importGlobalExercisesIfNeeded()
             exerciseRepository.importUserExercises()
