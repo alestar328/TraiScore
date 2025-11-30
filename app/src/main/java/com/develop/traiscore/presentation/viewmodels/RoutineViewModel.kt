@@ -128,11 +128,17 @@ class RoutineViewModel @Inject constructor(
         if (input.startsWith("-")) return input.dropLast(1)
 
         return when (columnType) {
+
+            ColumnType.EXERCISE_NAME -> {
+                // No filtrar nada, nulo de validación → texto libre
+                input
+            }
+
             ColumnType.SERIES -> {
-                // Solo 1 cifra, solo números enteros
                 val filtered = input.filter { it.isDigit() }
                 if (filtered.length > 1) filtered.take(1) else filtered
             }
+
             ColumnType.WEIGHT -> {
                 val filteredInput = input.filter { it.isDigit() || it == '.' }
                 val parts = filteredInput.split(".")
@@ -140,24 +146,25 @@ class RoutineViewModel @Inject constructor(
                 val intPart = parts.getOrNull(0)?.take(3)?.filter { it.isDigit() } ?: ""
                 val decPart = parts.getOrNull(1)?.take(2)?.filter { it.isDigit() } ?: ""
 
-                return when {
-                    input.count { it == '.' } > 1 -> filteredInput.dropLast(1) // evita múltiples puntos
+                when {
+                    input.count { it == '.' } > 1 -> filteredInput.dropLast(1)
                     parts.size == 1 -> intPart
                     else -> "$intPart.${decPart}"
                 }
             }
+
             ColumnType.REPS -> {
-                // Solo 2 cifras, solo números enteros
                 val filtered = input.filter { it.isDigit() }
                 if (filtered.length > 2) filtered.take(2) else filtered
             }
+
             ColumnType.RIR -> {
-                // Solo 1 cifra, solo números enteros
                 val filtered = input.filter { it.isDigit() }
                 if (filtered.length > 1) filtered.take(1) else filtered
             }
         }
     }
+
     fun getFileName(context: Context, uri: Uri): String? {
         return try {
             when (uri.scheme) {
@@ -338,17 +345,12 @@ class RoutineViewModel @Inject constructor(
                 val updatedExercises = section.exercises.mapIndexed { idx, ex ->
                     if (idx != exerciseIndex) return@mapIndexed ex
 
-                    when(columnType) {
-                        ColumnType.SERIES -> {
-                            val v = newValue.toIntOrNull() ?: 0
-                            ex.copy(series = v)
-                        }
-                        ColumnType.WEIGHT -> ex.copy(weight = newValue)
-                        ColumnType.REPS   -> ex.copy(reps = newValue)
-                        ColumnType.RIR    -> {
-                            val v = newValue.toIntOrNull() ?: 0
-                            ex.copy(rir = v)
-                        }
+                    when (columnType) {
+                        ColumnType.EXERCISE_NAME -> ex.copy(name = newValue)
+                        ColumnType.SERIES    -> ex.copy(series = newValue.toIntOrNull() ?: 0)
+                        ColumnType.WEIGHT    -> ex.copy(weight = newValue)
+                        ColumnType.REPS      -> ex.copy(reps = newValue)
+                        ColumnType.RIR       -> ex.copy(rir = newValue.toIntOrNull() ?: 0)
                     }
                 }
 
@@ -423,5 +425,19 @@ class RoutineViewModel @Inject constructor(
             }
             data.copy(sections = cleanedSections)
         }
+    }
+    fun addExerciseToSection(trainingType: String, newExercise: SimpleExercise) {
+        val currentRoutine = routineDocument ?: return // ✅ Sin guión bajo
+
+        val updatedSections = currentRoutine.sections.map { section ->
+            if (section.type == trainingType) {
+                // ✅ Añadir ejercicio al final de la lista
+                section.copy(exercises = section.exercises + newExercise)
+            } else {
+                section
+            }
+        }
+
+        routineDocument = currentRoutine.copy(sections = updatedSections) // ✅ Sin guión bajo
     }
 }

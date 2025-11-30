@@ -1,13 +1,10 @@
 package com.develop.traiscore.presentation.viewmodels
 
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.data.firebaseData.SimpleExercise
-import com.develop.traiscore.data.firebaseData.saveExerciseToFirebase
 import com.develop.traiscore.data.local.dao.ExerciseDao
 import com.develop.traiscore.data.local.entity.ExerciseEntity
 import com.develop.traiscore.data.repository.ExerciseRepository
@@ -28,7 +25,6 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
 import java.text.Normalizer
 import java.util.Date
 import java.util.Locale

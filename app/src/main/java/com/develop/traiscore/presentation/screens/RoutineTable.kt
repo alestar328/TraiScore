@@ -2,9 +2,7 @@ package com.develop.traiscore.presentation.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.DismissDirection
 import androidx.compose.material.DismissValue
 import androidx.compose.material.ExperimentalMaterialApi
@@ -13,6 +11,11 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.rememberDismissState
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -38,11 +41,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.core.ColumnType
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.presentation.theme.traiBlue
-import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 
 data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val fourth: D)
 
@@ -50,6 +51,7 @@ data class Quadruple<A, B, C, D>(val first: A, val second: B, val third: C, val 
 @Composable
 fun RoutineTable(
     exercises: List<SimpleExercise>,
+    exerciseNames: List<String>,
     onDeleteExercise: (index: Int) -> Unit,
     modifier: Modifier = Modifier,
     onSeriesChanged: (Int, String) -> Unit = { _, _ -> },
@@ -102,7 +104,7 @@ fun RoutineTable(
         exercises.forEachIndexed { index, exercise ->
             var rowHasFocus by remember { mutableStateOf(false) }
 
-            key("exercise_${index}_${exercise.name}_${exercises.size}") {
+            key(index)  {
                 if (enableSwipe) {
                     val dismissState = rememberDismissState(
                         confirmStateChange = { dismissValue ->
@@ -185,6 +187,7 @@ fun RoutineTable(
                         dismissContent = {
                             TableRow(
                                 exercise = exercise,
+                                exerciseNames = exerciseNames,
                                 exerciseIndex = index,
                                 onRepsChanged = onRepsChanged,
                                 onSeriesChanged = onSeriesChanged,
@@ -197,13 +200,15 @@ fun RoutineTable(
                                 inputFocusedBorderColor = inputFocusedBorderColor,
                                 inputCursorColor = inputCursorColor,
                                 onFocusChange = { rowHasFocus = it },
-                                validateInput = validateInput
+                                validateInput = validateInput,
+                                onFieldChanged = onFieldChanged,
                             )
                         }
                     )
                 } else {
                     TableRow(
                         exercise = exercise,
+                        exerciseNames = exerciseNames,
                         exerciseIndex = index,
                         onRepsChanged = onRepsChanged,
                         onSeriesChanged = onSeriesChanged,
@@ -216,7 +221,8 @@ fun RoutineTable(
                         inputFocusedBorderColor = inputFocusedBorderColor,
                         inputCursorColor = inputCursorColor,
                         onFocusChange = { rowHasFocus = it },
-                        validateInput = validateInput
+                        validateInput = validateInput,
+                        onFieldChanged = onFieldChanged,
                     )
                 }
             }
@@ -262,10 +268,12 @@ private fun TableHeader(
 private fun TableRow(
     exercise: SimpleExercise,
     exerciseIndex: Int,
+    exerciseNames: List<String>,
     onSeriesChanged: (Int, String) -> Unit,
     onWeightChanged: (Int, String) -> Unit,
     onRepsChanged: (Int, String) -> Unit,
     onRirChanged: (Int, String) -> Unit,
+    onFieldChanged: (exerciseIndex: Int, columnType: ColumnType, newValue: String) -> Unit,   // 👈 AÑADIDO
     textColor: Color,
     fontSize: Int,
     fontWeight: FontWeight,
@@ -281,8 +289,19 @@ private fun TableRow(
             .padding(vertical = 3.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        BodyCellStatic(exercise.name, 1.5f, textColor, fontSize, fontWeight)
-
+        BodyCellAutocomplete(
+            value = exercise.name,
+            onValueChangeFinal = { finalName ->
+                onFieldChanged(exerciseIndex, ColumnType.EXERCISE_NAME, finalName)
+            },
+            exerciseNames = exerciseNames,
+            weight = 1.5f,
+            textColor = textColor,
+            fontSize = fontSize,
+            fontWeight = fontWeight,
+            focusedBorderColor = inputFocusedBorderColor,
+            cursorColor = inputCursorColor
+        )
         val cells: List<Quadruple<String, Float, ColumnType, (String) -> Unit>> = listOf(
             Quadruple(exercise.series.toString(), 0.7f, ColumnType.SERIES) { v ->
                 onSeriesChanged(exerciseIndex, v)
@@ -320,31 +339,109 @@ private fun TableRow(
         }
     }
 }
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun RowScope.BodyCellStatic(
+fun RowScope.BodyCellAutocomplete(
     value: String,
+    onValueChangeFinal: (String) -> Unit,
+    exerciseNames: List<String>,
     weight: Float,
     textColor: Color,
     fontSize: Int,
-    fontWeight: FontWeight
+    fontWeight: FontWeight,
+    focusedBorderColor: Color,
+    cursorColor: Color
 ) {
-    Box(
-        modifier = Modifier
-            .weight(weight)
-            .height(50.dp),
-        contentAlignment = Alignment.Center
+    var localValue by remember { mutableStateOf(value) }
+    var expanded by remember { mutableStateOf(false) }
+    var isFocused by remember { mutableStateOf(false) }
+
+    LaunchedEffect(value) {
+        if (!isFocused) {
+            localValue = value
+        }
+    }
+
+    val filtered = remember(localValue) {
+        if (localValue.isBlank()) emptyList()
+        else exerciseNames.filter { it.contains(localValue, ignoreCase = true) }.take(20)
+    }
+
+    // ✅ ExposedDropdownMenuBox - Componente nativo para autocompletar
+    ExposedDropdownMenuBox(
+        expanded = expanded && isFocused && filtered.isNotEmpty(),
+        onExpandedChange = { /* No hacer nada, controlamos manualmente */ },
+        modifier = Modifier.weight(weight)
     ) {
-        Text(
-            text = value,
-            fontSize = fontSize.sp,
-            fontWeight = fontWeight,
-            color = textColor,
-            textAlign = TextAlign.Center
+        OutlinedTextField(
+            value = localValue,
+            onValueChange = { newValue ->
+                localValue = newValue
+                expanded = newValue.isNotBlank() && filtered.isNotEmpty()
+            },
+            singleLine = true,
+            textStyle = TextStyle(
+                fontSize = fontSize.sp,
+                color = textColor,
+                textAlign = TextAlign.Start
+            ),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+                .menuAnchor() // ✅ CRÍTICO: Ancla el dropdown al TextField
+                .onFocusChanged {
+                    val nowFocused = it.isFocused
+                    if (!nowFocused && isFocused) {
+                        onValueChangeFinal(localValue)
+                        expanded = false
+                    }
+                    isFocused = nowFocused
+
+                    // Expandir automáticamente si tiene texto y hay resultados
+                    if (nowFocused && localValue.isNotBlank() && filtered.isNotEmpty()) {
+                        expanded = true
+                    }
+                },
+            colors = OutlinedTextFieldDefaults.colors(
+                unfocusedBorderColor = Color.Transparent,
+                focusedBorderColor = focusedBorderColor,
+                cursorColor = cursorColor,
+                focusedContainerColor = Color(0xFF1A1A1A),
+                unfocusedContainerColor = Color.Transparent
+            ),
+            trailingIcon = null // ✅ Sin ícono de dropdown (no queremos el icono estándar)
         )
+
+        // ✅ Menu anclado correctamente al TextField
+        ExposedDropdownMenu(
+            expanded = expanded && isFocused && filtered.isNotEmpty(),
+            onDismissRequest = {
+                expanded = false
+            },
+            modifier = Modifier
+                .background(Color(0xFF222222))
+                .heightIn(max = 200.dp) // ✅ Altura máxima para scroll automático
+        ) {
+            filtered.forEach { suggestion ->
+                DropdownMenuItem(
+                    text = {
+                        Text(
+                            suggestion,
+                            color = Color.White,
+                            fontSize = 14.sp
+                        )
+                    },
+                    onClick = {
+                        localValue = suggestion
+                        onValueChangeFinal(suggestion)
+                        expanded = false
+                    },
+                    contentPadding = ExposedDropdownMenuDefaults.ItemContentPadding
+                )
+            }
+        }
     }
 }
-
 @Composable
 private fun RowScope.HeaderCell(
     text: String,
@@ -426,13 +523,21 @@ fun RoutineTablePreview() {
         SimpleExercise("Fondos", 3, "12", "100", 0)
     )
 
-    // Mock de validación simple
+    val dummyExerciseNames = listOf(
+        "Press de banca",
+        "Press inclinado",
+        "Press militar",
+        "Fondos en paralelas",
+        "Aperturas con mancuernas"
+    )
+
     val fakeValidateInput: (String, ColumnType) -> String = { input, _ ->
         input.filter { it.isDigit() || it == '.' }
     }
 
     RoutineTable(
         exercises = dummyExercises,
+        exerciseNames = dummyExerciseNames,   // ✅ USAMOS LA LISTA DUMMY
         onDeleteExercise = { /* nada */ },
         onFieldChanged = { row, column, value ->
             println("Fila $row, columna $column → $value")

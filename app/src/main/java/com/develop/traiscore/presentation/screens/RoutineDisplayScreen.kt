@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -29,6 +30,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +43,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import androidx.compose.ui.platform.LocalContext
 import com.develop.traiscore.BuildConfig
+import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 import com.google.firebase.auth.FirebaseAuth
 
 
@@ -49,12 +52,16 @@ import com.google.firebase.auth.FirebaseAuth
 fun RoutineScreen(
     routineViewModel: RoutineViewModel = viewModel(),
     documentId: String,
-    selectedType: String, // <- nuevo parámetro
+    selectedType: String,
     onBack: () -> Unit
 ) {
-
+    val exerciseVM: AddExerciseViewModel = viewModel()
+    val exerciseNames by exerciseVM.exerciseNames.collectAsState()
     val context = LocalContext.current
     var showEmptyDialog by remember { mutableStateOf(false) }
+    var showAddDialog by remember { mutableStateOf(false) } // ✅ NUEVO: Estado para diálogo
+    var exerciseCategory by remember { mutableStateOf<com.develop.traiscore.core.DefaultCategoryExer?>(null) } // ✅ NUEVO
+
     val userId = FirebaseAuth.getInstance().currentUser?.uid
         ?: run { onBack(); return }
     val isTrainerVersion = BuildConfig.FLAVOR == "trainer"
@@ -73,8 +80,9 @@ fun RoutineScreen(
         ) {
             CircularProgressIndicator()
         }
-        return   // 👈 MUY IMPORTANTE
+        return
     }
+
     if (showEmptyDialog) {
         AlertDialog(
             onDismissRequest = { onBack() },
@@ -88,8 +96,8 @@ fun RoutineScreen(
         )
         return
     }
-    val filteredExercises = routineViewModel.getExercisesByType(selectedType)
 
+    val filteredExercises = routineViewModel.getExercisesByType(selectedType)
 
     Scaffold(
         topBar = {
@@ -101,9 +109,7 @@ fun RoutineScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(
-                        onClick = { onBack() }
-                    ) {
+                    IconButton(onClick = { onBack() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Volver",
@@ -118,13 +124,10 @@ fun RoutineScreen(
             )
         },
         floatingActionButton = {
-            // Solo para TRAINER mostramos el FAB de “Enviar rutina”
             if (isTrainerVersion) {
                 FloatingActionButton(
                     onClick = {
-                        // ✅ NUEVA FUNCIONALIDAD DE EXPORTACIÓN
                         val currentRoutine = routineViewModel.routineDocument
-
                         if (currentRoutine == null) {
                             Toast.makeText(
                                 context,
@@ -133,8 +136,6 @@ fun RoutineScreen(
                             ).show()
                             return@FloatingActionButton
                         }
-
-                        // Verificar que hay datos para exportar
                         if (currentRoutine.sections.isEmpty()) {
                             Toast.makeText(
                                 context,
@@ -143,14 +144,11 @@ fun RoutineScreen(
                             ).show()
                             return@FloatingActionButton
                         }
-
                         try {
-                            // Exportar usando RoutineExportManager
                             com.develop.traiscore.exports.RoutineExportManager.exportRoutine(
                                 context = context,
                                 routine = currentRoutine,
                                 onSuccess = { fileUri ->
-                                    // Compartir el archivo después de exportar
                                     com.develop.traiscore.exports.RoutineExportManager.shareRoutineFile(
                                         context = context,
                                         fileUri = fileUri,
@@ -189,22 +187,17 @@ fun RoutineScreen(
                 }
             }
         }
-    )
-    { innerPadding ->
+    ) { innerPadding ->
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(innerPadding)
         ) {
-            // Encabezado general de la rutina
-
-            // Por cada tipo de entrenamiento, se muestra una tabla
             item {
-                val exerciseCount = filteredExercises.size
-
                 RoutineTable(
                     exercises = filteredExercises,
+                    exerciseNames = exerciseNames,
                     onSeriesChanged = { exerciseIndex, newSeries ->
                         routineViewModel.updateExerciseFieldInMemory(
                             exerciseIndex, selectedType,
@@ -252,6 +245,7 @@ fun RoutineScreen(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
+                    // ✅ BOTÓN LIMPIAR
                     Button(
                         onClick = {
                             routineViewModel.cleanRoutine()
@@ -262,6 +256,7 @@ fun RoutineScreen(
                         Text("Limpiar")
                     }
 
+                    // ✅ BOTÓN GUARDAR
                     Button(
                         onClick = {
                             routineViewModel.saveRoutineToFirebase(documentId) { isSuccess ->
@@ -275,8 +270,55 @@ fun RoutineScreen(
                     ) {
                         Text("Guardar")
                     }
+
+                    // ✅ NUEVO: BOTÓN AÑADIR EJERCICIO
+                    Button(
+                        onClick = { showAddDialog = true },
+                        colors = ButtonDefaults.buttonColors(containerColor = com.develop.traiscore.presentation.theme.traiBlue)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Añadir ejercicio",
+                            tint = Color.White
+                        )
+                    }
                 }
             }
+        }
+
+        // ✅ DIÁLOGO PARA AÑADIR EJERCICIO (igual que CreateRoutineScreen)
+        if (showAddDialog) {
+            LaunchedEffect(Unit) { exerciseCategory = null }
+
+            com.develop.traiscore.presentation.components.AddExeRoutineDialog(
+                onDismiss = { showAddDialog = false },
+                onSave = { exerciseName, category ->
+                    // ✅ Añadir ejercicio al final de la sección actual
+                    routineViewModel.addExerciseToSection(
+                        trainingType = selectedType,
+                        newExercise = com.develop.traiscore.data.firebaseData.SimpleExercise(
+                            name = exerciseName,
+                            series = 0,
+                            reps = "",
+                            weight = "",
+                            rir = 0
+                        )
+                    )
+                    Toast.makeText(
+                        context,
+                        "Ejercicio '$exerciseName' añadido",
+                        Toast.LENGTH_SHORT
+                    ).show()
+                    showAddDialog = false
+                },
+                exerciseNames = exerciseNames,
+                selectedCategory = exerciseCategory,
+                onExerciseSelected = { name ->
+                    exerciseVM.fetchCategoryFor(name) { cat ->
+                        exerciseCategory = cat
+                    }
+                }
+            )
         }
     }
 }

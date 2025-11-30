@@ -12,7 +12,6 @@ import androidx.compose.foundation.layout.exclude
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -61,7 +60,6 @@ import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.exports.RoutineExportManager
 import com.develop.traiscore.presentation.components.AddExeRoutineDialog
-import com.develop.traiscore.presentation.components.AddRestButton
 import com.develop.traiscore.presentation.components.MuscleGroupCarousel
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBlue
@@ -90,6 +88,7 @@ fun CreateRoutineScreen(
     }
     var workoutName by remember { mutableStateOf("") }
     val exerciseVM: AddExerciseViewModel = viewModel()
+
     var exerciseCategory by remember { mutableStateOf<DefaultCategoryExer?>(null) }
     var nameError by remember { mutableStateOf<String?>(null) }
     var showDialog by remember { mutableStateOf(false) }
@@ -106,13 +105,25 @@ fun CreateRoutineScreen(
     fun updateExerciseField(index: Int, columnType: ColumnType, newValue: String) {
         exercises = exercises.toMutableList().apply {
             this[index] = when (columnType) {
-                ColumnType.SERIES -> this[index].copy(series = newValue.toIntOrNull() ?: 0)
-                ColumnType.WEIGHT -> this[index].copy(weight = newValue)
-                ColumnType.REPS -> this[index].copy(reps = newValue)
-                ColumnType.RIR -> this[index].copy(rir = newValue.toIntOrNull() ?: 0)
+
+                ColumnType.EXERCISE_NAME ->
+                    this[index].copy(name = newValue)
+
+                ColumnType.SERIES ->
+                    this[index].copy(series = newValue.toIntOrNull() ?: 0)
+
+                ColumnType.WEIGHT ->
+                    this[index].copy(weight = newValue)
+
+                ColumnType.REPS ->
+                    this[index].copy(reps = newValue)
+
+                ColumnType.RIR ->
+                    this[index].copy(rir = newValue.toIntOrNull() ?: 0)
             }
         }
     }
+
 
     fun validateRoutineName(name: String): String? {
         return when {
@@ -248,6 +259,7 @@ fun CreateRoutineScreen(
                         ) {
                             RoutineTable(
                                 exercises = exercises,
+                                exerciseNames = exerciseNames,
                                 onDeleteExercise = { index ->
                                     exercises = exercises.toMutableList().apply {
                                         removeAt(index)
