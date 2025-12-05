@@ -28,6 +28,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.presentation.components.NavItem
+import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.navigation.BottomNavigationBar
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.navigation.TrainerBottomNavigationBar
@@ -88,7 +89,9 @@ fun MainScreen(
     var routineScreenState by remember { mutableStateOf<ScreenState>(ScreenState.MAIN_ROUTINE_MENU) }
     var selectedIndex by rememberSaveable { mutableIntStateOf(initialSelectedIndex) }
     var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
-
+    var showTopBarLeftAction by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
+    var showTopBarRightAction by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
+    var showFAB by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
     val shouldShowNavBar = currentUserRole != null || true // Siempre mostrar
     val workoutEntryViewModel: WorkoutEntryViewModel = hiltViewModel()
 
@@ -108,6 +111,15 @@ fun MainScreen(
     }
     Scaffold(
         modifier = Modifier.fillMaxSize(),
+        topBar = {
+            TraiScoreTopBar(
+                leftIcon = { showTopBarLeftAction?.invoke() ?: Unit },
+                rightIcon = { showTopBarRightAction?.invoke() ?: Unit }
+            )
+        },
+        floatingActionButton = {
+            showFAB?.invoke()
+        },
         bottomBar = {
             // ✅ NUEVO: UI basada únicamente en BuildConfig.FLAVOR
             when (BuildConfig.FLAVOR) {
@@ -178,7 +190,14 @@ fun MainScreen(
                 onBackToMeasurements = {  // ✅ AGREGAR ESTA LÍNEA
                     routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
                 },
-                routineViewModel = routineViewModel
+                routineViewModel = routineViewModel,
+                onConfigureTopBar = { left, right ->
+                    showTopBarLeftAction = left
+                    showTopBarRightAction = right
+                },
+                onConfigureFAB = { fab ->
+                    showFAB = fab
+                }
             )
             // ✅ NUEVO: Solo mostrar AddExerciseBottomSheet en la versión athlete
             if (BuildConfig.FLAVOR == "athlete" || BuildConfig.FLAVOR == "production" || BuildConfig.FLAVOR == "lite") {
@@ -228,7 +247,9 @@ fun ContentScreen(
     onMeasurementsHistoryClick: () -> Unit,
     onEditMeasurementFromHistory: () -> Unit,
     onBackToMeasurements: () -> Unit,
-    routineViewModel: RoutineViewModel
+    routineViewModel: RoutineViewModel,
+    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit = { _, _ -> },
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit = {}
 
     // ✅ ELIMINADO: currentUserRole: UserRole?
 ) {
@@ -262,7 +283,9 @@ fun ContentScreen(
                 onMeasurementsHistoryClick = onMeasurementsHistoryClick,
                 onEditMeasurementFromHistory = onEditMeasurementFromHistory,
                 onBackToMeasurements = onBackToMeasurements,
-                routineViewModel = routineViewModel
+                routineViewModel = routineViewModel,
+                onConfigureTopBar = onConfigureTopBar,
+                onConfigureFAB = onConfigureFAB
             )
         }
         else -> {
@@ -279,7 +302,9 @@ fun ContentScreen(
                 onMeasurementsHistoryClick = onMeasurementsHistoryClick,
                 onEditMeasurementFromHistory = onEditMeasurementFromHistory,
                 onBackToMeasurements = onBackToMeasurements,
-                routineViewModel = routineViewModel
+                routineViewModel = routineViewModel,
+                onConfigureTopBar = onConfigureTopBar,
+                onConfigureFAB = onConfigureFAB       
             )
         }
     }
@@ -382,10 +407,16 @@ private fun AthleteContent(
     onMeasurementsHistoryClick: () -> Unit,
     onEditMeasurementFromHistory: () -> Unit,
     onBackToMeasurements: () -> Unit,
-    routineViewModel: RoutineViewModel
+    routineViewModel: RoutineViewModel,
+    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit,
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit
 ) {
     when (selectedIndex) {
-        0 -> ExercisesScreen(navController = navController)
+        0 -> ExercisesScreen(
+            navController = navController,
+            onConfigureTopBar = onConfigureTopBar,
+            onConfigureFAB = onConfigureFAB
+        )
         1 -> StatScreen(navController = navController)
         2 -> Text("Pantalla Add (opcional)")
         3 -> {

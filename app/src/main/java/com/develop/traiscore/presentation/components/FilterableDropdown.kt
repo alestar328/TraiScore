@@ -1,22 +1,37 @@
 package com.develop.traiscore.presentation.components
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.LocalTextStyle
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardCapitalization
-import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.withStyle
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
@@ -37,70 +52,61 @@ fun FilterableDropdown(
     contentPadding: PaddingValues? = null
 ) {
     var expanded by remember { mutableStateOf(false) }
-    var filterText by remember { mutableStateOf(TextFieldValue("")) }
-    var userIsTyping by remember { mutableStateOf(false) } // **SIMPLIFICADO**: Solo controlar si está escribiendo
+    var filterText by remember { mutableStateOf("") }
     val focusManager = LocalFocusManager.current
-    var shouldCloseFocus by remember { mutableStateOf(false) }
 
+    // Sincronizar el valor externo (selectedValue) con el campo de texto
     LaunchedEffect(selectedValue) {
-        filterText = if (selectedValue.isNotBlank())
-            TextFieldValue(selectedValue)
-        else
-            TextFieldValue("")
-
-        // **SIMPLIFICADO**: Si viene preseleccionado, el usuario NO está escribiendo
-        userIsTyping = false
+        filterText = selectedValue
     }
 
-    val filteredItems = remember(items, filterText.text) {
-        if (filterText.text.isBlank()) {
+    val filteredItems = remember(items, filterText) {
+        if (filterText.isBlank()) {
             items.take(maxDisplayedItems)
         } else {
-            val query = filterText.text.lowercase().trim()
+            val query = filterText.lowercase().trim()
             val queryNormalized = normalizeText(query)
 
             items
                 .map { item ->
                     val itemNormalized = normalizeText(item.lowercase())
-                    val score = calculateRelevanceScore(itemNormalized, queryNormalized, item.lowercase(), query)
+                    val score = calculateRelevanceScore(
+                        itemNormalized,
+                        queryNormalized,
+                        item.lowercase(),
+                        query
+                    )
                     item to score
                 }
-                .filter { it.second > 0 } // Solo items con coincidencia
-                .sortedByDescending { it.second } // Ordenar por relevancia
+                .filter { it.second > 0 }
+                .sortedByDescending { it.second }
                 .take(maxDisplayedItems)
                 .map { it.first }
         }
     }
 
-    // **SIMPLIFICADO**: Solo mostrar si está escribiendo Y hay resultados
-    val shouldShowDropdown = userIsTyping && filterText.text.isNotEmpty() && filteredItems.isNotEmpty()
-    val hasText = filterText.text.isNotEmpty()
+    val hasText = filterText.isNotEmpty()
+    val shouldShowDropdown = expanded && filteredItems.isNotEmpty()
 
     ExposedDropdownMenuBox(
-        expanded = shouldShowDropdown, // Usar directamente la condición
-        modifier = modifier,
+        expanded = shouldShowDropdown,
         onExpandedChange = { newExpanded ->
             expanded = newExpanded
-            // **SIMPLIFICADO**: Si el usuario expande manualmente, está "escribiendo"
-            if (newExpanded) {
-                userIsTyping = true
-            }
         },
+        modifier = modifier
     ) {
-        // Input field
-        @OptIn(ExperimentalMaterial3Api::class)
         OutlinedTextField(
             value = filterText,
             onValueChange = { newValue ->
                 filterText = newValue
-                userIsTyping = true
+                expanded = true // al escribir, abrimos el dropdown
             },
             singleLine = true,
             maxLines = 1,
             textStyle = textSize?.let { LocalTextStyle.current.copy(fontSize = it) }
                 ?: LocalTextStyle.current,
             placeholder = {
-                if (filterText.text.isEmpty()) {
+                if (filterText.isEmpty()) {
                     Text(
                         text = placeholder,
                         style = textSize?.let { LocalTextStyle.current.copy(fontSize = it) }
@@ -112,21 +118,25 @@ fun FilterableDropdown(
                 if (hasText) {
                     IconButton(
                         onClick = {
-                            filterText = TextFieldValue("")
+                            filterText = ""
                             onItemSelected("")
                             expanded = false
-                            userIsTyping = false
+                            focusManager.clearFocus()
                         }
                     ) {
-                        Icon(Icons.Default.Close, contentDescription = "Limpiar", tint = Color.Red)
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Limpiar",
+                            tint = Color.Red
+                        )
                     }
                 } else {
                     ExposedDropdownMenuDefaults.TrailingIcon(expanded = shouldShowDropdown)
                 }
             },
             keyboardOptions = KeyboardOptions.Default.copy(
-                capitalization = KeyboardCapitalization.Words,
-                imeAction = ImeAction.Done
+                capitalization = androidx.compose.ui.text.input.KeyboardCapitalization.Words,
+                imeAction = androidx.compose.ui.text.input.ImeAction.Done
             ),
             colors = OutlinedTextFieldDefaults.colors(
                 focusedBorderColor = traiBlue,
@@ -140,13 +150,10 @@ fun FilterableDropdown(
             modifier = Modifier
                 .menuAnchor()
                 .fillMaxWidth()
-                // 👇 No fijes altura: usa la mínima nativa y deja que crezca si hace falta
-                .heightIn(min = TextFieldDefaults.MinHeight) // import androidx.compose.material3.TextFieldDefaults
-                // 👇 Aplica padding externo aquí (si lo pasas)
+                .heightIn(min = textFieldHeight ?: TextFieldDefaults.MinHeight)
                 .then(if (contentPadding != null) Modifier.padding(contentPadding) else Modifier)
         )
 
-        // **SOLUCIÓN**: Usar ExposedDropdownMenu que maneja mejor el teclado
         ExposedDropdownMenu(
             expanded = shouldShowDropdown,
             onDismissRequest = {
@@ -158,27 +165,27 @@ fun FilterableDropdown(
                 DropdownMenuItem(
                     text = {
                         Text(
-                            text = highlightMatches(item, filterText.text),
+                            text = highlightMatches(item, filterText),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     },
                     onClick = {
-                        filterText = TextFieldValue(item)
-                        onItemSelected(item)
+                        filterText = item           // 👈 mostrar el seleccionado en el campo
+                        onItemSelected(item)        // 👈 notificar al padre
                         expanded = false
                         focusManager.clearFocus()
                     }
                 )
             }
 
-            // Mostrar mensaje si hay más resultados
-            if (items.size > maxDisplayedItems && filterText.text.isNotBlank()) {
+            // Mensaje de "y más..." si hay más resultados
+            if (items.size > maxDisplayedItems && filterText.isNotBlank()) {
                 val totalMatches = items.count { item ->
                     calculateRelevanceScore(
                         normalizeText(item.lowercase()),
-                        normalizeText(filterText.text.lowercase()),
+                        normalizeText(filterText.lowercase()),
                         item.lowercase(),
-                        filterText.text.lowercase()
+                        filterText.lowercase()
                     ) > 0
                 }
                 if (totalMatches > filteredItems.size) {
@@ -190,7 +197,7 @@ fun FilterableDropdown(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         },
-                        onClick = { /* No hacer nada */ },
+                        onClick = { },
                         enabled = false
                     )
                 }
@@ -250,9 +257,6 @@ private fun calculateRelevanceScore(
     return score
 }
 
-/**
- * Verifica si todos los caracteres de query aparecen en orden en item
- */
 private fun containsCharactersInOrder(item: String, query: String): Boolean {
     var queryIndex = 0
     for (char in item) {
@@ -267,66 +271,38 @@ private fun containsCharactersInOrder(item: String, query: String): Boolean {
  * Resalta las coincidencias en el texto
  */
 @Composable
-private fun highlightMatches(text: String, query: String): androidx.compose.ui.text.AnnotatedString {
-    if (query.isBlank()) return buildAnnotatedString { append(text) }
+private fun highlightMatches(text: String, query: String) =
+    if (query.isBlank()) {
+        buildAnnotatedString { append(text) }
+    } else {
+        buildAnnotatedString {
+            val normalizedText = normalizeText(text)
+            val normalizedQuery = normalizeText(query)
 
-    return buildAnnotatedString {
-        val normalizedText = normalizeText(text)
-        val normalizedQuery = normalizeText(query)
+            var lastIndex = 0
+            var searchIndex = 0
 
-        var lastIndex = 0
-        var searchIndex = 0
+            while (searchIndex < normalizedText.length) {
+                val matchIndex = normalizedText.indexOf(normalizedQuery, searchIndex)
+                if (matchIndex == -1) break
 
-        while (searchIndex < normalizedText.length) {
-            val matchIndex = normalizedText.indexOf(normalizedQuery, searchIndex)
-            if (matchIndex == -1) break
+                append(text.substring(lastIndex, matchIndex))
 
-            // Texto antes de la coincidencia
-            append(text.substring(lastIndex, matchIndex))
+                withStyle(
+                    style = SpanStyle(
+                        fontWeight = FontWeight.Bold,
+                        color = traiBlue
+                    )
+                ) {
+                    append(text.substring(matchIndex, matchIndex + normalizedQuery.length))
+                }
 
-            // Coincidencia resaltada
-            withStyle(
-                style = SpanStyle(
-                    fontWeight = FontWeight.Bold,
-                    color = traiBlue
-                )
-            ) {
-                append(text.substring(matchIndex, matchIndex + normalizedQuery.length))
+                lastIndex = matchIndex + normalizedQuery.length
+                searchIndex = lastIndex
             }
 
-            lastIndex = matchIndex + normalizedQuery.length
-            searchIndex = lastIndex
-        }
-
-        // Resto del texto
-        if (lastIndex < text.length) {
-            append(text.substring(lastIndex))
+            if (lastIndex < text.length) {
+                append(text.substring(lastIndex))
+            }
         }
     }
-}
-
-@Composable
-@Preview
-fun FilterableDropdownPreview() {
-    val lista = listOf(
-        "Press banca",
-        "Press banca inclinado",
-        "Press militar",
-        "Curl mancuerna",
-        "Curl barra",
-        "Sentadilla",
-        "Sentadilla búlgara",
-        "Dominadas",
-        "Peso muerto",
-        "Fondos"
-    )
-
-    FilterableDropdown(
-        items = lista,
-        onItemSelected = { selected ->
-            println("Seleccionaste: $selected")
-        },
-        selectedValue = "",
-        placeholder = "Buscar ejercicio..."
-    )
-}

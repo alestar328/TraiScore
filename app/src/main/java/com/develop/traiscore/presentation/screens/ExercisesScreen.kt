@@ -26,6 +26,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.*
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -61,7 +62,9 @@ import com.develop.traiscore.presentation.viewmodels.ViewModeSelector
 fun ExercisesScreen(
     viewModel: WorkoutEntryViewModel = hiltViewModel(),
     statViewModel: StatScreenViewModel = hiltViewModel(), // ✅ AGREGAR esta línea
-    navController: NavController
+    navController: NavController,
+    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit = { _, _ -> },
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit = {}
 ) {
     val entries = viewModel.entries.collectAsState().value
     val showBottomSheet = remember { mutableStateOf(false) }
@@ -109,78 +112,77 @@ fun ExercisesScreen(
         showDeleteDialog.value = false
         workoutToDelete.value = null
     }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = TraiScoreTheme.dimens.paddingMedium)
-    ) {
-        Scaffold(
-            topBar = {
-                TraiScoreTopBar(
-                    leftIcon = {
-                        IconButton(
-                            onClick = {
-                                if (showSearchBar.value) {
-                                    showSearchBar.value = false
-                                    selectedSearch.value = ""
-                                }
-                                showViewModeSelector.value = !showViewModeSelector.value
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.DateRange,
-                                contentDescription = "Selector de vista",
-                                tint = MaterialTheme.tsColors.ledCyan
-                            )
+    LaunchedEffect(currentViewMode.value, hasActiveSession, availableSessions.size) {
+        // Configurar TopBar
+        onConfigureTopBar(
+            // leftIcon
+            {
+                IconButton(
+                    onClick = {
+                        if (showSearchBar.value) {
+                            showSearchBar.value = false
+                            selectedSearch.value = ""
                         }
-                    },
-                    rightIcon = {
-                        IconButton(
-                            onClick = {
-                                calculateTodayDataAndNavigate(
-                                    context = context,
-                                    navController = navController,
-                                    viewModel = statViewModel,
-                                    oneRepMax = oneRepMax,
-                                    maxReps = maxReps
-                                )
-                            }
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_camara),
-                                contentDescription = "Compartir sesión",
-                                tint = MaterialTheme.tsColors.ledCyan,
-                                modifier = Modifier.size(30.dp)
-                            )
-                        }
+                        showViewModeSelector.value = !showViewModeSelector.value
                     }
-                )
-            }
-            ,
-            floatingActionButton = {
-                // FAB condicional solo en vista TODAY
-                if (currentViewMode.value == ViewMode.TODAY &&
-                    !hasActiveSession &&
-                    availableSessions.size < 10) {
-                    FloatingActionButton(
-                        onClick = { showNewSessionDialog = true },
-                        containerColor = MaterialTheme.tsColors.ledCyan,
-                        contentColor = Color.Black
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Add,
-                            contentDescription = "Nueva Sesión"
-                        )
-                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Selector de vista",
+                        tint = MaterialTheme.tsColors.ledCyan
+                    )
                 }
             },
-            content = { paddingValues ->
+            // rightIcon
+            {
+                IconButton(
+                    onClick = {
+                        calculateTodayDataAndNavigate(
+                            context = context,
+                            navController = navController,
+                            viewModel = statViewModel,
+                            oneRepMax = oneRepMax,
+                            maxReps = maxReps
+                        )
+                    }
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.ic_camara),
+                        contentDescription = "Compartir sesión",
+                        tint = MaterialTheme.tsColors.ledCyan,
+                        modifier = Modifier.size(30.dp)
+                    )
+                }
+            }
+        )
+
+        // Configurar FAB
+        if (currentViewMode.value == ViewMode.TODAY &&
+            !hasActiveSession &&
+            availableSessions.size < 10) {
+            onConfigureFAB {
+                FloatingActionButton(
+                    onClick = { showNewSessionDialog = true },
+                    containerColor = MaterialTheme.tsColors.ledCyan,
+                    contentColor = Color.Black
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = "Nueva Sesión"
+                    )
+                }
+            }
+        } else {
+            onConfigureFAB(null)
+        }
+    }
+
+
                 Column(
                     modifier = Modifier
                         .fillMaxSize()
                         .background(MaterialTheme.colorScheme.background)
-                        .padding(top = paddingValues.calculateTopPadding())
+                        .padding(horizontal = TraiScoreTheme.dimens.paddingMedium)
                 ) {
                     // Barra de búsqueda
                     AnimatedVisibility(
@@ -285,9 +287,7 @@ fun ExercisesScreen(
                         }
                     }
                 }
-            }
-        )
-    }
+
 
     // Bottom Sheet para editar ejercicios
     AddExerciseBottomSheet(

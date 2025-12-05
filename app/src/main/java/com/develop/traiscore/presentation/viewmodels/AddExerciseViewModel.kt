@@ -132,9 +132,6 @@ class AddExerciseViewModel @Inject constructor(
     )
     init {
         viewModelScope.launch {
-            // 🧹 Limpiar duplicados existentes (solo una vez)
-            //exerciseRepository.cleanupDuplicates()
-
             exerciseRepository.importGlobalExercisesIfNeeded()
             exerciseRepository.importUserExercises()
         }
@@ -230,82 +227,7 @@ class AddExerciseViewModel @Inject constructor(
         exerciseRepository.addExercise(name, category)
     }
 
-    private suspend fun saveExerciseToFirebaseCompatible(
-        name: String,
-        category: String,
-        exerciseDao: ExerciseDao,
-        onComplete: (Boolean) -> Unit = {}
-    ) {
-        val currentUser = FirebaseAuth.getInstance().currentUser
-        if (currentUser == null) {
-            println("❌ Usuario no autenticado")
-            onComplete(false)
-            return
-        }
 
-        val userId = currentUser.uid
-
-        // Primero guardar en local para mantener compatibilidad
-        val localExercise = ExerciseEntity(
-            id = 0,
-            idIntern = "",
-            name = name,
-            category = category,
-            isDefault = false
-        )
-
-        val localId = exerciseDao.insertExercise(localExercise)
-
-        val db = Firebase.firestore
-        val userExercisesCollection = db.collection("users")
-            .document(userId)
-            .collection("exercises")
-
-        userExercisesCollection.get()
-            .addOnSuccessListener { snapshot ->
-                val userExerciseDocs = snapshot.documents.filter {
-                    it.id.startsWith("userExer")
-                }
-
-                val nextNumber = (userExerciseDocs.mapNotNull {
-                    it.id.removePrefix("userExer").toIntOrNull()
-                }.maxOrNull() ?: 0) + 1
-
-                val newDocId = "userExer$nextNumber"
-
-                val newExercise = hashMapOf(
-                    "name" to name,
-                    "category" to category,
-                    "isDefault" to false,
-                    "createdBy" to userId,
-                    "localId" to localId
-                )
-
-                userExercisesCollection
-                    .document(newDocId)
-                    .set(newExercise)
-                    .addOnSuccessListener {
-                        println("✅ Ejercicio guardado con ID: $newDocId")
-
-                        CoroutineScope(Dispatchers.IO).launch {
-                            val updatedExercise = localExercise.copy(
-                                id = localId.toInt(),
-                                idIntern = newDocId
-                            )
-                            exerciseDao.updateExercise(updatedExercise)
-                            onComplete(true) // ✅ Callback de éxito
-                        }
-                    }
-                    .addOnFailureListener { e ->
-                        println("❌ Error al guardar el ejercicio: ${e.message}")
-                        onComplete(false) // ✅ Callback de error
-                    }
-            }
-            .addOnFailureListener { e ->
-                println("❌ Error al obtener ejercicios existentes: ${e.message}")
-                onComplete(false) // ✅ Callback de error
-            }
-    }
 
 
     fun fetchCategoryFor(exerciseName: String, onResult: (DefaultCategoryExer?) -> Unit) {
@@ -346,92 +268,10 @@ class AddExerciseViewModel @Inject constructor(
                     .addOnFailureListener { onResult(null) }
             }
     }
-    fun hasActiveSession(callback: (Boolean, String?) -> Unit) {
-        viewModelScope.launch {
-            try {
-                val response = sessionRepository.getActiveSession()
-                if (response.success && response.session != null) {
-                    callback(true, response.session.name)
-                } else {
-                    callback(false, null)
-                }
-            } catch (e: Exception) {
-                callback(false, null)
-            }
-        }
-    }
-
-
-
-    private fun addWorkoutWithoutSession(
-        title: String,
-        reps: Int,
-        weight: Float,
-        rir: Int
-    ) {
-        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-
-        val workoutData = mapOf(
-            "title" to title,
-            "reps" to reps,
-            "weight" to weight,
-            "rir" to rir,
-            "timestamp" to Date()
-            // Sin sessionId, sessionName, sessionColor para compatibilidad legacy
-        )
-
-        Firebase.firestore
-            .collection("users")
-            .document(userId)
-            .collection("workoutEntries")
-            .add(workoutData)
-            .addOnSuccessListener { documentReference ->
-                println("✅ Workout legacy agregado: ${documentReference.id}")
-            }
-            .addOnFailureListener { e ->
-                println("❌ Error al agregar workout legacy: ${e.message}")
-            }
-    }
-
-    fun saveSectionToRoutineForUser(
-        userId: String,
-        routineId: String,
-        sectionName: String, // ✅ CAMBIO: String en lugar de DefaultCategoryExer
-        exercises: List<SimpleExercise>,
-        onComplete: (Boolean, String?) -> Unit
-    ) {
-        val section = hashMapOf(
-            "type" to sectionName, // ✅ CAMBIO: Usar sectionName directamente
-            "exercises" to exercises.map { exercise ->
-                hashMapOf(
-                    "name" to exercise.name,
-                    "series" to exercise.series,
-                    "reps" to exercise.reps,
-                    "weight" to exercise.weight,
-                    "rir" to exercise.rir
-                )
-            }
-        )
-
-        firestore
-            .collection("users")
-            .document(userId)
-            .collection("routines")
-            .document(routineId)
-            .update("sections", FieldValue.arrayUnion(section))
-            .addOnSuccessListener {
-                onComplete(true, null)
-            }
-            .addOnFailureListener { exception ->
-                onComplete(false, exception.message)
-            }
-    }
 
 
     fun refreshExercises() {
         viewModelScope.launch {
-            exerciseRepository.importGlobalExercisesIfNeeded()
-            exerciseRepository.importUserExercises()
             exerciseRepository.syncPendingExercises()
         }
     }

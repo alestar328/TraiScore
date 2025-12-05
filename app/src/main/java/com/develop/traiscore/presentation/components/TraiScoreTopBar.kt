@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -39,26 +40,22 @@ fun TraiScoreTopBar(
 ) {
     val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
 
-    TopAppBar(
+    CenterAlignedTopAppBar(
         title = {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+
                 Text(
                     text = buildAnnotatedString {
                         withStyle( style = SpanStyle( color = traiBlue )) { append("Trai")}
                         withStyle( style = SpanStyle(   color = Color.White ) ) { append("Score") }
                     },
-                    style = MaterialTheme.typography.headlineMedium.copy(
+                    style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold
                     )
                 )
-            }
+
         },
         navigationIcon = { leftIcon() },
-        modifier = Modifier.height(56.dp),
+        modifier = Modifier.height(60.dp),
         actions = { rightIcon() },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.background

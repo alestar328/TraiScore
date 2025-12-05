@@ -21,7 +21,7 @@ android {
         applicationId = "com.develop.traiscore"
         minSdk = 31
         targetSdk = 35
-        versionCode = 27
+        versionCode = 30
         versionName = "1.1.5"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
@@ -53,23 +53,19 @@ android {
         create("production") {
             dimension = "version"
             applicationId = "com.develop.traiscore"
-            applicationIdSuffix = ""
         }
         create("athlete") {
             dimension = "version"
             //applicationId = "com.develop.traiscore.athlete"
-            applicationId = "com.develop.traiscore"
-            versionNameSuffix = "-athlete"
+            applicationId = "com.traiscore.athlete"
         }
         create("trainer") {
             dimension = "version"
-            applicationId = "com.develop.traiscore.trainer"
-            versionNameSuffix = "-trainer"
+            applicationId = "com.traiscore.trainer"
         }
         create("lite") {
             dimension = "version"
-            applicationId = "com.develop.traiscore"
-            versionNameSuffix = "-lite"
+            applicationId = "com.traiscore.lite"
             minSdk = 24 // Compatible con Android 7+
         }
     }

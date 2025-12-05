@@ -21,6 +21,7 @@ class ExerciseRepository @Inject constructor(
     val exercises: Flow<List<ExerciseEntity>> = exerciseDao.getAllExercisesFlow()
 
     private var userExercisesImported = false
+    private var globalExercisesImported = false
 
 
     // ✅ Obtener ejercicios una sola vez (para operaciones puntuales)
@@ -33,14 +34,25 @@ class ExerciseRepository @Inject constructor(
      * Se ejecuta al instalar la app o al login
      */
     suspend fun importGlobalExercisesIfNeeded() {
+        // 👉 Primera protección: bandera en memoria (evita doble llamada simultánea)
+        if (globalExercisesImported) {
+            Log.d("ExerciseRepo", "⏭️ Importación global ignorada (ya realizada en memoria)")
+            return
+        }
+
+        // 👉 Marcar inmediatamente para evitar que otra llamada paralela vuelva a importar
+        globalExercisesImported = true
+
+        // 👉 Segunda protección: verificar si Room ya tiene globales guardados
         val count = exerciseDao.getGlobalExerciseCount()
         if (count > 0) {
-            Log.d("ExerciseRepo", "📦 Ya hay $count ejercicios globales importados")
+            Log.d("ExerciseRepo", "📦 Ya hay $count ejercicios globales importados (Room)")
             return
         }
 
         try {
             Log.d("ExerciseRepo", "📥 Importando ejercicios globales desde Firebase...")
+
             val snapshot = firestore.collection("exercises").get().await()
 
             val exercises = snapshot.documents.mapNotNull { doc ->
@@ -58,22 +70,23 @@ class ExerciseRepository @Inject constructor(
                 )
             }
 
-            // 🆕 FILTRAR por si acaso
-            val exercisesToInsert = mutableListOf<ExerciseEntity>()
-
-            exercises.forEach { fbExercise ->
-                val existing = exerciseDao.getExerciseByFirebaseId(fbExercise.idIntern)
-                if (existing == null) {
-                    exercisesToInsert.add(fbExercise)
-                }
+            // Filtrar posibles duplicados
+            val toInsert = exercises.filter { fbExercise ->
+                exerciseDao.getExerciseByFirebaseId(fbExercise.idIntern) == null
             }
 
-            if (exercisesToInsert.isNotEmpty()) {
-                exerciseDao.insertExercises(exercisesToInsert)
-                Log.d("ExerciseRepo", "✅ Importados ${exercisesToInsert.size} ejercicios globales")
+            if (toInsert.isNotEmpty()) {
+                exerciseDao.insertExercises(toInsert)
+                Log.d("ExerciseRepo", "✅ Importados ${toInsert.size} ejercicios globales")
+            } else {
+                Log.d("ExerciseRepo", "⏭️ Ningún ejercicio global nuevo para insertar")
             }
+
         } catch (e: Exception) {
             Log.e("ExerciseRepo", "❌ Error importando ejercicios globales", e)
+            // 👇 MUY IMPORTANTE:
+            // Si falló, reseteamos la bandera para reintentar luego.
+            globalExercisesImported = false
         }
     }
     suspend fun cleanupDuplicates() {

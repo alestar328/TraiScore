@@ -65,7 +65,7 @@ fun RoutineScreen(
     val userId = FirebaseAuth.getInstance().currentUser?.uid
         ?: run { onBack(); return }
     val isTrainerVersion = BuildConfig.FLAVOR == "trainer"
-
+    val canEditExercises = true
     LaunchedEffect(documentId) {
         routineViewModel.loadRoutine(documentId)
     }
