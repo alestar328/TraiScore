@@ -33,6 +33,7 @@ import com.develop.traiscore.BuildConfig
 import com.develop.traiscore.R
 import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.presentation.MainActivity
+import com.develop.traiscore.presentation.ScreenState
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.components.general.ProfilePhotoComponent
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
@@ -54,10 +55,15 @@ data class TrainerInfo(
 fun ProfileScreen(
     navController: NavHostController,
     clientId: String? = null,
+    onSettingsClick: () -> Unit,
     onMeasurementsClick: () -> Unit,
-    profileViewModel: ProfileViewModel = hiltViewModel() // ← Agregar esta línea
+    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit = { _, _ -> },
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit = {},
+    profileViewModel: ProfileViewModel = hiltViewModel(),
+    setRoutineScreenState: (ScreenState) -> Unit,
 
-) {
+
+    ) {
     val profileUiState by profileViewModel.uiState.collectAsStateWithLifecycle()
     var showAchievements by remember { mutableStateOf(false) }
 
@@ -113,9 +119,7 @@ fun ProfileScreen(
             null
         }
     }
-    LaunchedEffect(Unit) {
-        profileViewModel.loadCurrentUserPhoto()
-    }
+
     LaunchedEffect(profileUiState.error) {
         profileUiState.error?.let { error ->
             // Aquí puedes mostrar un Toast o Snackbar con el error
@@ -123,20 +127,81 @@ fun ProfileScreen(
             profileViewModel.clearError()
         }
     }
-    if (isAthlete || isProduction || isLite) {
-        LaunchedEffect(Unit) {
+
+
+    DisposableEffect(Unit) {
+        onDispose {
+            cleanupListener()
+        }
+    }
+    LaunchedEffect(Unit) {
+
+        // 1️⃣ Cargar foto del usuario
+        profileViewModel.loadCurrentUserPhoto()
+
+        // 2️⃣ Configuración del TopBar según flavor
+        when (BuildConfig.FLAVOR) {
+
+            "trainer" -> {
+                onConfigureTopBar(
+                    { /* left trainer */ },
+                    {
+                        IconButton(onClick = { navController.navigate(NavigationRoutes.Settings.route) }) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.tsColors.ledCyan
+                            )
+                        }
+                    }
+                )
+            }
+
+            "production", "athlete", "lite" -> {
+                onConfigureTopBar(
+                    {
+                        Box(
+                            modifier = Modifier
+                                .size(30.dp)
+                                .clickable { showAchievements = true },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.trophy_icon),
+                                contentDescription = "Logros",
+                                tint = MaterialTheme.tsColors.ledCyan
+                            )
+                        }
+                    },
+                    {
+                        IconButton(onClick = { onSettingsClick() }) {
+                            Icon(
+                                imageVector = Icons.Default.Settings,
+                                contentDescription = "Settings",
+                                tint = MaterialTheme.tsColors.ledCyan
+                            )
+                        }
+                    }
+                )
+            }
+        }
+
+        // 3️⃣ Configurar FAB global
+        onConfigureFAB(null)
+
+        // 4️⃣ Listener Firestore SOLO para athletes
+        if (isAthlete || isProduction || isLite) {
             val currentUser = auth.currentUser ?: return@LaunchedEffect
             isLoading = true
             trainerInfo = null
+
             try {
-                // Carga inicial (si la quieres)
                 FirebaseFirestore.getInstance()
                     .collection("users")
                     .document(currentUser.uid)
                     .get()
                     .await()
 
-                // Listener en tiempo real
                 cleanupListener()
                 firestoreListener = FirebaseFirestore.getInstance()
                     .collection("users")
@@ -147,11 +212,12 @@ fun ProfileScreen(
                             isLoading = false
                             return@addSnapshotListener
                         }
-                        val linkedTrainerUid = snapshot?.getString("linkedTrainerUid")
-                        if (linkedTrainerUid != null) {
-                            // Carga info del trainer
+
+                        val trainerId = snapshot?.getString("linkedTrainerUid")
+
+                        if (trainerId != null) {
                             scope.launch {
-                                trainerInfo = fetchTrainerInfo(linkedTrainerUid)
+                                trainerInfo = fetchTrainerInfo(trainerId)
                                 isLoading = false
                             }
                         } else {
@@ -159,6 +225,7 @@ fun ProfileScreen(
                             isLoading = false
                         }
                     }
+
             } catch (e: Exception) {
                 android.util.Log.e("ProfileScreen", "Error inicial", e)
                 isLoading = false
@@ -166,60 +233,12 @@ fun ProfileScreen(
         }
     }
 
-    DisposableEffect(Unit) {
-        onDispose {
-            cleanupListener()
-        }
-    }
-
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = TraiScoreTheme.dimens.paddingMedium)
-    ) {
-        Scaffold(
-            topBar = {
-                TraiScoreTopBar(
-                    leftIcon = {
-                        Box(
-                            modifier = Modifier
-                                .size(30.dp)
-                                .clickable {
-                                    showAchievements = true
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.trophy_icon),
-                                contentDescription = "Logros",
-                                tint = MaterialTheme.tsColors.ledCyan,
-                                modifier = Modifier.size(22.dp)
-                            )
-                        }
-
-
-                    },
-                    rightIcon = {
-                        IconButton(
-                            onClick = { navController.navigate(NavigationRoutes.Settings.route) }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Settings,
-                                contentDescription = "Settings",
-                                tint = MaterialTheme.tsColors.ledCyan,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        }
-                    }
-                )
-            },
-        ) { padding ->
             Column(
                 modifier = Modifier
-                    .padding(padding)
                     .fillMaxSize()
-                    .background(MaterialTheme.colorScheme.background),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(horizontal = TraiScoreTheme.dimens.paddingMedium),
+                        horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Spacer(Modifier.height(16.dp))
 
@@ -310,7 +329,7 @@ fun ProfileScreen(
                             containerColor = traiOrange,
                             contentColor = Color.Black,
                             painter = painterResource(id = R.drawable.exercises_icon),
-                            onClick = { navController.navigate(NavigationRoutes.MyExercises.route) }
+                            onClick = { setRoutineScreenState(ScreenState.MY_EXERCISES_SCREEN) }
                         )
                     }
                     Spacer(Modifier.height(20.dp))
@@ -343,7 +362,7 @@ fun ProfileScreen(
                     textAlign = TextAlign.Center // 👈 Centrado en la fila
                 )
             }
-        }
+
         if (showLogoutDialog) {
             LogoutConfirmDialog(
                 onConfirm = {
@@ -371,7 +390,7 @@ fun ProfileScreen(
             clientId = clientId // Pasar el clientId para mostrar logros del cliente correcto
         )
     }
-}
+
 
 @Composable
 private fun TrainerSection(

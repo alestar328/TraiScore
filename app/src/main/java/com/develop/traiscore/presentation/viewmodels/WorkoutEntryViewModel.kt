@@ -52,7 +52,17 @@ class WorkoutEntryViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            initializeData()
+            // 1️⃣ Importar desde Firebase → (solo si Room está vacío)
+            workoutRepository.importWorkoutsFromFirebaseToRoom()
+
+            // 2️⃣ Escuchar cambios locales
+            workoutRepository.workouts.collectLatest { localWorkouts ->
+                _entries.value = localWorkouts
+                updateSessionGrouping(localWorkouts)
+            }
+
+            // 3️⃣ Sincronizar pendientes AUTOMÁTICAMENTE al abrir app
+            workoutRepository.syncPendingWorkouts()
         }
     }
 

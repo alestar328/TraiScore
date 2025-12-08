@@ -112,6 +112,9 @@ fun ExercisesScreen(
         showDeleteDialog.value = false
         workoutToDelete.value = null
     }
+    LaunchedEffect(Unit) {
+        viewModel.syncPendingWorkouts()
+    }
     LaunchedEffect(currentViewMode.value, hasActiveSession, availableSessions.size) {
         // Configurar TopBar
         onConfigureTopBar(

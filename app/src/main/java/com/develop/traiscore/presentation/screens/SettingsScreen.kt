@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,7 +64,9 @@ fun SettingsScreen(
     onBack: () -> Unit = {},
     onNavigateToScreenMode: () -> Unit = {},
     onNavigateToCreateCategory: () -> Unit = {},
-    onNavigateToLanguage: () -> Unit = {}
+    onNavigateToLanguage: () -> Unit = {},
+    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit
+
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
@@ -85,48 +88,28 @@ fun SettingsScreen(
             }
         )
     }
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.Center,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        // Texto "TraiScore"
-                        Text(
-                            text = buildAnnotatedString {
-                                withStyle( style = SpanStyle( color = traiBlue )) { append("Trai")}
-                                withStyle( style = SpanStyle(   color = Color.White ) ) { append("Score") }
-                            },
-                            style = MaterialTheme.typography.headlineLarge.copy(
-                                fontWeight = FontWeight.Bold
-                            )
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = {  onBack() }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
-                    }
-                },
-                actions = {
-                    // 👇 Esto crea un espacio equivalente al icono izquierdo
-                    Spacer(modifier = Modifier.size(48.dp))
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                )
-            )
-        },
-        content = { paddingValues ->
+    LaunchedEffect(Unit) {
+        onConfigureTopBar(
+            {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Volver",
+                        tint = traiBlue
+                    )
+                }
+            },
+            {
+                // Espacio simétrico a la derecha
+                Spacer(modifier = Modifier.size(48.dp))
+            }
+        )
+    }
             Column(
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(paddingValues)
                     .fillMaxSize()
-                    .padding(TraiScoreTheme.dimens.paddingMedium)
+                    .padding(horizontal = TraiScoreTheme.dimens.paddingMedium)
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -141,7 +124,7 @@ fun SettingsScreen(
 
                 Spacer(modifier = Modifier.height(TraiScoreTheme.dimens.spacerMedium))
 
-                SettingsOptionRow(
+              /*PROXIMO DESARROLLO:  SettingsOptionRow(
                     painter  = rememberVectorPainter(Icons.Default.Person) ,
                     label = "Datos personales",
                     iconTint = Color.Cyan,
@@ -152,7 +135,7 @@ fun SettingsScreen(
                     label = "Nueva categoria de ejercicio",
                     iconTint = Color.Cyan,
                     onClick = { onNavigateToCreateCategory() }
-                )
+                )*/
                 SettingsOptionRow(
                     painter  = painterResource(id = R.drawable.language_icon),
                     label = "Cambiar idioma",
@@ -167,11 +150,6 @@ fun SettingsScreen(
                     onClick = { onNavigateToScreenMode()}
                 )
             }
-
-        }
-    )
-
-
 }
 @Composable
 fun SettingsOptionRow(
@@ -205,15 +183,5 @@ fun SettingsOptionRow(
             fontWeight = FontWeight.Bold,
             color = Color.White
         )
-    }
-}
-@Preview(
-    name = "SettingsScreenPreview",
-    showBackground = true
-)
-@Composable
-fun SettingsScreenPreview() {
-    TraiScoreTheme {
-        SettingsScreen()
     }
 }

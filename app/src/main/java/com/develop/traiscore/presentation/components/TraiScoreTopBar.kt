@@ -55,7 +55,7 @@ fun TraiScoreTopBar(
 
         },
         navigationIcon = { leftIcon() },
-        modifier = Modifier.height(60.dp),
+        modifier = Modifier.height(70.dp),
         actions = { rightIcon() },
         colors = TopAppBarDefaults.topAppBarColors(
             containerColor = MaterialTheme.colorScheme.background

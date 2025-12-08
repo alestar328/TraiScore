@@ -23,7 +23,7 @@ fun ProIconUI(
     modifier: Modifier = Modifier,
     backgroundColor: Color = Color.Yellow,
     textColor: Color = Color.Black,
-    fontSize: TextUnit = 24.sp,
+    fontSize: TextUnit = 20.sp,
     cornerRadius: Dp = 12.dp,
     elevation: Dp = 4.dp
 ) {

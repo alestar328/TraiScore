@@ -84,7 +84,9 @@ fun StatScreen(
     bodyStatsViewModel: BodyStatsViewModel = hiltViewModel(),
     clientId: String? = null,
     navController: NavController,
-    addExerciseViewModel: AddExerciseViewModel = hiltViewModel() // 👈 Añadir
+    addExerciseViewModel: AddExerciseViewModel = hiltViewModel(),
+    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit = { _, _ -> },
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit = {}
 
 ) {
     var selectedTab by remember { mutableStateOf(StatTab.RECORDS) }
@@ -163,54 +165,40 @@ fun StatScreen(
             }
         }
     }
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = TraiScoreTheme.dimens.paddingMedium)
-    ) {
-        Scaffold(
-            topBar = {
-                TraiScoreTopBar(
-                    leftIcon = {
-                        ProIconUI(
-                            onClick = {
-                                navController.navigate(NavigationRoutes.Pricing.route)
-                            },
-                            fontSize = 15.sp,
-
-                        )
-                    },
-                    rightIcon = {
-                        FloatingActionButton(
-                            onClick = {
-                                println("⏱️ Icono de cronometro")
-                                showChronoScreen = true
-
-                            },
-                            modifier = Modifier.size(30.dp),
-                            containerColor = MaterialTheme.tsColors.ledCyan,
-                            contentColor = Color.White,
-                            elevation = FloatingActionButtonDefaults.elevation(0.dp)
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.timer_icon),
-                                contentDescription = "Temporizador",
-                                tint = Color.Black
-                            )
-                        }
-
-                    }
+    LaunchedEffect(key1 = "statScreen_topBar") {
+        onConfigureTopBar(
+            // LEFT ICON
+            {
+                ProIconUI(
+                    onClick = { navController.navigate(NavigationRoutes.Pricing.route) },
+                    fontSize = 15.sp
                 )
             },
-            content = { paddingValues ->
+            // RIGHT ICON
+            {
+                FloatingActionButton(
+                    onClick = { showChronoScreen = true },
+                    modifier = Modifier.size(30.dp),
+                    containerColor = MaterialTheme.tsColors.ledCyan,
+                    contentColor = Color.White,
+                    elevation = FloatingActionButtonDefaults.elevation(0.dp)
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.timer_icon),
+                        contentDescription = "Temporizador",
+                        tint = Color.Black
+                    )
+                }
+            }
+        )
+
+        onConfigureFAB(null) // StatScreen no usa FAB global
+    }
+
                 Column(
                     modifier = Modifier
-                        .padding(
-                            top = paddingValues.calculateTopPadding(),
-                            start = paddingValues.calculateStartPadding(LayoutDirection.Ltr),
-                            end = paddingValues.calculateEndPadding(LayoutDirection.Ltr)
-                        )
                         .background(MaterialTheme.colorScheme.background)
+                        .padding(horizontal = TraiScoreTheme.dimens.paddingMedium)
                         .fillMaxSize()
                 ) {
                     // Toggle Buttons justo debajo del TopAppBar
@@ -617,8 +605,7 @@ fun StatScreen(
                     }
                 }
 
-            }
-        )
+
         ChronoScreen(
             isVisible = showChronoScreen,
             onDismiss = {
@@ -629,5 +616,5 @@ fun StatScreen(
 
 
 
-    }
+
 }

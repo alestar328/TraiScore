@@ -3,6 +3,7 @@ package com.develop.traiscore.presentation.screens
 import android.net.Uri
 import android.util.Log
 import android.widget.Toast
+import com.develop.traiscore.BuildConfig
 import android.widget.Toast.LENGTH_SHORT
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -84,9 +85,8 @@ fun RoutineMenuScreen(
     importViewModel: ImportRoutineViewModel = hiltViewModel(),
     screenTitle: String = "Mis Rutinas",
     clientName: String? = null,
-    userRole: UserRole = UserRole.CLIENT // Parámetro para determinar el rol del usuario
-
-
+    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit = { _, _ -> },
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit = {}
 ) {
     val context = LocalContext.current
     var showEmptyDialog by remember { mutableStateOf(false) }
@@ -214,92 +214,71 @@ fun RoutineMenuScreen(
         )
         return
     }
+    LaunchedEffect(Unit) {
+        when (BuildConfig.FLAVOR) {
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = TraiScoreTheme.dimens.paddingMedium)
-    ) {
-        Scaffold(
-            topBar = {
-                // Usar TopBar apropiado según el rol del usuario
-                when (userRole) {
-                    UserRole.TRAINER -> {
+            "trainer" -> {
+                onConfigureTopBar(
+                    {
+                        /* Left icon vacío para entrenador */
+                    },
+                    {
                         TopBarTrainersRoutines(
                             title = screenTitle,
-                            onShareClick = {
-                                // Lógica para compartir rutinas
-                                println("🔗 Compartir rutinas")
-                                // Aquí puedes implementar la funcionalidad de compartir
-                            }
+                            onShareClick = { println("Compartir rutinas") }
                         )
                     }
-                    UserRole.CLIENT -> {
-                        TraiScoreTopBar(
-                            leftIcon = {
-                                FloatingActionButton(
-                                    onClick = {
-                                        println("⏱️ Icono de cronometro")
-                                    },
-                                    modifier = Modifier.size(30.dp),
-                                    containerColor = MaterialTheme.tsColors.ledCyan,
-                                    contentColor = Color.White,
-                                    elevation = FloatingActionButtonDefaults.elevation(0.dp)
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.timer_icon),
-                                        contentDescription = "Temporizador",
-                                        tint = Color.Black
-                                    )
-                                }
-                            },
-                            rightIcon = {
-                                FloatingActionButton(
-                                    onClick = {
-                                        filePickerLauncher.launch("*/*")
-                                    },
-                                    modifier = Modifier.size(30.dp),
-                                    containerColor = MaterialTheme.tsColors.ledCyan,
-                                    contentColor = Color.White,
-                                    elevation = FloatingActionButtonDefaults.elevation(0.dp)
-                                ) {
-                                    Icon(
-                                        painter = painterResource(id = R.drawable.import_icon),
-                                        contentDescription = "Importar",
-                                        tint = Color.Black
-                                    )
-                                }
-                            }
-                        )
-                    }
-                }
-            },
-            containerColor = Color.DarkGray,
-            contentWindowInsets = ScaffoldDefaults.contentWindowInsets
-                .exclude(WindowInsets.navigationBars), // ✅ elimina padding automático inferior
-            floatingActionButton = {
-                Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(12.dp),
-
-                ) {
-
-                    ExtendedFloatingActionButton(
-                        onClick = onAddClick,
-                        icon = { Icon(Icons.Default.Add, contentDescription = null) },
-                        text = { Text("Nueva rutina") },
-                        containerColor = traiBlue,
-                        contentColor = Color.Black
-                    )
-                }
+                )
             }
-        ) { innerPadding ->
-            LazyColumn(
+
+            "production", "lite" -> {
+                onConfigureTopBar(
+                    {
+                        FloatingActionButton(
+                            onClick = { println("⏱️ Cronómetro") },
+                            modifier = Modifier.size(30.dp),
+                            containerColor = MaterialTheme.tsColors.ledCyan
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.timer_icon),
+                                contentDescription = "Temporizador",
+                                tint = Color.Black
+                            )
+                        }
+                    },
+                    {
+                        FloatingActionButton(
+                            onClick = { filePickerLauncher.launch("*/*") },
+                            modifier = Modifier.size(30.dp),
+                            containerColor = MaterialTheme.tsColors.ledCyan
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.import_icon),
+                                contentDescription = "Importar",
+                                tint = Color.Black
+                            )
+                        }
+                    }
+                )
+            }
+        }
+
+        onConfigureFAB {
+            ExtendedFloatingActionButton(
+                onClick = onAddClick,
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Nueva rutina") },
+                containerColor = traiBlue
+            )
+        }
+    }
+
+
+    LazyColumn(
                 modifier = Modifier
                     .fillMaxSize()
                     .background(MaterialTheme.colorScheme.background)
-                    .padding(innerPadding)
-                    .padding(top = 8.dp),
+                    .padding(horizontal = TraiScoreTheme.dimens.paddingMedium),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 itemsIndexed(
@@ -359,8 +338,8 @@ fun RoutineMenuScreen(
 
 
             }
-        }
-    }
+
+
 }
 
 @Composable

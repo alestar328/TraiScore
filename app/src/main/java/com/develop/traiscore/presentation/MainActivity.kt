@@ -68,7 +68,6 @@ import com.develop.traiscore.presentation.screens.MedicalHistoryScreenUI
 import com.develop.traiscore.presentation.screens.MyExercisesUI
 import com.develop.traiscore.presentation.screens.MyHealthWithIAScreen
 import com.develop.traiscore.presentation.screens.PhotoPreviewTempScreen
-import com.develop.traiscore.presentation.screens.PricingScreenUI
 import com.develop.traiscore.presentation.screens.RoutineMenuScreen
 import com.develop.traiscore.presentation.screens.RoutineScreen
 import com.develop.traiscore.presentation.screens.ScreenModeUI
@@ -420,19 +419,12 @@ fun AppNavigation(navController: NavHostController) {
                 }
             )
         }
-        composable(NavigationRoutes.Settings.route) {
-            SettingsScreen(
-                onBack = { navController.popBackStack() },
-                onNavigateToScreenMode = { navController.navigate("screen_mode") },
-                onNavigateToCreateCategory = {
-                    navController.navigate("createCategory") // ✅ O tu ruta
-                },
-                onNavigateToLanguage = {
-                    navController.navigate(NavigationRoutes.Language.route)
-                }
-
+  /*      composable(NavigationRoutes.Settings.route) {
+            MainScreen(
+                navController = navController,
+                initialSelectedIndex = 4  // Perfil
             )
-        }
+        }*/
         composable(NavigationRoutes.Main.route) {
             MainScreen(navController = navController)
         }
@@ -460,7 +452,9 @@ fun AppNavigation(navController: NavHostController) {
             currentUserRole?.let { role ->
                 CreateRoutineScreen(
                     onBack = { navController.popBackStack() },
-                    navController = navController
+                    navController = navController,
+                    onConfigureTopBar = { _, _ -> },
+                    onConfigureFAB = {}
                 )
             } ?: run {
                 Text("Cargando...")
@@ -523,14 +517,14 @@ fun AppNavigation(navController: NavHostController) {
                 bodyStatsViewModel = bodyStatsViewModel
             )
         }
-        composable(NavigationRoutes.MyExercises.route) {
+    /*    composable(NavigationRoutes.MyExercises.route) {
             MyExercisesUI(
                 navController = navController,
-                onBack = {
-                    navController.popBackStack()
+                onBack = { navController.popBackStack() },
+                onConfigureTopBar = { left, right ->
                 }
             )
-        }
+        }*/
         composable(
             route = NavigationRoutes.MeasurementsEdit.route,
             arguments = listOf(navArgument("documentId") { type = NavType.StringType })
@@ -737,8 +731,10 @@ fun AppNavigation(navController: NavHostController) {
             CreateRoutineScreen(
                 onBack = { navController.popBackStack() },
                 navController = navController,
-                targetClientId = clientId, // ✅ PASAR el ID del cliente
-                clientName = clientName // ✅ PASAR el nombre del cliente
+                targetClientId = clientId,
+                clientName = clientName,
+                onConfigureTopBar = { _, _ -> },
+                onConfigureFAB = {}
             )
         }
         composable(

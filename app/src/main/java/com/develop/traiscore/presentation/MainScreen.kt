@@ -38,9 +38,11 @@ import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.screens.ExercisesScreen
 import com.develop.traiscore.presentation.screens.MyClients
+import com.develop.traiscore.presentation.screens.MyExercisesUI
 import com.develop.traiscore.presentation.screens.ProfileScreen
 import com.develop.traiscore.presentation.screens.RoutineMenuScreen
 import com.develop.traiscore.presentation.screens.RoutineScreen
+import com.develop.traiscore.presentation.screens.SettingsScreen
 import com.develop.traiscore.presentation.screens.StatScreen
 import com.develop.traiscore.presentation.viewmodels.ExercisesScreenViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
@@ -197,8 +199,9 @@ fun MainScreen(
                 },
                 onConfigureFAB = { fab ->
                     showFAB = fab
-                }
-            )
+                },
+                setRoutineScreenState = { routineScreenState = it },
+                )
             // ✅ NUEVO: Solo mostrar AddExerciseBottomSheet en la versión athlete
             if (BuildConfig.FLAVOR == "athlete" || BuildConfig.FLAVOR == "production" || BuildConfig.FLAVOR == "lite") {
                 val addExerciseViewModel: AddExerciseViewModel = hiltViewModel()
@@ -227,10 +230,12 @@ sealed class ScreenState {
     object MAIN_ROUTINE_MENU : ScreenState()
     data class FIREBASE_ROUTINE_SCREEN(val documentId: String, val selectedType: String) :
         ScreenState()
-
+    object SETTINGS_SCREEN : ScreenState()   // 👈 NUEVO
     object CREATE_ROUTINE_SCREEN : ScreenState()
     object BODY_MEASUREMENTS_SCREEN : ScreenState()
     object MEASUREMENTS_HISTORY_SCREEN : ScreenState()
+    object MY_EXERCISES_SCREEN : ScreenState()
+    object PROFILE_SCREEN : ScreenState()
 }
 
 @Composable
@@ -240,6 +245,7 @@ fun ContentScreen(
     navController: NavHostController,
     exeScreenViewModel: ExercisesScreenViewModel,
     routineScreenState: ScreenState,
+    setRoutineScreenState: (ScreenState) -> Unit,
     onRoutineSelected: (String, String) -> Unit,
     onBackToRoutineMenu: () -> Unit,
     onCreateRoutine: () -> Unit,
@@ -267,7 +273,10 @@ fun ContentScreen(
                 onMeasurementsHistoryClick = onMeasurementsHistoryClick,
                 onEditMeasurementFromHistory = onEditMeasurementFromHistory,
                 onBackToMeasurements = onBackToMeasurements,
-                routineViewModel = routineViewModel
+                routineViewModel = routineViewModel,
+                onConfigureTopBar = onConfigureTopBar,
+                onConfigureFAB = onConfigureFAB,
+                setRoutineScreenState = setRoutineScreenState,
             )
         }
         "athlete" -> {
@@ -285,7 +294,8 @@ fun ContentScreen(
                 onBackToMeasurements = onBackToMeasurements,
                 routineViewModel = routineViewModel,
                 onConfigureTopBar = onConfigureTopBar,
-                onConfigureFAB = onConfigureFAB
+                onConfigureFAB = onConfigureFAB,
+                setRoutineScreenState = setRoutineScreenState,
             )
         }
         else -> {
@@ -304,7 +314,8 @@ fun ContentScreen(
                 onBackToMeasurements = onBackToMeasurements,
                 routineViewModel = routineViewModel,
                 onConfigureTopBar = onConfigureTopBar,
-                onConfigureFAB = onConfigureFAB       
+                onConfigureFAB = onConfigureFAB      ,
+                setRoutineScreenState = setRoutineScreenState,
             )
         }
     }
@@ -322,7 +333,11 @@ private fun TrainerContent(
     onMeasurementsHistoryClick: () -> Unit,
     onEditMeasurementFromHistory: () -> Unit,
     onBackToMeasurements: () -> Unit,
-    routineViewModel: RoutineViewModel
+    routineViewModel: RoutineViewModel,
+    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit,
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit,
+    setRoutineScreenState: (ScreenState) -> Unit,
+
 ) {
     when (selectedIndex) {
         0 -> MyClients(
@@ -340,16 +355,13 @@ private fun TrainerContent(
             when (routineScreenState) {
                 is ScreenState.MAIN_ROUTINE_MENU ->
                     RoutineMenuScreen(
-                        onRoutineClick = { docId, type ->
-                            onRoutineSelected(docId, type)
-                        },
-                        onAddClick = {
-                            onCreateRoutine()
-                        },
+                        onRoutineClick = { docId, type -> onRoutineSelected(docId, type) },
+                        onAddClick = { onCreateRoutine() },
                         viewModel = routineViewModel,
                         screenTitle = "Mis Rutinas de Entrenador",
-                        clientName = null
-                        // ✅ ELIMINADO: userRole = UserRole.TRAINER
+                        clientName = null,
+                        onConfigureTopBar = onConfigureTopBar,
+                        onConfigureFAB = onConfigureFAB
                     )
                 is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
                     RoutineScreen(
@@ -361,8 +373,9 @@ private fun TrainerContent(
                 is ScreenState.CREATE_ROUTINE_SCREEN -> {
                     CreateRoutineScreen(
                         onBack = onBackToRoutineMenu,
-                        navController = navController
-                        // ✅ ELIMINADO: currentUserRole = UserRole.TRAINER
+                        navController = navController,
+                        onConfigureTopBar = onConfigureTopBar,
+                        onConfigureFAB = onConfigureFAB
                     )
                 }
                 else -> Unit
@@ -387,7 +400,12 @@ private fun TrainerContent(
                 )
                 else -> ProfileScreen(
                     navController = navController,
-                    onMeasurementsClick = onMeasurementsClick // ✅ USAR callback
+                    onMeasurementsClick = onMeasurementsClick,
+                    onConfigureTopBar = onConfigureTopBar,
+                    onConfigureFAB = onConfigureFAB,
+                    setRoutineScreenState = setRoutineScreenState,
+                    onSettingsClick = { setRoutineScreenState(ScreenState.SETTINGS_SCREEN) }
+
                 )
             }
         }
@@ -409,7 +427,8 @@ private fun AthleteContent(
     onBackToMeasurements: () -> Unit,
     routineViewModel: RoutineViewModel,
     onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit,
-    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit,
+    setRoutineScreenState: (ScreenState) -> Unit
 ) {
     when (selectedIndex) {
         0 -> ExercisesScreen(
@@ -417,22 +436,23 @@ private fun AthleteContent(
             onConfigureTopBar = onConfigureTopBar,
             onConfigureFAB = onConfigureFAB
         )
-        1 -> StatScreen(navController = navController)
+        1 -> StatScreen(
+            navController = navController,
+            onConfigureTopBar = onConfigureTopBar,
+            onConfigureFAB = onConfigureFAB
+        )
         2 -> Text("Pantalla Add (opcional)")
         3 -> {
             when (routineScreenState) {
                 is ScreenState.MAIN_ROUTINE_MENU ->
                     RoutineMenuScreen(
-                        onRoutineClick = { docId, type ->
-                            onRoutineSelected(docId, type)
-                        },
-                        onAddClick = {
-                            onCreateRoutine()
-                        },
+                        onRoutineClick = { docId, type -> onRoutineSelected(docId, type) },
+                        onAddClick = { onCreateRoutine() },
                         viewModel = routineViewModel,
                         screenTitle = "Mis Rutinas",
-                        clientName = null
-                        // ✅ ELIMINADO: userRole = UserRole.CLIENT
+                        clientName = null,
+                        onConfigureTopBar = onConfigureTopBar,
+                        onConfigureFAB = onConfigureFAB
                     )
                 is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
                     RoutineScreen(
@@ -445,15 +465,18 @@ private fun AthleteContent(
                 is ScreenState.CREATE_ROUTINE_SCREEN -> {
                     CreateRoutineScreen(
                         onBack = onBackToRoutineMenu,
-                        navController = navController
-                        // ✅ ELIMINADO: currentUserRole = UserRole.CLIENT
+                        navController = navController,
+                        onConfigureTopBar = onConfigureTopBar,
+                        onConfigureFAB = onConfigureFAB
                     )
+
                 }
                 else -> Unit
             }
         }
         4 -> {
             when (routineScreenState) {
+
                 is ScreenState.BODY_MEASUREMENTS_SCREEN -> BodyMeasurementsScreen(
                     onBack = onBackToRoutineMenu,
                     onSave = { gender, data ->
@@ -463,17 +486,38 @@ private fun AthleteContent(
                     onMeasurementsClick = onMeasurementsClick,
                     onMeasurementsHistoryClick = onMeasurementsHistoryClick
                 )
+
                 is ScreenState.MEASUREMENTS_HISTORY_SCREEN -> BodyMeasurementsHistoryScreen(
                     onBack = onBackToMeasurements,
                     onEditMeasurement = { historyItem ->
                         onEditMeasurementFromHistory()
                     }
                 )
+                is ScreenState.MY_EXERCISES_SCREEN -> MyExercisesUI(
+                    navController = navController,
+                    onBack = { setRoutineScreenState(ScreenState.PROFILE_SCREEN) },
+                    onConfigureTopBar = onConfigureTopBar
+                )
+                is ScreenState.SETTINGS_SCREEN -> SettingsScreen(
+                    onBack = { onBackToRoutineMenu() }, // vuelve al ProfileScreen
+                    onNavigateToScreenMode = { navController.navigate("screen_mode") },
+                    onNavigateToCreateCategory = { navController.navigate("createCategory") },
+                    onNavigateToLanguage = { navController.navigate(NavigationRoutes.Language.route) },
+                    onConfigureTopBar = onConfigureTopBar
+                )
+
                 else -> ProfileScreen(
                     navController = navController,
-                    onMeasurementsClick = onMeasurementsClick
+                    onMeasurementsClick = onMeasurementsClick,
+                    onConfigureTopBar = onConfigureTopBar,
+                    onConfigureFAB = onConfigureFAB,
+                    setRoutineScreenState = setRoutineScreenState,
+                    onSettingsClick = {
+                        setRoutineScreenState(ScreenState.SETTINGS_SCREEN)
+                    }
                 )
             }
         }
+
     }
 }
