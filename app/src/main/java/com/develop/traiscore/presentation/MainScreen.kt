@@ -102,6 +102,7 @@ fun MainScreen(
     val activeSession by newSessionViewModel.activeSession.collectAsState()
 
     var isBottomSheetVisible by remember { mutableStateOf(false) }
+    var showTopBarTitle by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
 
 
     LaunchedEffect(Unit) {
@@ -116,6 +117,7 @@ fun MainScreen(
         topBar = {
             TraiScoreTopBar(
                 leftIcon = { showTopBarLeftAction?.invoke() ?: Unit },
+                title = showTopBarTitle,
                 rightIcon = { showTopBarRightAction?.invoke() ?: Unit }
             )
         },
@@ -193,9 +195,10 @@ fun MainScreen(
                     routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
                 },
                 routineViewModel = routineViewModel,
-                onConfigureTopBar = { left, right ->
+                onConfigureTopBar = { left, right, title ->
                     showTopBarLeftAction = left
                     showTopBarRightAction = right
+                    showTopBarTitle = title
                 },
                 onConfigureFAB = { fab ->
                     showFAB = fab
@@ -254,7 +257,7 @@ fun ContentScreen(
     onEditMeasurementFromHistory: () -> Unit,
     onBackToMeasurements: () -> Unit,
     routineViewModel: RoutineViewModel,
-    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit = { _, _ -> },
+    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit, title: (@Composable () -> Unit)?) -> Unit = { _, _, _ -> },
     onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit = {}
 
     // ✅ ELIMINADO: currentUserRole: UserRole?
@@ -334,7 +337,7 @@ private fun TrainerContent(
     onEditMeasurementFromHistory: () -> Unit,
     onBackToMeasurements: () -> Unit,
     routineViewModel: RoutineViewModel,
-    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit,
+    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit, title: (@Composable () -> Unit)?) -> Unit, // ✅ AGREGAR title
     onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit,
     setRoutineScreenState: (ScreenState) -> Unit,
 
@@ -360,21 +363,25 @@ private fun TrainerContent(
                         viewModel = routineViewModel,
                         screenTitle = "Mis Rutinas de Entrenador",
                         clientName = null,
-                        onConfigureTopBar = onConfigureTopBar,
+                        onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) },
                         onConfigureFAB = onConfigureFAB
                     )
                 is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
                     RoutineScreen(
                         documentId = routineScreenState.documentId,
                         selectedType = routineScreenState.selectedType,
-                        onBack = onBackToRoutineMenu
+                        onBack = onBackToRoutineMenu,
+                        onConfigureTopBar = { left, right, title ->
+                            onConfigureTopBar(left, right, title)  // ✅ Pasar los 3 parámetros
+                        },
+                        onConfigureFAB = { fab -> onConfigureFAB(fab) }
                     )
                 }
                 is ScreenState.CREATE_ROUTINE_SCREEN -> {
                     CreateRoutineScreen(
                         onBack = onBackToRoutineMenu,
                         navController = navController,
-                        onConfigureTopBar = onConfigureTopBar,
+                        onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) }, // ✅ Pasar null
                         onConfigureFAB = onConfigureFAB
                     )
                 }
@@ -401,7 +408,7 @@ private fun TrainerContent(
                 else -> ProfileScreen(
                     navController = navController,
                     onMeasurementsClick = onMeasurementsClick,
-                    onConfigureTopBar = onConfigureTopBar,
+                    onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) },
                     onConfigureFAB = onConfigureFAB,
                     setRoutineScreenState = setRoutineScreenState,
                     onSettingsClick = { setRoutineScreenState(ScreenState.SETTINGS_SCREEN) }
@@ -426,19 +433,20 @@ private fun AthleteContent(
     onEditMeasurementFromHistory: () -> Unit,
     onBackToMeasurements: () -> Unit,
     routineViewModel: RoutineViewModel,
-    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit,
+    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit, title: (@Composable () -> Unit)?) -> Unit,
     onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit,
     setRoutineScreenState: (ScreenState) -> Unit
 ) {
+
     when (selectedIndex) {
         0 -> ExercisesScreen(
             navController = navController,
-            onConfigureTopBar = onConfigureTopBar,
+            onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) }, // ✅ Pasar null
             onConfigureFAB = onConfigureFAB
         )
         1 -> StatScreen(
             navController = navController,
-            onConfigureTopBar = onConfigureTopBar,
+            onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) }, // ✅ Pasar null
             onConfigureFAB = onConfigureFAB
         )
         2 -> Text("Pantalla Add (opcional)")
@@ -451,22 +459,25 @@ private fun AthleteContent(
                         viewModel = routineViewModel,
                         screenTitle = "Mis Rutinas",
                         clientName = null,
-                        onConfigureTopBar = onConfigureTopBar,
+                        onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) }, // ✅ Pasar null
                         onConfigureFAB = onConfigureFAB
                     )
                 is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
                     RoutineScreen(
                         documentId = routineScreenState.documentId,
                         selectedType = routineScreenState.selectedType,
-                        onBack = onBackToRoutineMenu
-                        // ✅ ELIMINADO: currentUserRole = UserRole.CLIENT
+                        onBack = onBackToRoutineMenu,
+                        onConfigureTopBar = { left, right, title ->
+                            onConfigureTopBar(left, right, title)
+                        },
+                        onConfigureFAB = { fab -> onConfigureFAB(fab) }
                     )
                 }
                 is ScreenState.CREATE_ROUTINE_SCREEN -> {
                     CreateRoutineScreen(
                         onBack = onBackToRoutineMenu,
                         navController = navController,
-                        onConfigureTopBar = onConfigureTopBar,
+                        onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) }, // ✅ Pasar null
                         onConfigureFAB = onConfigureFAB
                     )
 
@@ -496,20 +507,20 @@ private fun AthleteContent(
                 is ScreenState.MY_EXERCISES_SCREEN -> MyExercisesUI(
                     navController = navController,
                     onBack = { setRoutineScreenState(ScreenState.PROFILE_SCREEN) },
-                    onConfigureTopBar = onConfigureTopBar
+                    onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) } // ✅ Pasar null
                 )
                 is ScreenState.SETTINGS_SCREEN -> SettingsScreen(
                     onBack = { onBackToRoutineMenu() }, // vuelve al ProfileScreen
                     onNavigateToScreenMode = { navController.navigate("screen_mode") },
                     onNavigateToCreateCategory = { navController.navigate("createCategory") },
                     onNavigateToLanguage = { navController.navigate(NavigationRoutes.Language.route) },
-                    onConfigureTopBar = onConfigureTopBar
+                    onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) } // ✅ Pasar null
                 )
 
                 else -> ProfileScreen(
                     navController = navController,
                     onMeasurementsClick = onMeasurementsClick,
-                    onConfigureTopBar = onConfigureTopBar,
+                    onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) },
                     onConfigureFAB = onConfigureFAB,
                     setRoutineScreenState = setRoutineScreenState,
                     onSettingsClick = {

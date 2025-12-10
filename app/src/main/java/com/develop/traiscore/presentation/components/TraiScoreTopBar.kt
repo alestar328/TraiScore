@@ -34,6 +34,7 @@ import com.develop.traiscore.presentation.viewmodels.ThemeViewModel
 @Composable
 fun TraiScoreTopBar(
     leftIcon: @Composable () -> Unit = {},
+    title: @Composable (() -> Unit)? = null,
     rightIcon: @Composable () -> Unit = {},
     showLogo: Boolean = true,
     themeViewModel: ThemeViewModel = hiltViewModel()
@@ -42,17 +43,21 @@ fun TraiScoreTopBar(
 
     CenterAlignedTopAppBar(
         title = {
-
+            if (title != null) {
+                // 👉 Mostrar título dinámico (ej: nombre de rutina)
+                title()
+            } else {
+                // 👉 Mostrar logo TraiScore (comportamiento por defecto)
                 Text(
                     text = buildAnnotatedString {
-                        withStyle( style = SpanStyle( color = traiBlue )) { append("Trai")}
-                        withStyle( style = SpanStyle(   color = Color.White ) ) { append("Score") }
+                        withStyle(SpanStyle(color = traiBlue)) { append("Trai") }
+                        withStyle(SpanStyle(color = Color.White)) { append("Score") }
                     },
                     style = MaterialTheme.typography.titleLarge.copy(
                         fontWeight = FontWeight.Bold
                     )
                 )
-
+            }
         },
         navigationIcon = { leftIcon() },
         modifier = Modifier.height(70.dp),

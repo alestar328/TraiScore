@@ -699,7 +699,9 @@ fun AppNavigation(navController: NavHostController) {
                 documentId = docId,
                 selectedType = type,
                 onBack = { navController.popBackStack() },
-                routineViewModel = routineViewModel
+                routineViewModel = routineViewModel,
+                onConfigureTopBar = { _, _, _ -> },
+                onConfigureFAB = {}
             )
         }
         composable(NavigationRoutes.MyHealthWithIA.route) {

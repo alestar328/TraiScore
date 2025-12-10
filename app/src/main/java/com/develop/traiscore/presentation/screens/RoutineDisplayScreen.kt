@@ -53,7 +53,13 @@ fun RoutineScreen(
     routineViewModel: RoutineViewModel = viewModel(),
     documentId: String,
     selectedType: String,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onConfigureTopBar: (
+        @Composable () -> Unit,      // left
+        @Composable () -> Unit,      // right
+        (@Composable () -> Unit)?
+    ) -> Unit,
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit
 ) {
     val exerciseVM: AddExerciseViewModel = viewModel()
     val exerciseNames by exerciseVM.exerciseNames.collectAsState()
@@ -98,101 +104,75 @@ fun RoutineScreen(
     }
 
     val filteredExercises = routineViewModel.getExercisesByType(selectedType)
+    val routineTitle = currentRoutineData.routineName.ifBlank { "Rutina" }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = currentRoutineData.routineName.ifBlank { "Rutina" },
-                        color = Color.White
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = { onBack() }) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = Color.White
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
-                ),
-                modifier = Modifier.height(56.dp)
-            )
-        },
-        floatingActionButton = {
-            if (isTrainerVersion) {
-                FloatingActionButton(
-                    onClick = {
-                        val currentRoutine = routineViewModel.routineDocument
-                        if (currentRoutine == null) {
-                            Toast.makeText(
-                                context,
-                                "Error: No se pudo cargar la rutina",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            return@FloatingActionButton
-                        }
-                        if (currentRoutine.sections.isEmpty()) {
-                            Toast.makeText(
-                                context,
-                                "La rutina no tiene secciones para exportar",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                            return@FloatingActionButton
-                        }
-                        try {
-                            com.develop.traiscore.exports.RoutineExportManager.exportRoutine(
-                                context = context,
-                                routine = currentRoutine,
-                                onSuccess = { fileUri ->
-                                    com.develop.traiscore.exports.RoutineExportManager.shareRoutineFile(
-                                        context = context,
-                                        fileUri = fileUri,
-                                        routineName = currentRoutine.routineName
-                                    )
-                                    Toast.makeText(
-                                        context,
-                                        "✅ Rutina '${currentRoutine.routineName}' exportada y compartida",
-                                        Toast.LENGTH_SHORT
-                                    ).show()
-                                },
-                                onError = { error ->
-                                    Toast.makeText(
-                                        context,
-                                        "❌ Error al exportar: $error",
-                                        Toast.LENGTH_LONG
-                                    ).show()
-                                }
-                            )
-                        } catch (e: Exception) {
-                            Toast.makeText(
-                                context,
-                                "Error inesperado: ${e.message}",
-                                Toast.LENGTH_LONG
-                            ).show()
-                        }
-                    },
-                    containerColor = Color.Yellow,
-                    contentColor = Color.Black,
-                    modifier = Modifier
-                ) {
+    LaunchedEffect(routineTitle) {
+        onConfigureTopBar(
+            {
+                IconButton(onClick = onBack) {
                     Icon(
-                        imageVector = Icons.Default.Email,
-                        contentDescription = "Enviar rutina"
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Volver",
+                        tint = Color.White
                     )
                 }
+            },
+            { /* nada a la derecha */ },
+            {
+                Text(
+                    text = routineTitle,
+                    color = Color.White
+                )
             }
+        )
+    }
+
+    // ► Configuración del FAB SOLO trainer
+    LaunchedEffect(isTrainerVersion) {
+        if (isTrainerVersion) {
+            onConfigureFAB {
+                FloatingActionButton(
+                    onClick = {
+                        val routine = routineViewModel.routineDocument ?: return@FloatingActionButton
+                        if (routine.sections.isEmpty()) {
+                            Toast.makeText(context, "La rutina no tiene secciones", Toast.LENGTH_SHORT).show()
+                            return@FloatingActionButton
+                        }
+
+                        com.develop.traiscore.exports.RoutineExportManager.exportRoutine(
+                            context = context,
+                            routine = routine,
+                            onSuccess = { fileUri ->
+                                com.develop.traiscore.exports.RoutineExportManager.shareRoutineFile(
+                                    context,
+                                    fileUri,
+                                    routine.routineName
+                                )
+                            },
+                            onError = { err ->
+                                Toast.makeText(context, "❌ Error: $err", Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    },
+                    containerColor = Color.Yellow,
+                    contentColor = Color.Black
+                ) {
+                    Icon(Icons.Default.Email, contentDescription = "Enviar Rutina")
+                }
+            }
+        } else {
+            onConfigureFAB(null)
         }
-    ) { innerPadding ->
+    }
+
+    // ► Carga de datos
+    LaunchedEffect(documentId) {
+        routineViewModel.loadRoutine(documentId)
+    }
         LazyColumn(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(innerPadding)
         ) {
             item {
                 RoutineTable(
@@ -320,5 +300,5 @@ fun RoutineScreen(
                 }
             )
         }
-    }
+
 }
