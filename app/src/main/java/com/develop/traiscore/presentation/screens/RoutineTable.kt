@@ -11,7 +11,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.rememberDismissState
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
@@ -254,7 +253,7 @@ private fun TableHeader(
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
         listOf(
-            "Ejercicio" to 1.5f,
+            "Ejercicio" to 1.7f,
             "Series" to 0.7f,
             "Peso" to 0.8f,
             "Reps" to 0.7f,
@@ -296,7 +295,7 @@ private fun TableRow(
                 onFieldChanged(exerciseIndex, ColumnType.EXERCISE_NAME, finalName)
             },
             exerciseNames = exerciseNames,
-            weight = 1.5f,
+            weight = 1.7f,
             textColor = textColor,
             fontSize = fontSize,
             fontWeight = fontWeight,

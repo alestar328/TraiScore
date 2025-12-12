@@ -160,7 +160,7 @@ fun ProfileScreen(
             "production", "athlete", "lite" -> {
                 onConfigureTopBar(
                     {
-                        Box(
+                     /*   Box(
                             modifier = Modifier
                                 .size(30.dp)
                                 .clickable { showAchievements = true },
@@ -171,7 +171,7 @@ fun ProfileScreen(
                                 contentDescription = "Logros",
                                 tint = MaterialTheme.tsColors.ledCyan
                             )
-                        }
+                        }*/
                     },
                     {
                         IconButton(onClick = { onSettingsClick() }) {

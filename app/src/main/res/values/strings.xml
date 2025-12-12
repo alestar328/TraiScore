@@ -148,7 +148,7 @@
     <string name="routines_accept">Aceptar</string>
 
     <!-- Session card -->
-    <string name="session_card_touch">Toca para empezar</string>
+    <string name="session_card_touch">Crear nueva sesión</string>
     <string name="session_new_session">Nueva sesión</string>
 
 

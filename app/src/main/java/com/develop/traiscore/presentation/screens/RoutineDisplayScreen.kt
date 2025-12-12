@@ -1,18 +1,19 @@
 package com.develop.traiscore.presentation.screens
 
-import android.widget.Toast
+import  android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -23,11 +24,8 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -42,7 +40,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import com.develop.traiscore.BuildConfig
+import com.develop.traiscore.R
+import com.develop.traiscore.presentation.theme.traiBlue
+import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 import com.google.firebase.auth.FirebaseAuth
 
@@ -113,15 +115,27 @@ fun RoutineScreen(
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
                         contentDescription = "Volver",
-                        tint = Color.White
+                        tint = traiBlue
                     )
                 }
             },
-            { /* nada a la derecha */ },
+            {
+                IconButton(
+                    onClick = {
+
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Selector de vista",
+                        tint = MaterialTheme.tsColors.ledCyan
+                    )
+                }
+            },
             {
                 Text(
                     text = routineTitle,
-                    color = Color.White
+                    color = traiBlue
                 )
             }
         )
@@ -233,7 +247,11 @@ fun RoutineScreen(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
                     ) {
-                        Text("Limpiar")
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Guardar rutina",
+                            tint = Color.White
+                        )
                     }
 
                     // ✅ BOTÓN GUARDAR
@@ -248,7 +266,11 @@ fun RoutineScreen(
                         },
                         colors = ButtonDefaults.buttonColors(containerColor = Color.Green)
                     ) {
-                        Text("Guardar")
+                        Icon(
+                            painter = painterResource(id = R.drawable.save_icon),
+                            contentDescription = "Guardar rutina",
+                            tint = Color.White
+                        )
                     }
 
                     // ✅ NUEVO: BOTÓN AÑADIR EJERCICIO

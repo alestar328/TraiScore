@@ -65,13 +65,18 @@ fun SettingsScreen(
     onNavigateToScreenMode: () -> Unit = {},
     onNavigateToCreateCategory: () -> Unit = {},
     onNavigateToLanguage: () -> Unit = {},
-    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit
+    onConfigureTopBar: (
+        @Composable () -> Unit,      // left
+        @Composable () -> Unit,      // right
+        (@Composable () -> Unit)?
+    ) -> Unit,
 
 ) {
     var showDialog by remember { mutableStateOf(false) }
 
     val viewModel: AddExerciseViewModel = hiltViewModel()
     val coroutineScope = rememberCoroutineScope()
+    val titleTopbar = "Ajustes"
 
     if (showDialog) {
         AddExerciseDialogToDB(
@@ -102,6 +107,12 @@ fun SettingsScreen(
             {
                 // Espacio simétrico a la derecha
                 Spacer(modifier = Modifier.size(48.dp))
+            },
+            {
+                Text(
+                    text = titleTopbar,
+                    color = traiBlue
+                )
             }
         )
     }
@@ -113,14 +124,7 @@ fun SettingsScreen(
                     .verticalScroll(rememberScrollState()),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(
-                    text = "Ajustes",
-                    style = MaterialTheme.typography.displaySmall.copy(
-                        color = Color.White,
-                        textAlign = TextAlign.Center
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
+
 
                 Spacer(modifier = Modifier.height(TraiScoreTheme.dimens.spacerMedium))
 

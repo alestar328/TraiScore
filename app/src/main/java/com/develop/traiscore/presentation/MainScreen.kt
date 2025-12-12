@@ -514,7 +514,9 @@ private fun AthleteContent(
                     onNavigateToScreenMode = { navController.navigate("screen_mode") },
                     onNavigateToCreateCategory = { navController.navigate("createCategory") },
                     onNavigateToLanguage = { navController.navigate(NavigationRoutes.Language.route) },
-                    onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) } // ✅ Pasar null
+                    onConfigureTopBar = { left, right, title ->
+                        onConfigureTopBar(left, right, title)
+                    },
                 )
 
                 else -> ProfileScreen(
