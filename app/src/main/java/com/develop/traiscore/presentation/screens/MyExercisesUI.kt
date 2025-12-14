@@ -43,7 +43,7 @@ fun MyExercisesUI(
     onBack: () -> Unit,
     addExerciseViewModel: AddExerciseViewModel = hiltViewModel(),
     onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit,
-
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit
     ) {
     val exercisesWithSource by addExerciseViewModel.exercisesWithSource.collectAsState()
     val filteredExercises by addExerciseViewModel.filteredExercisesWithSource.collectAsState()
@@ -95,8 +95,32 @@ fun MyExercisesUI(
             )
         }
     }
-
-
+    SideEffect {
+        if (!isSearchActive) {
+            onConfigureFAB {
+                FloatingActionButton(
+                    onClick = {
+                        selectedExercise = null
+                        showDialog = true
+                    },
+                    containerColor = MaterialTheme.tsColors.ledCyan,
+                    contentColor = Color.Black
+                ) {
+                    Icon(
+                        Icons.Default.Add,
+                        contentDescription = "Agregar ejercicio"
+                    )
+                }
+            }
+        } else {
+            onConfigureFAB(null) // ⬅️ clave
+        }
+    }
+    DisposableEffect(Unit) {
+        onDispose {
+            onConfigureFAB(null)
+        }
+    }
         Column(
             modifier = Modifier
                 .fillMaxSize()

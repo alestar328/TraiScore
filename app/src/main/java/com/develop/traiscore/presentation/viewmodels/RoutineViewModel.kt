@@ -12,7 +12,9 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.develop.traiscore.core.ColumnType
 import com.develop.traiscore.data.firebaseData.RoutineDocument
+import com.develop.traiscore.data.firebaseData.RoutineSection
 import com.develop.traiscore.data.firebaseData.SimpleExercise
+import com.develop.traiscore.data.local.entity.RoutineHistoryEntity
 import com.develop.traiscore.data.repository.RoutineRepository
 import com.develop.traiscore.exports.ImportRoutineViewModel
 import com.google.firebase.auth.FirebaseAuth
@@ -79,9 +81,6 @@ class RoutineViewModel @Inject constructor(
                 // 2) Devolver ID LOCAL a la UI
                 onComplete(localId.toString(), null)
 
-                // 3) BACKUP EN FIREBASE (asíncrono)
-                routineRepository.backupRoutineToFirebase(localId)
-
             } catch (e: Exception) {
                 onComplete(null, e.message)
             }
@@ -120,7 +119,9 @@ class RoutineViewModel @Inject constructor(
             }
         }
     }
-
+    fun deserializeSectionsSnapshot(snapshotJson: String): List<RoutineSection> {
+        return routineRepository.deserializeSections(snapshotJson)
+    }
     fun validateInput(input: String, columnType: ColumnType): String {
         if (input.isEmpty()) return input
 
@@ -238,23 +239,37 @@ class RoutineViewModel @Inject constructor(
 
         viewModelScope.launch {
             isLoading = true
-
             try {
-                val localList = routineRepository.getAllRoutines(userId)
+                // ✅ PRIMERO: Sincronizar desde Firebase si es necesario
+                val localRoutines = routineRepository.getAllRoutines(userId)
 
+                if (localRoutines.isEmpty()) {
+                    Log.d("RoutineViewModel", "No hay rutinas en Room, intentando sincronizar desde Firebase")
+                    try {
+                        routineRepository.syncRoutinesFromFirebase(userId)
+                        Log.d("RoutineViewModel", "Sincronización de Firebase completada")
+                    } catch (e: Exception) {
+                        Log.e("RoutineViewModel", "Error en sincronización inicial", e)
+                    }
+                }
+
+                // ✅ SEGUNDO: Cargar rutinas (ahora deben estar en Room)
+                val finalList = routineRepository.getAllRoutines(userId)
                 routineTypes.clear()
-                routineTypes.addAll(localList)
+                routineTypes.addAll(finalList)
 
                 isLoading = false
-                onComplete(localList.isNotEmpty())
+                onComplete(finalList.isNotEmpty())
+
+                Log.d("RoutineViewModel", "Rutinas cargadas: ${finalList.size}")
 
             } catch (e: Exception) {
+                Log.e("RoutineViewModel", "Error cargando rutinas", e)
                 isLoading = false
                 onComplete(false)
             }
         }
     }
-
 
     private fun isValidTraiScoreJson(context: Context, uri: Uri): Boolean {
         return try {
@@ -368,15 +383,53 @@ class RoutineViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val localId = documentId.toInt()
+
+                // ✅ NUEVO: Guardar snapshot en historial con fecha actual
+                routineRepository.saveRoutineSnapshot(localId)
+
+                // Backup en Firebase (asíncrono)
                 routineRepository.backupRoutineToFirebase(localId)
+
                 onResult(true)
             } catch (e: Exception) {
-                Log.e("RoutineViewModel", "Backup failed", e)
+                Log.e("RoutineViewModel", "Save failed", e)
                 onResult(false)
             }
         }
     }
+    fun getDatesWithRoutines(
+        userId: String,
+        onResult: (List<String>) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val dates = routineRepository.getDatesWithRoutines(userId)
+                onResult(dates)
+            } catch (e: Exception) {
+                Log.e("RoutineViewModel", "Error loading routine dates", e)
+                onResult(emptyList())
+            }
+        }
+    }
 
+    /**
+     * Obtiene rutinas guardadas en una fecha específica
+     */
+    fun getRoutinesByDate(
+        userId: String,
+        date: String,
+        onResult: (List<RoutineHistoryEntity>) -> Unit
+    ) {
+        viewModelScope.launch {
+            try {
+                val routines = routineRepository.getRoutinesByDate(userId, date)
+                onResult(routines)
+            } catch (e: Exception) {
+                Log.e("RoutineViewModel", "Error loading routines by date", e)
+                onResult(emptyList())
+            }
+        }
+    }
     // ✅ MODIFICAR: deleteRoutineType para usar targetClientId cuando esté disponible
     fun deleteRoutineType(
         documentId: String,

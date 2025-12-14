@@ -26,7 +26,10 @@ import com.develop.traiscore.presentation.theme.tsColors
 enum class ViewMode {
     YEAR, MONTH, TODAY
 }
-
+enum class CalendarMode {
+    SESSIONS,   // Para ver entrenamientos/sesiones
+    ROUTINES    // Para ver rutinas guardadas
+}
 @Composable
 fun ViewModeSelector(
     selectedMode: ViewMode,

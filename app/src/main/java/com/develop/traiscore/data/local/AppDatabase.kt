@@ -16,10 +16,18 @@ import com.develop.traiscore.data.local.entity.SessionEntity
 import com.develop.traiscore.data.local.entity.RoutineEntity
 import com.develop.traiscore.data.local.entity.RoutineSectionEntity
 import com.develop.traiscore.data.local.entity.RoutineExerciseEntity
+import com.develop.traiscore.data.local.entity.RoutineHistoryEntity
 
 @Database(
-    entities = [WorkoutEntry::class, ExerciseEntity::class, SessionEntity::class, RoutineEntity::class, RoutineSectionEntity::class, RoutineExerciseEntity::class],
-    version = 6,
+    entities = [
+        WorkoutEntry::class,
+        ExerciseEntity::class,
+        SessionEntity::class,
+        RoutineEntity::class,
+        RoutineSectionEntity::class,
+        RoutineExerciseEntity::class,
+        RoutineHistoryEntity::class],
+    version = 7,
     exportSchema = false // Cambia según tus necesidades
 
 )

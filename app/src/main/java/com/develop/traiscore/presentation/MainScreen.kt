@@ -507,7 +507,8 @@ private fun AthleteContent(
                 is ScreenState.MY_EXERCISES_SCREEN -> MyExercisesUI(
                     navController = navController,
                     onBack = { setRoutineScreenState(ScreenState.PROFILE_SCREEN) },
-                    onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) } // ✅ Pasar null
+                    onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) },
+                    onConfigureFAB = onConfigureFAB
                 )
                 is ScreenState.SETTINGS_SCREEN -> SettingsScreen(
                     onBack = { onBackToRoutineMenu() }, // vuelve al ProfileScreen

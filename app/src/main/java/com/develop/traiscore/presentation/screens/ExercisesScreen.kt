@@ -122,24 +122,6 @@ fun ExercisesScreen(
             {
                 IconButton(
                     onClick = {
-                        if (showSearchBar.value) {
-                            showSearchBar.value = false
-                            selectedSearch.value = ""
-                        }
-                        showViewModeSelector.value = !showViewModeSelector.value
-                    }
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = "Selector de vista",
-                        tint = MaterialTheme.tsColors.ledCyan
-                    )
-                }
-            },
-            // rightIcon
-            {
-                IconButton(
-                    onClick = {
                         calculateTodayDataAndNavigate(
                             context = context,
                             navController = navController,
@@ -154,6 +136,25 @@ fun ExercisesScreen(
                         contentDescription = "Compartir sesión",
                         tint = MaterialTheme.tsColors.ledCyan,
                         modifier = Modifier.size(30.dp)
+                    )
+                }
+            },
+            // rightIcon
+            {
+
+                IconButton(
+                    onClick = {
+                        if (showSearchBar.value) {
+                            showSearchBar.value = false
+                            selectedSearch.value = ""
+                        }
+                        showViewModeSelector.value = !showViewModeSelector.value
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Selector de vista",
+                        tint = MaterialTheme.tsColors.ledCyan
                     )
                 }
             }
