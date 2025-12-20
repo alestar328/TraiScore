@@ -40,6 +40,34 @@ class RoutineRepository(
 
         return routineDao.insertRoutine(routine).toInt()
     }
+    suspend fun persistRoutineInRoom(
+        routineLocalId: Int,
+        routineDocument: RoutineDocument
+    ) {
+        // 1. Borrar ejercicios actuales
+        val sections = routineDao.getSections(routineLocalId)
+        routineDao.deleteExercises(sections.map { it.id })
+
+        // 2. Reinsertar ejercicios desde routineDocument
+        routineDocument.sections.forEach { section ->
+            val sectionEntity = sections.firstOrNull { it.type == section.type } ?: return@forEach
+
+            val exercises = section.exercises.map {
+                RoutineExerciseEntity(
+                    sectionId = sectionEntity.id,
+                    name = it.name,
+                    series = it.series,
+                    reps = it.reps,
+                    weight = it.weight,
+                    rir = it.rir
+                )
+            }
+
+            if (exercises.isNotEmpty()) {
+                routineDao.insertExercises(exercises)
+            }
+        }
+    }
 
     suspend fun addSection(
         routineLocalId: Int,

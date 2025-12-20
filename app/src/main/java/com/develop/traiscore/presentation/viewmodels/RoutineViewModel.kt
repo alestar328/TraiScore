@@ -383,7 +383,9 @@ class RoutineViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 val localId = documentId.toInt()
-
+                routineDocument?.let {
+                    routineRepository.persistRoutineInRoom(localId, it)
+                }
                 // ✅ NUEVO: Guardar snapshot en historial con fecha actual
                 routineRepository.saveRoutineSnapshot(localId)
 
