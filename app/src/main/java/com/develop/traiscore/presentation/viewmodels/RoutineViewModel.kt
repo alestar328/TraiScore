@@ -49,8 +49,22 @@ class RoutineViewModel @Inject constructor(
 
         Log.d("RoutineViewModel", "Configurado para cliente: $clientId - Lista limpiada")
     }
+    private var hasLoadedRoutines = false
 
-
+    fun ensureRoutinesLoaded(context: Context, onComplete: (Boolean) -> Unit) {
+        if (hasLoadedRoutines) {
+            onComplete(routineTypes.isNotEmpty())
+            return
+        }
+        hasLoadedRoutines = true
+        loadRoutines(context, onComplete)
+    }
+    fun removeRoutineAt(index: Int) {
+        val newList = routineTypes.toMutableList()
+        newList.removeAt(index)
+        routineTypes.clear()
+        routineTypes.addAll(newList)
+    }
     fun getTargetUserId(): String? {
         return targetClientId ?: FirebaseAuth.getInstance().currentUser?.uid
     }

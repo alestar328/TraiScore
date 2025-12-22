@@ -105,10 +105,7 @@ fun MainScreen(
     var showTopBarTitle by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
 
 
-    LaunchedEffect(Unit) {
-        // ✅ ELIMINADO: Ya no necesitamos getUserRole
-        routineViewModel.clearTargetClient()
-    }
+
     LaunchedEffect(Unit) {
         newSessionViewModel.checkForActiveSession()
     }

@@ -100,7 +100,13 @@ fun RoutineMenuScreen(
             }
         }
     }
-
+    LaunchedEffect(Unit) {
+        viewModel.ensureRoutinesLoaded(context) { hasRoutines ->
+            if (!hasRoutines && !viewModel.hasShownEmptyDialog) {
+                showEmptyDialog = true
+            }
+        }
+    }
     val filePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -146,7 +152,7 @@ fun RoutineMenuScreen(
                             viewModel.deleteRoutineType(routine.documentId) { success ->
                                 if (success) {
                                     // ✅ Actualizar la lista del viewModel en lugar de la lista local
-                                    viewModel.routineTypes.removeAt(index)
+                                    viewModel.removeRoutineAt(index)
                                     Toast.makeText(context, "Rutina eliminada", LENGTH_SHORT).show()
                                 } else {
                                     Toast.makeText(
