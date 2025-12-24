@@ -73,7 +73,8 @@ fun RoutineTable(
     inputCursorColor: Color = Color.Yellow,
     enableSwipe: Boolean = true,
     validateInput: (String, ColumnType) -> String,
-    bottomPadding: Dp = 16.dp
+    bottomPadding: Dp = 16.dp,
+    transparentCells: Boolean = false
 ) {
     // ✅ Altura dinámica basada en el contenido
     val headerHeight = 56.dp
@@ -84,7 +85,7 @@ fun RoutineTable(
         modifier = modifier
         .fillMaxWidth()
         .padding(5.dp)
-        .background(MaterialTheme.colorScheme.background)
+        .background(backgroundColor)
         .height(totalHeight) // ✅ Altura exacta según el número de ejercicios
         ) {
     // Header
@@ -202,6 +203,7 @@ fun RoutineTable(
                                 onFocusChange = { rowHasFocus = it },
                                 validateInput = validateInput,
                                 onFieldChanged = onFieldChanged,
+                                transparentCells = transparentCells
                             )
                         }
                     )
@@ -223,6 +225,7 @@ fun RoutineTable(
                         onFocusChange = { rowHasFocus = it },
                         validateInput = validateInput,
                         onFieldChanged = onFieldChanged,
+                        transparentCells = transparentCells
                     )
                 }
             }
@@ -281,7 +284,8 @@ private fun TableRow(
     inputFocusedBorderColor: Color,
     inputCursorColor: Color,
     onFocusChange: (Boolean) -> Unit,
-    validateInput: (String, ColumnType) -> String
+    validateInput: (String, ColumnType) -> String,
+    transparentCells: Boolean
 ) {
     Row(
         modifier = Modifier
@@ -300,7 +304,8 @@ private fun TableRow(
             fontSize = fontSize,
             fontWeight = fontWeight,
             focusedBorderColor = inputFocusedBorderColor,
-            cursorColor = inputCursorColor
+            cursorColor = inputCursorColor,
+            transparentCells = transparentCells
         )
         val cells: List<Quadruple<String, Float, ColumnType, (String) -> Unit>> = listOf(
             Quadruple(exercise.series.toString(), 0.7f, ColumnType.SERIES) { v ->
@@ -334,7 +339,8 @@ private fun TableRow(
                 onFocusChanged = { focused ->
                     onFocusChange(focused)
                 },
-                validateInput = validateInput
+                validateInput = validateInput,
+                transparentCells = transparentCells
             )
         }
     }
@@ -350,7 +356,8 @@ fun RowScope.BodyCellAutocomplete(
     fontSize: Int,
     fontWeight: FontWeight,
     focusedBorderColor: Color,
-    cursorColor: Color
+    cursorColor: Color,
+    transparentCells: Boolean
 ) {
     var localValue by remember { mutableStateOf(value) }
     var expanded by remember { mutableStateOf(false) }
@@ -406,8 +413,8 @@ fun RowScope.BodyCellAutocomplete(
                 unfocusedBorderColor = Color.Transparent,
                 focusedBorderColor = focusedBorderColor,
                 cursorColor = cursorColor,
-                focusedContainerColor = Color(0xFF1A1A1A),
-                unfocusedContainerColor = Color.Transparent
+                focusedContainerColor = if (transparentCells) Color.Transparent else Color(0xFF1A1A1A),
+                unfocusedContainerColor = if (transparentCells) Color.Transparent else Color.Transparent
             ),
             trailingIcon = null // ✅ Sin ícono de dropdown (no queremos el icono estándar)
         )
@@ -479,7 +486,8 @@ private fun RowScope.BodyCell(
     cursorColor: Color,
     columnType: ColumnType,
     onFocusChanged: (Boolean) -> Unit,
-    validateInput: (String, ColumnType) -> String
+    validateInput: (String, ColumnType) -> String,
+    transparentCells: Boolean
 ) {
     var localValue by remember { mutableStateOf(value) }
 
@@ -507,8 +515,8 @@ private fun RowScope.BodyCell(
             unfocusedBorderColor = borderColor,
             focusedBorderColor = focusedBorderColor,
             cursorColor = cursorColor,
-            focusedContainerColor = Color(0xFF1A1A1A),
-            unfocusedContainerColor = Color.Transparent
+            focusedContainerColor = if (transparentCells) Color.Transparent else Color(0xFF1A1A1A),
+            unfocusedContainerColor = if (transparentCells) Color.Transparent else Color.Transparent
         )
     )
 }

@@ -283,6 +283,7 @@ fun RoutineScreen(
                             },
                             onDeleteExercise = {},
                             enableSwipe = false,
+                            backgroundColor = Color.Transparent,
                             validateInput = routineViewModel::validateInput,
                             bottomPadding = if (isTrainerVersion) 80.dp else 10.dp
                         )

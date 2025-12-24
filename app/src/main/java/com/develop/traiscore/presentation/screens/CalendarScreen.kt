@@ -292,7 +292,7 @@ fun CalendarScreen(
                             style = MaterialTheme.typography.titleMedium,
                             color = traiBlue,
                             fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp)
+                            modifier = Modifier.padding(start = 8.dp, bottom = 8.dp, top = 8.dp)
                         )
                     }
 
@@ -397,17 +397,20 @@ private fun RoutineHistoryCard(
 
                     // ✅ Renderizar tablas por sección
                     sections.forEach { sec ->
-                        Text(
+
+                /*     ESTO MUESTRA EL TYPE: CHEST, LEGS, CORE, BACK
+                   Text(
                             text = sec.type,
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurface,
                             fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.padding(bottom = 6.dp, top = 6.dp)
-                        )
+                        )*/
 
                         RoutineTable(
                             exercises = sec.exercises,
                             exerciseNames = exerciseNames,
+                            backgroundColor = Color.Transparent,
                             onDeleteExercise = {},
                             onFieldChanged = { _, _, _ -> }, // read-only “lógico” (no guardamos cambios)
                             onSeriesChanged = { _, _ -> },
@@ -416,7 +419,6 @@ private fun RoutineHistoryCard(
                             onRirChanged = { _, _ -> },
                             enableSwipe = false,
                             validateInput = routineViewModel::validateInput,
-                            bottomPadding = 8.dp
                         )
                     }
                 }
