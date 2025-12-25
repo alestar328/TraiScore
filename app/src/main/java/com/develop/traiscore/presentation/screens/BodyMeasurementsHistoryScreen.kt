@@ -11,11 +11,8 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import com.develop.traiscore.R
 import com.develop.traiscore.data.local.entity.UserMeasurements
 import com.develop.traiscore.presentation.components.bodyMeasurements.EmptyContent
 import com.develop.traiscore.presentation.components.bodyMeasurements.ErrorContent
@@ -43,7 +40,13 @@ fun BodyMeasurementsHistoryScreen(
     modifier: Modifier = Modifier,
     onBack: () -> Unit,
     onEditMeasurement: (String) -> Unit = {},
-    bodyStatsViewModel: BodyStatsViewModel = hiltViewModel()
+    bodyStatsViewModel: BodyStatsViewModel = hiltViewModel(),
+    onConfigureTopBar: (
+        @Composable () -> Unit,
+        @Composable () -> Unit,
+        (@Composable () -> Unit)?
+    ) -> Unit,
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit
 ) {
     var historyItems by remember { mutableStateOf<List<MeasurementHistoryItem>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
@@ -95,98 +98,36 @@ fun BodyMeasurementsHistoryScreen(
         }
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        if (showCompareMode) "Comparando (${selectedForComparison.size})"
-                        else stringResource(R.string.measurements_title),
-                        color = traiBlue
+    LaunchedEffect(Unit) {
+        onConfigureTopBar(
+            {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        Icons.Default.ArrowBack,
+                        contentDescription = null,
+                        tint = traiBlue
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (showCompareMode) {
-                            showCompareMode = false
-                            selectedForComparison = emptySet()
-                        } else {
-                            onBack()
-                        }
-                    }) {
-                        Icon(
-                            if (showCompareMode) Icons.Default.Close else Icons.Default.ArrowBack,
-                            contentDescription = if (showCompareMode) "Cancelar comparación" else "Volver"
-                        )
-                    }
-                },
-                actions = {
-                    if (!showCompareMode) {
-                        // Botón de comparación
-                        IconButton(
-                            onClick = { showCompareMode = true }
-                        ) {
-                            Icon(
-                                Icons.Default.Info,
-                                contentDescription = "Comparar medidas",
-                                tint = traiBlue
-                            )
-                        }
+                }
+            },
+            {
+                // sin acciones a la derecha
+            },
+            {
+                Text(
+                    text = "Historial de medidas",
+                    color = traiBlue
+                )
+            }
+        )
+    }
+    LaunchedEffect(Unit) {
+        onConfigureFAB(null)
+    }
 
-                        // Menú de ordenación
-                        Box {
-                            IconButton(onClick = { showSortMenu = true }) {
-                                Icon(
-                                    Icons.Default.List,
-                                    contentDescription = "Ordenar",
-                                    tint = traiBlue
-                                )
-                            }
-                            DropdownMenu(
-                                expanded = showSortMenu,
-                                onDismissRequest = { showSortMenu = false }
-                            ) {
-                                sortOptions.forEach { option ->
-                                    DropdownMenuItem(
-                                        text = { Text(option) },
-                                        onClick = {
-                                            selectedSortOption = option
-                                            showSortMenu = false
-                                        },
-                                        leadingIcon = {
-                                            if (selectedSortOption == option) {
-                                                Icon(
-                                                    Icons.Default.Check,
-                                                    contentDescription = null,
-                                                    tint = traiBlue
-                                                )
-                                            }
-                                        }
-                                    )
-                                }
-                            }
-                        }
-                    } else if (selectedForComparison.size >= 2) {
-                        // Botón para iniciar comparación
-                        TextButton(
-                            onClick = {
-                                // Aquí se puede navegar a una pantalla de comparación detallada
-                                Log.d("Compare", "Comparando: $selectedForComparison")
-                            }
-                        ) {
-                            Text("Comparar", color = traiBlue, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(containerColor = MaterialTheme.colorScheme.background)
-            )
-        }
-    ) { paddingValues ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(paddingValues)
         ) {
             when {
                 isLoading -> {
@@ -286,5 +227,5 @@ fun BodyMeasurementsHistoryScreen(
                 }
             }
         }
-    }
+
 }

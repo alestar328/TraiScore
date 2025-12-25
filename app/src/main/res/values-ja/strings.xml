@@ -155,6 +155,7 @@
     <string name="measurement_waist">ウエスト</string>
     <string name="measurement_height">身長</string>
     <string name="measurement_thigh">太もも</string>
+    <string name="measurement_hip">ヒップ</string>
     <string name="measurement_arms">腕</string>
     <string name="measurement_neck">首</string>
     <string name="measurement_calf">ふくらはぎ</string>

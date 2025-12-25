@@ -15,7 +15,9 @@ enum class MeasurementType(
     ARMS("Arms", R.string.measurement_arms, R.string.unit_cm),
     WAIST("Waist", R.string.measurement_waist, R.string.unit_cm),
     THIGH("Thigh", R.string.measurement_thigh, R.string.unit_cm),
+    HIP("Hip", R.string.measurement_hip, R.string.unit_cm),
     CALF("Calf", R.string.measurement_calf, R.string.unit_cm);
+
 
     companion object {
         fun getAllMeasurements(): List<MeasurementType> = values().toList()

@@ -155,6 +155,7 @@
     <string name="measurement_waist">Taille</string>
     <string name="measurement_height">Taille (hauteur)</string>
     <string name="measurement_thigh">Cuisse</string>
+    <string name="measurement_hip">Hanche</string>
     <string name="measurement_arms">Bras</string>
     <string name="measurement_neck">Cou</string>
     <string name="measurement_calf">Mollets</string>

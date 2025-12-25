@@ -167,6 +167,7 @@
     <string name="measurement_chest">Brust</string>
     <string name="measurement_waist">Taille</string>
     <string name="measurement_height">Größe</string>
+    <string name="measurement_hip">Hüfte</string>
     <string name="measurement_thigh">Oberschenkel</string>
     <string name="measurement_arms">Arme</string>
     <string name="measurement_neck">Nacken</string>

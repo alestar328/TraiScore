@@ -76,7 +76,8 @@ fun RoutineMenuScreen(
     screenTitle: String = "Mis Rutinas",
     clientName: String? = null,
     onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit) -> Unit = { _, _ -> },
-    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit = {}
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit = {},
+    onOpenChrono: () -> Unit = {}   // ✅ DEFAULT (CLAVE)
 ) {
     val context = LocalContext.current
     var showEmptyDialog by remember { mutableStateOf(false) }
@@ -245,7 +246,7 @@ fun RoutineMenuScreen(
                     {
 
                         FloatingActionButton(
-                            onClick = { println("⏱️ Cronómetro") },
+                            onClick = onOpenChrono,
                             modifier = Modifier.size(30.dp),
                             containerColor = MaterialTheme.tsColors.ledCyan
                         ) {

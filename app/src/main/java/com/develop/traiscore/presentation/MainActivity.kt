@@ -47,15 +47,12 @@ import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.data.Authentication.UserRoleManager
 import com.develop.traiscore.exports.ImportRoutineViewModel
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
-import com.develop.traiscore.presentation.screens.BodyMeasurementsHistoryScreen
-import com.develop.traiscore.presentation.screens.BodyMeasurementsScreen
 import com.develop.traiscore.presentation.screens.CameraGalleryScreen
 import com.develop.traiscore.presentation.screens.CameraScanScreen
 import com.develop.traiscore.presentation.screens.ClientProfileScreen
 import com.develop.traiscore.presentation.screens.CreateCategoryUI
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.screens.LabResultsScreen
-import com.develop.traiscore.presentation.screens.LanguageScreenUI
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
@@ -65,13 +62,10 @@ import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import com.develop.traiscore.presentation.screens.LoginScreenRoute
 import com.develop.traiscore.presentation.screens.MedicalHistoryScreenUI
-import com.develop.traiscore.presentation.screens.MyExercisesUI
 import com.develop.traiscore.presentation.screens.MyHealthWithIAScreen
 import com.develop.traiscore.presentation.screens.PhotoPreviewTempScreen
 import com.develop.traiscore.presentation.screens.RoutineMenuScreen
 import com.develop.traiscore.presentation.screens.RoutineScreen
-import com.develop.traiscore.presentation.screens.ScreenModeUI
-import com.develop.traiscore.presentation.screens.SettingsScreen
 import com.develop.traiscore.presentation.screens.StatScreen
 import com.develop.traiscore.presentation.viewmodels.BodyStatsViewModel
 import com.develop.traiscore.presentation.viewmodels.LabResultsViewModel
@@ -389,11 +383,7 @@ fun AppNavigation(navController: NavHostController) {
                 navController = navController
             )
         }
-        composable("screen_mode") {
-            ScreenModeUI(
-                onBack = { navController.popBackStack() }
-            )
-        }
+
         composable("createCategory") {
             CreateCategoryUI(
                 onBack = { navController.popBackStack() },
@@ -402,23 +392,7 @@ fun AppNavigation(navController: NavHostController) {
                 }
             )
         }
-        composable(NavigationRoutes.Language.route) {
-            LanguageScreenUI(
-                onBack = {
-                    navController.popBackStack()
-                },
-                onLanguageChanged = { languageCode ->
-                    // Guardar idioma y reiniciar app
-                    LocaleManager.setLanguage(context, languageCode)
 
-                    // Reiniciar la app completamente
-                    val intent = Intent(context, MainActivity::class.java)
-                    intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_NEW_TASK)
-                    context.startActivity(intent)
-                    (context as? ComponentActivity)?.finish()
-                }
-            )
-        }
   /*      composable(NavigationRoutes.Settings.route) {
             MainScreen(
                 navController = navController,
@@ -429,17 +403,7 @@ fun AppNavigation(navController: NavHostController) {
             MainScreen(navController = navController)
         }
 
-        composable(NavigationRoutes.MeasurementsHistory.route) {
-            val bodyStatsViewModel: BodyStatsViewModel = hiltViewModel()
 
-            BodyMeasurementsHistoryScreen(
-                onBack = { navController.popBackStack() },
-                onEditMeasurement = { documentId ->
-                    navController.navigate(NavigationRoutes.MeasurementsEdit.createRoute(documentId))
-                },
-                bodyStatsViewModel = bodyStatsViewModel
-            )
-        }
 
         composable(NavigationRoutes.CreateRoutine.route) {
             var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
@@ -499,24 +463,7 @@ fun AppNavigation(navController: NavHostController) {
             )
         }
 
-        composable(NavigationRoutes.Measurements.route) {
-            val bodyStatsViewModel: BodyStatsViewModel = hiltViewModel()
 
-            BodyMeasurementsScreen(
-                onBack = {
-                    navController.popBackStack()
-                },
-                onSave = { gender, data ->
-                    navController.popBackStack()
-                },
-                initialData = emptyMap(),
-                onMeasurementsClick = { },
-                onMeasurementsHistoryClick = {
-                    navController.navigate(NavigationRoutes.MeasurementsHistory.route)
-                },
-                bodyStatsViewModel = bodyStatsViewModel
-            )
-        }
     /*    composable(NavigationRoutes.MyExercises.route) {
             MyExercisesUI(
                 navController = navController,
@@ -525,34 +472,7 @@ fun AppNavigation(navController: NavHostController) {
                 }
             )
         }*/
-        composable(
-            route = NavigationRoutes.MeasurementsEdit.route,
-            arguments = listOf(navArgument("documentId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val documentId = backStackEntry.arguments?.getString("documentId") ?: return@composable
-            val bodyStatsViewModel: BodyStatsViewModel = hiltViewModel()
 
-            // Load the measurement for editing
-            LaunchedEffect(documentId) {
-                bodyStatsViewModel.loadMeasurementForEditById(documentId)
-            }
-
-            BodyMeasurementsScreen(
-                onBack = {
-                    bodyStatsViewModel.clearEditMode()
-                    navController.popBackStack()
-                },
-                onSave = { gender, data ->
-                    navController.popBackStack()
-                },
-                initialData = emptyMap(),
-                onMeasurementsClick = { },
-                onMeasurementsHistoryClick = {
-                    navController.navigate(NavigationRoutes.MeasurementsHistory.route)
-                },
-                bodyStatsViewModel = bodyStatsViewModel
-            )
-        }
         composable(NavigationRoutes.TrainerInvitations.route) {
             com.develop.traiscore.presentation.screens.TrainerInvitationsScreen(
                 onBack = { navController.popBackStack() }
@@ -739,23 +659,7 @@ fun AppNavigation(navController: NavHostController) {
                 onConfigureFAB = {}
             )
         }
-        composable(
-            route = "client_measurements_history/{clientId}",
-            arguments = listOf(navArgument("clientId") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
 
-            BodyMeasurementsHistoryScreen(
-                onBack = { navController.popBackStack() },
-                onEditMeasurement = { documentId ->
-                    // Navigate to edit screen with document ID
-                    navController.navigate(NavigationRoutes.MeasurementsEdit.createRoute(documentId))
-                },
-                bodyStatsViewModel = hiltViewModel<BodyStatsViewModel>().apply {
-                    setTargetUser(clientId)
-                }
-            )
-        }
         composable(
             route = "client_stats/{clientId}",
             arguments = listOf(navArgument("clientId") { type = NavType.StringType })

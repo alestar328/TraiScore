@@ -22,7 +22,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.FloatingActionButton
@@ -37,6 +36,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -48,6 +49,7 @@ import com.develop.traiscore.presentation.theme.traiOrange
 import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.ChronoState
 import com.develop.traiscore.presentation.viewmodels.ChronoViewModel
+import com.develop.traiscore.R
 
 @Composable
 fun ChronoScreen(
@@ -193,16 +195,14 @@ fun ChronoScreen(
                         },
                         elevation = FloatingActionButtonDefaults.elevation(0.dp)
                     ) {
+                        //                                Icons.Default.PlayArrow
                         Icon(
-                            imageVector = if (chronoState == ChronoState.RUNNING) {
-                                Icons.Default.Warning
+                            painter = if (chronoState == ChronoState.RUNNING) {
+                                painterResource(R.drawable.pause_icon)
                             } else {
-                                Icons.Default.PlayArrow
+                                rememberVectorPainter(Icons.Default.PlayArrow)
                             },
-                            contentDescription = when (chronoState) {
-                                ChronoState.RUNNING -> "Pausar"
-                                else -> "Iniciar"
-                            },
+                            contentDescription = if (chronoState == ChronoState.RUNNING) "Pausar" else "Iniciar",
                             tint = Color.White,
                             modifier = Modifier.size(32.dp)
                         )

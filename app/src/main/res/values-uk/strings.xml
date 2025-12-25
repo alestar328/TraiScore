@@ -155,6 +155,7 @@
     <string name="measurement_waist">Талія</string>
     <string name="measurement_height">Зріст</string>
     <string name="measurement_thigh">Стегно</string>
+    <string name="measurement_hip">Стегно</string>
     <string name="measurement_arms">Руки</string>
     <string name="measurement_neck">Шия</string>
     <string name="measurement_calf">Ікри</string>

@@ -154,6 +154,7 @@
     <string name="measurement_chest">Chest</string>
     <string name="measurement_waist">Waist</string>
     <string name="measurement_height">Height</string>
+    <string name="measurement_hip">Hip</string>
     <string name="measurement_thigh">Thigh</string>
     <string name="measurement_arms">Arms</string>
     <string name="measurement_neck">Neck</string>

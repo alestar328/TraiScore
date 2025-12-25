@@ -13,55 +13,55 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.R
 import com.develop.traiscore.presentation.components.ThemeModeCard
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.TSStyle
+import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.ThemeViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ScreenModeUI(
     onBack: () -> Unit = {},
-    themeViewModel: ThemeViewModel = hiltViewModel()
+    themeViewModel: ThemeViewModel = hiltViewModel(),
+    onConfigureTopBar: (
+        @Composable () -> Unit,
+        @Composable () -> Unit,
+        (@Composable () -> Unit)?
+    ) -> Unit,
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit
 ) {
     val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    // Logo en lugar de texto
-                    Image(
-                        painter = painterResource(id = R.drawable.trailogoup),
-                        contentDescription = "Logo cabecera",
-                        modifier = Modifier.fillMaxWidth(),
+
+    LaunchedEffect(Unit) {
+        onConfigureTopBar(
+            {
+                IconButton(onClick = onBack) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Volver",
+                        tint = traiBlue
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Volver",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.surface,
-                    titleContentColor = MaterialTheme.colorScheme.onSurface
-                )
-            )
-        }
-    ) { paddingValues ->
+                }
+            },
+            {
+                // Espacio simétrico a la derecha
+                Spacer(modifier = Modifier.size(48.dp))
+            },
+            null
+        )
+
+        // Sin FAB en esta pantalla
+        onConfigureFAB(null)
+    }
         Column(
             modifier = Modifier
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
-                .padding(paddingValues)
                 .padding(TraiScoreTheme.dimens.paddingMedium),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -171,13 +171,5 @@ fun ScreenModeUI(
                 modifier = Modifier.padding(horizontal = 16.dp)
             )
         }
-    }
 }
 
-@Preview
-@Composable
-fun ScreenModeUIPreview() {
-    TraiScoreTheme {
-        ScreenModeUI()
-    }
-}

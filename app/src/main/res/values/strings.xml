@@ -164,6 +164,7 @@
     <string name="measurement_waist">Cintura</string>
     <string name="measurement_height">Altura</string>
     <string name="measurement_thigh">Muslo</string>
+    <string name="measurement_hip">Cadera</string>
     <string name="measurement_arms">Brazos</string>
     <string name="measurement_neck">Cuello</string>
     <string name="measurement_calf">Gemelos</string>

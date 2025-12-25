@@ -156,6 +156,7 @@
     <string name="measurement_height">Рост</string>
     <string name="measurement_thigh">Бедро</string>
     <string name="measurement_arms">Руки</string>
+    <string name="measurement_hip">Бедро</string>
     <string name="measurement_neck">Шея</string>
     <string name="measurement_calf">Икры</string>
     <string name="measurement_weight">Вес</string>

@@ -156,6 +156,7 @@
     <string name="measurement_height">Altura</string>
     <string name="measurement_thigh">Coxa</string>
     <string name="measurement_arms">Braços</string>
+    <string name="measurement_hip">Quadril</string>
     <string name="measurement_neck">Pescoço</string>
     <string name="measurement_calf">Panturrilhas</string>
     <string name="measurement_weight">Peso</string>

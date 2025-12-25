@@ -11,7 +11,6 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -25,10 +24,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -68,7 +64,13 @@ fun BodyMeasurementsScreen(
     bodyStatsViewModel: BodyStatsViewModel = hiltViewModel(),
     subscriptionViewModel: SubscriptionViewModel = hiltViewModel(),
     onMeasurementsClick: () -> Unit,
-    onMeasurementsHistoryClick: () -> Unit
+    onMeasurementsHistoryClick: () -> Unit,
+    onConfigureTopBar: (
+        @Composable () -> Unit,
+        @Composable () -> Unit,
+        (@Composable () -> Unit)?
+    ) -> Unit,
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit,
 ) {
     val context = LocalContext.current
 
@@ -226,98 +228,89 @@ fun BodyMeasurementsScreen(
         )
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        // ✅ CAMBIO: Título dinámico según modo
-                        if (bodyStatsViewModel.isEditMode) "Editar medidas"
-                        else stringResource(R.string.profile_my_sizes),
-                        color = traiBlue
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        // ✅ CAMBIO: Limpiar modo edición al volver
-                        if (bodyStatsViewModel.isEditMode) {
-                            bodyStatsViewModel.clearEditMode()
-                        }
-                        onBack()
-                    }) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+    LaunchedEffect(bodyStatsViewModel.isEditMode) {
+        onConfigureTopBar(
+            {
+                IconButton(onClick = {
+                    if (bodyStatsViewModel.isEditMode) {
+                        bodyStatsViewModel.clearEditMode()
                     }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.background
+                    onBack()
+                }) {
+                    Icon(
+                        Icons.AutoMirrored.Filled.ArrowBack,
+                        contentDescription = "Back",
+                        tint = traiBlue
+                    )
+                }
+            },
+            { /* right icon vacío */ },
+            {
+                Text(
+                    text = if (bodyStatsViewModel.isEditMode)
+                        "Editar medidas"
+                    else
+                        stringResource(R.string.profile_my_sizes),
+                    color = traiBlue
                 )
-            )
-        },
-        bottomBar = {
-            Column {
-                // Fila con ambos botones lado a lado
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (!bodyStatsViewModel.isEditMode) {
-                        ExtendedFloatingActionButton(
-                            onClick = onMeasurementsHistoryClick,
-                            modifier = Modifier.weight(1f),
-                            containerColor = traiOrange,
-                            contentColor = Color.Black
-                        ) {
-                            Icon(
-                                painter = painterResource(id = R.drawable.history_logo),
-                                contentDescription = "Historial",
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(stringResource(R.string.view_history))
+            }
+        )
+    }
+
+    LaunchedEffect(bodyStatsViewModel.isEditMode, bodyStatsViewModel.isLoading) {
+        onConfigureFAB {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+
+                if (!bodyStatsViewModel.isEditMode) {
+                    ExtendedFloatingActionButton(
+                        onClick = onMeasurementsHistoryClick,
+                        containerColor = traiOrange,
+                        contentColor = Color.Black
+                    ) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.history_logo),
+                            contentDescription = "Historial",
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        Text(stringResource(R.string.view_history))
+                    }
+                }
+
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        if (!bodyStatsViewModel.isLoading) {
+                            saveData()
                         }
+                    },
+                    containerColor = traiBlue,
+                    contentColor = Color.White
+                ) {
+                    if (bodyStatsViewModel.isLoading) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(18.dp),
+                            color = Color.White
+                        )
+                    } else {
+                        Icon(Icons.Default.Check, contentDescription = "Guardar")
                     }
 
-                    // Botón de guardar
-                    ExtendedFloatingActionButton(
-                        onClick = {
-                            if (!bodyStatsViewModel.isLoading) {
-                                saveData()
-                            }
-                        },
-                        modifier = Modifier.weight(if (bodyStatsViewModel.isEditMode) 1f else 1f),
-                        text = {
-                            when {
-                                bodyStatsViewModel.isLoading -> Text("Guardando...")
-                                bodyStatsViewModel.isEditMode -> Text("Actualizar")
-                                else -> Text(stringResource(R.string.save_measurements))
-                            }
-                        },
-                        icon = {
-                            if (bodyStatsViewModel.isLoading) {
-                                CircularProgressIndicator(
-                                    modifier = Modifier.width(24.dp).height(24.dp),
-                                    color = Color.White
-                                )
-                            } else {
-                                Icon(
-                                    imageVector = Icons.Default.Check,
-                                    contentDescription = "Save"
-                                )
-                            }
-                        },
-                        containerColor = traiBlue,
-                        contentColor = Color.White
+                    Spacer(Modifier.width(8.dp))
+
+                    Text(
+                        if (bodyStatsViewModel.isEditMode) "Actualizar"
+                        else stringResource(R.string.save_measurements)
                     )
                 }
             }
-        },
-        content = { inner ->
+        }
+    }
+
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .padding(inner)
                     .background(MaterialTheme.colorScheme.background),
                 contentAlignment = Alignment.Center
             ){
@@ -431,6 +424,6 @@ fun BodyMeasurementsScreen(
                     }
                 }
             }
-        }
-    )
+
+
 }

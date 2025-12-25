@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -72,7 +73,8 @@ fun RoutineScreen(
         @Composable () -> Unit,
         (@Composable () -> Unit)?
     ) -> Unit,
-    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit
+    onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit,
+    onOpenChrono: () -> Unit = {}
 ) {
     val exerciseVM: AddExerciseViewModel = viewModel()
     val exerciseNames by exerciseVM.exerciseNames.collectAsState()
@@ -152,15 +154,15 @@ fun RoutineScreen(
                 }
             },
             {
-                IconButton(
-                    onClick = {
-                        showViewModeSelector = !showViewModeSelector
-                    }
+                FloatingActionButton(
+                    onClick = onOpenChrono,
+                    modifier = Modifier.size(30.dp),
+                    containerColor = MaterialTheme.tsColors.ledCyan
                 ) {
                     Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = "Selector de vista",
-                        tint = MaterialTheme.tsColors.ledCyan
+                        painter = painterResource(id = R.drawable.timer_icon),
+                        contentDescription = "Temporizador",
+                        tint = Color.Black
                     )
                 }
             },
@@ -214,29 +216,18 @@ fun RoutineScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        AnimatedVisibility(
-            visible = showViewModeSelector,
-            enter = slideInVertically(
-                initialOffsetY = { -it },
-                animationSpec = tween(300)
-            ) + fadeIn(animationSpec = tween(300)),
-            exit = slideOutVertically(
-                targetOffsetY = { -it },
-                animationSpec = tween(200)
-            ) + fadeOut(animationSpec = tween(200))
-        ) {
-            ViewModeSelector(
-                selectedMode = ViewMode.TODAY,
-                onModeSelected = { mode ->
-                    currentViewMode = mode
-                    showViewModeSelector = false
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.background)
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
-            )
-        }
+
+        ViewModeSelector(
+            selectedMode = currentViewMode,
+            onModeSelected = { mode ->
+                currentViewMode = mode
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+
 
         when (currentViewMode) {
             ViewMode.TODAY -> {
