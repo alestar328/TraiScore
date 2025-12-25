@@ -172,7 +172,7 @@ fun SettingsOptionRow(
             text = label,
             fontSize = 15.sp,
             fontWeight = FontWeight.Bold,
-            color = Color.White
+            color = MaterialTheme.colorScheme.onBackground
         )
     }
 }

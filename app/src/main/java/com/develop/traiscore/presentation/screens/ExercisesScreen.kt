@@ -252,8 +252,6 @@ fun ExercisesScreen(
                             )
                         },
                         label = "ViewModeTransition",
-                        modifier = Modifier
-                        .padding(top = 8.dp)
                     ) { viewMode ->
                         when (viewMode) {
                             ViewMode.YEAR -> {

@@ -1,9 +1,11 @@
 package com.develop.traiscore.di
 
 import android.content.Context
+import com.develop.traiscore.data.local.dao.BodyStatsDao
 import com.develop.traiscore.data.local.dao.ExerciseDao
 import com.develop.traiscore.data.local.dao.RoutineDao
 import com.develop.traiscore.data.preferences.ThemePreferences
+import com.develop.traiscore.data.repository.BodyStatsRepository
 import com.develop.traiscore.data.repository.ExerciseRepository
 import com.develop.traiscore.data.repository.InvitationRepository
 import com.develop.traiscore.data.repository.RoutineRepository
@@ -78,5 +80,15 @@ object AppModule {
         auth: FirebaseAuth
     ): RoutineRepository {
         return RoutineRepository(routineDao, firestore, auth)
+    }
+
+    @Provides
+    @Singleton
+    fun provideBodyStatsRepository(
+        bodyStatsDao: BodyStatsDao,
+        firestore: FirebaseFirestore,
+        auth: FirebaseAuth
+    ): BodyStatsRepository {
+        return BodyStatsRepository(bodyStatsDao, firestore, auth)
     }
 }

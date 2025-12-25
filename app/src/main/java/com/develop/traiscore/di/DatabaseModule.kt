@@ -3,6 +3,7 @@ package com.develop.traiscore.di
 import android.content.Context
 import androidx.room.Room
 import com.develop.traiscore.data.local.AppDatabase
+import com.develop.traiscore.data.local.dao.BodyStatsDao
 import com.develop.traiscore.data.local.dao.SessionDao
 import dagger.Module
 import dagger.Provides
@@ -17,14 +18,17 @@ import javax.inject.Singleton
 class DatabaseModule {
     @Singleton
     @Provides
-    fun provideRoomDatabase(@ApplicationContext appContext : Context): AppDatabase {
+    fun provideRoomDatabase(@ApplicationContext appContext: Context): AppDatabase {
         return Room.databaseBuilder(
             appContext,
-            AppDatabase::class.java, "trai_score_database"
+            AppDatabase::class.java,
+            "trai_score_database"
         )
-            .fallbackToDestructiveMigration() // Permite eliminar y recrear la base de datos
+            .addMigrations(AppDatabase.MIGRATION_7_8)  // ← AGREGAR MIGRACIÓN
+            .fallbackToDestructiveMigration()
             .build()
     }
+
     @Singleton
     @Provides
     fun provideRoutineDao(db: AppDatabase) = db.routineDao()
@@ -40,4 +44,9 @@ class DatabaseModule {
     @Singleton
     @Provides
     fun provideSessionDao(db: AppDatabase): SessionDao = db.sessionDao()
+
+    // ← AGREGAR
+    @Singleton
+    @Provides
+    fun provideBodyStatsDao(db: AppDatabase): BodyStatsDao = db.bodyStatsDao()
 }

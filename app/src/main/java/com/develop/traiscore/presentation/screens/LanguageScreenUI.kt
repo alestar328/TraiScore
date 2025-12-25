@@ -1,5 +1,6 @@
 package com.develop.traiscore.presentation.screens
 
+import android.app.Activity
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -44,6 +46,7 @@ import com.develop.traiscore.R
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.LanguageViewModel
+import com.develop.traiscore.utils.LocaleManager
 
 data class Language(
     val code: String,
@@ -66,7 +69,8 @@ fun LanguageScreenUI(
     onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit = {} // ✅ default vacío
 ) {
     val currentLanguage by viewModel.currentLanguage.collectAsState()
-
+    val context = LocalContext.current
+    val activity = context as? Activity
     // Para ahora, solo habilitamos español y alemán como mencionaste
     val languages = listOf(
         Language("es", "Español", "🇪🇸"),
@@ -128,8 +132,14 @@ fun LanguageScreenUI(
                     language = language,
                     isSelected = currentLanguage == language.code,
                     onClick = {
+                        // 1️⃣ Guardar + aplicar idioma
+                        LocaleManager.setLanguage(context, language.code)
+
+                        // 2️⃣ Actualizar estado UI (check)
                         viewModel.setLanguage(language.code)
-                        onLanguageChanged(language.code) // Notificar al padre
+
+                        // 3️⃣ Recrear Activity (CLAVE)
+                        activity?.recreate()
                     }
                 )
 

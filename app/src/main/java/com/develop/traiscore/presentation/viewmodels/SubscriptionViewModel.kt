@@ -26,16 +26,119 @@ class SubscriptionViewModel @Inject constructor() : ViewModel() {
         private set
     var actualDocumentsCount by mutableStateOf(0)
         private set
+    private var localDocumentsCount by mutableStateOf(0)
+
     private val db = Firebase.firestore
     private val auth = FirebaseAuth.getInstance()
 
+    fun checkCanCreateNewDocumentWithCount(
+        currentCount: Int,
+        onComplete: (canCreate: Boolean, message: String?) -> Unit
+    ) {
+        Log.d("SubscriptionVM", "Verificando límites con conteo local: $currentCount")
 
+        // Actualizar contador local
+        localDocumentsCount = currentCount
+
+        val subscription = userSubscription
+        if (subscription == null) {
+            onComplete(false, "Error al cargar suscripción")
+            return
+        }
+
+        val currentPlan = subscription.currentPlan
+        val limit = currentPlan.bodyStatsDocumentsLimit
+
+        when {
+            // Plan premium/pro - sin límites
+            limit == -1 -> {
+                Log.d("SubscriptionVM", "Plan sin límites - puede crear")
+                onComplete(true, null)
+            }
+            // Verificar contra límite
+            currentCount < limit -> {
+                val remaining = limit - currentCount
+                Log.d("SubscriptionVM", "Puede crear - Quedan $remaining de $limit")
+                onComplete(true, null)
+            }
+            // Límite alcanzado
+            else -> {
+                val message = "Has alcanzado el límite de $limit registros para tu plan ${currentPlan.name}"
+                Log.d("SubscriptionVM", "Límite alcanzado: $message")
+                onComplete(false, message)
+            }
+        }
+    }
+
+    fun updateBodyStatsCount(newCount: Int) {
+        Log.d("SubscriptionVM", "Actualizando contador local: $localDocumentsCount → $newCount")
+        localDocumentsCount = newCount
+        actualDocumentsCount = newCount
+
+        // Opcionalmente, sincronizar con Firebase en background
+        syncDocumentCountInSubscription(newCount)
+    }
+
+    fun checkBodyStatsLimitsLocal(): SubscriptionLimits {
+        val subscription = userSubscription ?: return SubscriptionLimits(
+            canCreateBodyStats = false,
+            remainingDocuments = 0,
+            requiresUpgrade = true,
+            currentPlan = SubscriptionPlan.FREE,
+            message = "Error al cargar suscripción"
+        )
+
+        val currentPlan = subscription.currentPlan
+        // Usar contador local si está disponible, sino usar actualDocumentsCount
+        val currentCount = if (localDocumentsCount > 0) localDocumentsCount else actualDocumentsCount
+
+        Log.d("SubscriptionVM", "=== VERIFICANDO LÍMITES LOCALES ===")
+        Log.d("SubscriptionVM", "Plan: ${currentPlan.planId}")
+        Log.d("SubscriptionVM", "Límite: ${currentPlan.bodyStatsDocumentsLimit}")
+        Log.d("SubscriptionVM", "Documentos locales: $currentCount")
+
+        return when {
+            currentPlan.bodyStatsDocumentsLimit == -1 -> {
+                SubscriptionLimits(
+                    canCreateBodyStats = true,
+                    remainingDocuments = -1,
+                    requiresUpgrade = false,
+                    currentPlan = currentPlan,
+                    message = "Registros ilimitados"
+                )
+            }
+            currentCount < currentPlan.bodyStatsDocumentsLimit -> {
+                val remaining = currentPlan.bodyStatsDocumentsLimit - currentCount
+                SubscriptionLimits(
+                    canCreateBodyStats = true,
+                    remainingDocuments = remaining,
+                    requiresUpgrade = false,
+                    currentPlan = currentPlan,
+                    message = "Te quedan $remaining registros"
+                )
+            }
+            else -> {
+                SubscriptionLimits(
+                    canCreateBodyStats = false,
+                    remainingDocuments = 0,
+                    requiresUpgrade = true,
+                    currentPlan = currentPlan,
+                    message = "Has alcanzado el límite de ${currentPlan.bodyStatsDocumentsLimit} registros"
+                )
+            }
+        }
+    }
     fun checkBodyStatsLimitsWithCount(onComplete: (SubscriptionLimits) -> Unit) {
-        // Primero contar documentos reales
-        countActualBodyStatsDocuments { realCount ->
-            // Luego verificar límites con el conteo actualizado
-            val limits = checkBodyStatsLimits()
+        // Si tenemos contador local actualizado, usarlo directamente
+        if (localDocumentsCount > 0) {
+            val limits = checkBodyStatsLimitsLocal()
             onComplete(limits)
+        } else {
+            // Fallback: contar desde Firebase
+            countActualBodyStatsDocuments { realCount ->
+                val limits = checkBodyStatsLimits()
+                onComplete(limits)
+            }
         }
     }
 

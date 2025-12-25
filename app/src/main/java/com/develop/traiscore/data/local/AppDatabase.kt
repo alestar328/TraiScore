@@ -6,6 +6,7 @@ import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 import com.develop.traiscore.core.Converters
+import com.develop.traiscore.data.local.dao.BodyStatsDao
 import com.develop.traiscore.data.local.dao.ExerciseDao
 import com.develop.traiscore.data.local.dao.RoutineDao
 import com.develop.traiscore.data.local.dao.SessionDao
@@ -17,6 +18,8 @@ import com.develop.traiscore.data.local.entity.RoutineEntity
 import com.develop.traiscore.data.local.entity.RoutineSectionEntity
 import com.develop.traiscore.data.local.entity.RoutineExerciseEntity
 import com.develop.traiscore.data.local.entity.RoutineHistoryEntity
+import com.develop.traiscore.data.local.entity.BodyStatsEntity
+
 
 @Database(
     entities = [
@@ -26,8 +29,10 @@ import com.develop.traiscore.data.local.entity.RoutineHistoryEntity
         RoutineEntity::class,
         RoutineSectionEntity::class,
         RoutineExerciseEntity::class,
-        RoutineHistoryEntity::class],
-    version = 7,
+        RoutineHistoryEntity::class,
+        BodyStatsEntity::class
+               ],
+    version = 8,
     exportSchema = false // Cambia según tus necesidades
 
 )
@@ -37,13 +42,14 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun workoutDao(): WorkoutDao
     abstract fun sessionDao(): SessionDao
     abstract fun routineDao(): RoutineDao
+    abstract fun bodyStatsDao(): BodyStatsDao  // ← AGREGAR
 
 
     companion object {
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(database: SupportSQLiteDatabase) {
                 database.execSQL("""
-                    CREATE TABLE IF NOT EXISTS sessions (
+                      CREATE TABLE IF NOT EXISTS sessions (
                         sessionId TEXT PRIMARY KEY NOT NULL,
                         name TEXT NOT NULL,
                         color TEXT NOT NULL,
@@ -57,6 +63,37 @@ abstract class AppDatabase : RoomDatabase() {
                         pendingAction TEXT
                     )
                 """)
+            }
+        }
+
+        // ← AGREGAR NUEVA MIGRACIÓN
+        val MIGRATION_7_8 = object : Migration(7, 8) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL("""
+                    CREATE TABLE IF NOT EXISTS body_stats (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+                        firebaseId TEXT NOT NULL DEFAULT '',
+                        userId TEXT NOT NULL,
+                        gender TEXT NOT NULL DEFAULT 'Male',
+                        height REAL NOT NULL DEFAULT 0.0,
+                        weight REAL NOT NULL DEFAULT 0.0,
+                        neck REAL NOT NULL DEFAULT 0.0,
+                        chest REAL NOT NULL DEFAULT 0.0,
+                        arms REAL NOT NULL DEFAULT 0.0,
+                        waist REAL NOT NULL DEFAULT 0.0,
+                        thigh REAL NOT NULL DEFAULT 0.0,
+                        calf REAL NOT NULL DEFAULT 0.0,
+                        isSynced INTEGER NOT NULL DEFAULT 0,
+                        pendingAction TEXT,
+                        createdAt INTEGER NOT NULL,
+                        updatedAt INTEGER NOT NULL
+                    )
+                """)
+
+                // Crear índices
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_body_stats_userId ON body_stats(userId)")
+                database.execSQL("CREATE INDEX IF NOT EXISTS index_body_stats_createdAt ON body_stats(createdAt)")
+                database.execSQL("CREATE UNIQUE INDEX IF NOT EXISTS index_body_stats_firebaseId ON body_stats(firebaseId)")
             }
         }
     }
