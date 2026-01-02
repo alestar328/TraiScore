@@ -9,6 +9,8 @@ import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.gson.Gson
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.tasks.await
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -19,6 +21,60 @@ class RoutineRepository(
     private val firestore: FirebaseFirestore,
     private val auth: FirebaseAuth
 ) {
+    private val _routineHistoryUpdated = MutableSharedFlow<Unit>(replay = 0)
+    val routineHistoryUpdated = _routineHistoryUpdated.asSharedFlow()
+
+
+    suspend fun getWorkoutEntriesFromRoutineHistory(
+        userId: String,
+        exerciseName: String
+    ): List<WorkoutEntry> {
+
+        // Año actual (ej: "2026")
+        val year = Calendar.getInstance().get(Calendar.YEAR).toString()
+
+        val history = routineDao.getRoutinesByYear(userId, "$year%")
+        if (history.isEmpty()) return emptyList()
+
+        val result = mutableListOf<WorkoutEntry>()
+
+        history.forEach { snapshot ->
+
+            val sections = deserializeSections(snapshot.sectionsSnapshot)
+
+            sections.forEach { section ->
+                section.exercises.forEach { ex ->
+
+                    if (!ex.name.equals(exerciseName, ignoreCase = true)) return@forEach
+
+                    val weight = ex.weight.toFloatOrNull() ?: return@forEach
+                    val reps = ex.reps.toIntOrNull() ?: return@forEach
+
+                    result.add(
+                        WorkoutEntry(
+                            id = 0,
+                            uid = snapshot.userId,
+                            exerciseId = 0,
+                            title = ex.name,
+                            weight = weight,
+                            series = ex.series,
+                            reps = reps,
+                            rir = ex.rir,
+                            type = section.type,
+                            timestamp = java.util.Date(snapshot.savedTimestamp),
+                            sessionId = snapshot.routineLocalId.toString(),
+                            sessionName = snapshot.routineName,
+                            sessionColor = null,
+                            isSynced = true,
+                            pendingAction = null
+                        )
+                    )
+                }
+            }
+        }
+
+        return result
+    }
 
     suspend fun createRoutineLocal(
         userId: String,
@@ -359,6 +415,9 @@ class RoutineRepository(
 
         // Guardar en base de datos
         routineDao.insertRoutineHistory(snapshot)
+
+        // 🔔 NOTIFICAR CAMBIO
+        _routineHistoryUpdated.emit(Unit)
     }
 
     /**
@@ -402,5 +461,9 @@ class RoutineRepository(
         } catch (e: Exception) {
             emptyList()
         }
+    }
+    suspend fun deleteRoutineHistory(routineLocalId: Int) {
+        routineDao.deleteRoutineHistory(routineLocalId)
+        _routineHistoryUpdated.emit(Unit)
     }
 }

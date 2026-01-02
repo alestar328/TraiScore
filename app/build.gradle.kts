@@ -21,8 +21,8 @@ android {
         applicationId = "com.develop.traiscore"
         minSdk = 31
         targetSdk = 35
-        versionCode = 32 //Esto hay que aumentar +1 cada vez que se carga a la Play Console
-        versionName = "1.1.6"
+        versionCode = 33 //Esto hay que aumentar +1 cada vez que se carga a la Play Console
+        versionName = "1.1.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {

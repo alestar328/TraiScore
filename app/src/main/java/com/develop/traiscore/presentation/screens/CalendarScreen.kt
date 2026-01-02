@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation.screens
 
-import android.graphics.drawable.Icon
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.background
@@ -12,14 +11,23 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.DismissDirection
+import androidx.compose.material.DismissValue
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.rememberDismissState
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
@@ -75,7 +83,7 @@ data class MonthYear(
         return calendar.getActualMaximum(Calendar.DAY_OF_MONTH)
     }
 }
-
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterialApi::class)
 @Composable
 fun CalendarScreen(
     mode: CalendarMode = CalendarMode.SESSIONS, // ✅ NUEVO: Por defecto sesiones
@@ -97,7 +105,8 @@ fun CalendarScreen(
     } else {
         emptyMap()
     }
-
+    var showDeleteRoutineDialog by remember { mutableStateOf(false) }
+    var routineToDelete by remember { mutableStateOf<RoutineHistoryEntity?>(null) }
     // ✅ Calcular workout del día seleccionado (solo modo SESSIONS)
     val selectedDayWorkouts = remember(selectedDate.value, groupedEntries, mode) {
         if (mode == CalendarMode.SESSIONS && selectedDate.value.isNotEmpty()) {
@@ -212,6 +221,46 @@ fun CalendarScreen(
             )
         }
 
+        if (showDeleteRoutineDialog && routineToDelete != null) {
+            AlertDialog(
+                onDismissRequest = {
+                    showDeleteRoutineDialog = false
+                    routineToDelete = null
+                },
+                title = { Text("Eliminar rutina guardada") },
+                text = {
+                    Text(
+                        "¿Eliminar la rutina '${routineToDelete?.routineName}' de este día?"
+                    )
+                },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            routineToDelete?.let { routine ->
+                                routineViewModel.deleteRoutineHistory(routine.routineLocalId)
+                                selectedDayRoutines =
+                                    selectedDayRoutines.filterNot { it.id == routine.id }
+                            }
+                            showDeleteRoutineDialog = false
+                            routineToDelete = null
+                        }
+                    ) {
+                        Text("Eliminar", color = Color.Red)
+                    }
+                },
+                dismissButton = {
+                    TextButton(
+                        onClick = {
+                            showDeleteRoutineDialog = false
+                            routineToDelete = null
+                        }
+                    ) {
+                        Text("Cancelar")
+                    }
+                }
+            )
+        }
+
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -300,10 +349,44 @@ fun CalendarScreen(
                         items = selectedDayRoutines,
                         key = { it.id }
                     ) { routine ->
-                        RoutineHistoryCard(
-                            routine = routine,
-                            routineViewModel = routineViewModel,
-                            exerciseNames = exerciseNames
+
+                        val dismissState = rememberDismissState(
+                            confirmStateChange = { newValue ->
+                                if (newValue == DismissValue.DismissedToStart) {
+                                    routineToDelete = routine
+                                    showDeleteRoutineDialog = true
+                                }
+                                false // ❗ no auto-eliminar
+                            }
+                        )
+
+                        SwipeToDismiss(
+                            state = dismissState,
+                            directions = setOf(DismissDirection.EndToStart),
+                            background = {
+                                if (dismissState.targetValue != DismissValue.Default) {
+                                    Box(
+                                        modifier = Modifier
+                                            .fillMaxSize()
+                                            .background(Color.Red)
+                                            .padding(end = 20.dp),
+                                        contentAlignment = Alignment.CenterEnd
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = "Eliminar rutina",
+                                            tint = Color.White
+                                        )
+                                    }
+                                }
+                            },
+                            dismissContent = {
+                                RoutineHistoryCard(
+                                    routine = routine,
+                                    routineViewModel = routineViewModel,
+                                    exerciseNames = exerciseNames
+                                )
+                            }
                         )
                     }
                 } else {

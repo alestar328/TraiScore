@@ -509,4 +509,18 @@ class RoutineViewModel @Inject constructor(
 
         routineDocument = currentRoutine.copy(sections = updatedSections) // ✅ Sin guión bajo
     }
+
+    fun deleteRoutineHistory(
+        routineLocalId: Int,
+        onComplete: (() -> Unit)? = null
+    ) {
+        viewModelScope.launch {
+            try {
+                routineRepository.deleteRoutineHistory(routineLocalId)
+                onComplete?.invoke()
+            } catch (e: Exception) {
+                Log.e("RoutineViewModel", "Error deleting routine history", e)
+            }
+        }
+    }
 }

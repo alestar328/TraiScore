@@ -8,6 +8,7 @@ import com.develop.traiscore.R
 import com.develop.traiscore.core.TimeRange
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import com.develop.traiscore.data.repository.ExerciseRepository
+import com.develop.traiscore.data.repository.RoutineRepository
 import com.develop.traiscore.data.repository.WorkoutRepository
 import com.develop.traiscore.domain.model.ExerciseProgressCalculator
 import com.develop.traiscore.domain.model.RadarChartData
@@ -49,7 +50,8 @@ data class SocialShareData(
 class StatScreenViewModel @Inject constructor(
     private val context: Context,
     private val workoutRepository: WorkoutRepository,
-    private val exerciseRepository: ExerciseRepository
+    private val exerciseRepository: ExerciseRepository,
+    private val routineRepository: RoutineRepository
 ) : ViewModel() {
     private val db = Firebase.firestore
 
@@ -149,16 +151,21 @@ class StatScreenViewModel @Inject constructor(
 
         // 🆕 BLOQUE 2 (AÑADIR ESTE)
         viewModelScope.launch {
-            workoutRepository.workouts
-                .collect { allWorkouts ->
-                    val currentExercise = _selectedExercise.value
-                    if (currentExercise != null) {
-                        Log.d("StatsVM", "🔄 Detectados ${allWorkouts.size} workouts - Refrescando $currentExercise")
-                        val entries = allWorkouts.filter { it.title == currentExercise }
-                        processLocalWorkoutData(entries)
-                    }
+            workoutRepository.workouts.collect {
+                _selectedExercise.value?.let { exercise ->
+                    loadAllProgressFor(exercise)
                 }
+            }
         }
+        viewModelScope.launch {
+            routineRepository.routineHistoryUpdated.collect {
+                _selectedExercise.value?.let { exercise ->
+                    Log.d("StatsVM", "🔄 Rutina guardada → refrescando stats")
+                    loadAllProgressFor(exercise)
+                }
+            }
+        }
+
     }
     fun calculateCurrentMonthTrainingDays() {
         viewModelScope.launch {
@@ -407,15 +414,30 @@ class StatScreenViewModel @Inject constructor(
     private fun loadAllProgressFor(exerciseName: String) {
         viewModelScope.launch {
             try {
-                // ✅ Usar first() en lugar de collect para obtener datos una sola vez
-                val allWorkouts = workoutRepository.workouts.first()
-                val entries = allWorkouts.filter { it.title == exerciseName }
+                val userId = getTargetUserId() ?: return@launch
 
-                Log.d("StatsVM", "📈 ${entries.size} registros locales para $exerciseName")
-                processLocalWorkoutData(entries)
+                // 1) Workouts (Room)
+                val workoutEntries = workoutRepository.workouts.first()
+                    .filter { it.title == exerciseName }
+
+                // 2) Rutinas guardadas (snapshots -> WorkoutEntry-like)
+                val routineEntries = routineRepository.getWorkoutEntriesFromRoutineHistory(
+                    userId = userId,
+                    exerciseName = exerciseName
+                )
+
+                // 3) Unificar
+                val unified = workoutEntries + routineEntries
+
+                Log.d(
+                    "StatsVM",
+                    "📈 $exerciseName → workouts=${workoutEntries.size}, routines=${routineEntries.size}, total=${unified.size}"
+                )
+
+                processLocalWorkoutData(unified)
+
             } catch (e: Exception) {
-                Log.e("StatsVM", "Error cargando progreso para $exerciseName", e)
-                // Resetear datos en caso de error
+                Log.e("StatsVM", "Error cargando progreso unificado para $exerciseName", e)
                 _weightProgress.value = emptyList()
                 _repsProgress.value = emptyList()
                 _rirProgress.value = emptyList()
