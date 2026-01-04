@@ -12,7 +12,7 @@ data class UserEntity(
     val photoURL: String? = null,
     val birthYear: Int? = null,
     val gender: Gender? = null,
-    val userRole: UserRole,
+    val userRole: UserRole? = null,
     val createdAt: Timestamp = Timestamp.now(),
     val updatedAt: Timestamp = Timestamp.now(),
     val isActive: Boolean = true,

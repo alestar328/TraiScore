@@ -4,18 +4,13 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.develop.traiscore.core.DefaultCategoryExer
-import com.develop.traiscore.data.firebaseData.SimpleExercise
 import com.develop.traiscore.data.local.dao.ExerciseDao
-import com.develop.traiscore.data.local.entity.ExerciseEntity
 import com.develop.traiscore.data.repository.ExerciseRepository
 import com.develop.traiscore.data.repository.SessionRepository
 import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -26,7 +21,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.text.Normalizer
-import java.util.Date
 import java.util.Locale
 import javax.inject.Inject
 

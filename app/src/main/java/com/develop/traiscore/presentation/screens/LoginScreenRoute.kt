@@ -3,11 +3,15 @@ package com.develop.traiscore.presentation.screens
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.develop.traiscore.core.Gender
 import com.develop.traiscore.data.Authentication.AuthenticationManager
+import com.develop.traiscore.presentation.viewmodels.AuthUiState
 import com.develop.traiscore.presentation.viewmodels.LoginViewModel
+import java.time.LocalDate
 
 @Composable
 fun LoginScreenRoute(
@@ -16,82 +20,58 @@ fun LoginScreenRoute(
     val loginViewModel = hiltViewModel<LoginViewModel>()
     val context = LocalContext.current
     val authManager = remember { AuthenticationManager(context) }
+    val authState = loginViewModel.authUiState.collectAsState().value
+    val errorMsg by loginViewModel.errorMsg.collectAsState()
 
-    // ✅ Observar evento de login exitoso
-    LaunchedEffect(Unit) {
-        loginViewModel.loginSuccess.collect {
+    // Navegación declarativa
+    LaunchedEffect(authState) {
+        if (authState is AuthUiState.LoggedIn) {
             onLoginSuccess()
         }
     }
 
-    // ✅ Observar evento de registro requerido
-    LaunchedEffect(Unit) {
-        loginViewModel.requireRegistration.collect {
-            // El ViewModel ya maneja isNewUser = true automáticamente
-            // Solo necesitamos que el UI reaccione al cambio
-        }
-    }
-
-    // ✅ Observar evento de registro completado exitosamente
-    LaunchedEffect(Unit) {
-        loginViewModel.registrationSuccess.collect {
-            // Después del registro exitoso, navegar a la pantalla principal
-            onLoginSuccess()
-        }
-    }
-
-    // ✅ Obtener datos prellenados para el formulario
-    val (prefilledEmail, prefilledFirstName, prefilledLastName) = loginViewModel.getPrefilledData()
-
-    LoginScreen(
-        errorMsg = loginViewModel.errorMsg.collectAsState().value,
-
-        // ✅ Google Sign-In
-        onGoogleClick = {
-            loginViewModel.signInWithGoogle(authManager)
-        },
-
-        // ✅ Navegación entre pantallas
-        onRegisterClick = {
-            // Para registro manual con email (no Google)
-            loginViewModel.onNavigateToRegister()
-        },
-        onBackToLogin = {
-            loginViewModel.onBackToLogin()
-        },
-
-        // ✅ Recuperar contraseña
-        onForgotPassword = { email ->
-            loginViewModel.sendPasswordResetEmail(email)
-        },
-
-        // ✅ Estado del formulario
-        isNewUser = loginViewModel.isNewUser,
-
-        // ✅ Completar registro (tanto Google como email)
-        onCompleteRegistration = { firstName, lastName, birthDate, gender, userRole ->
-            loginViewModel.completeRegistration(
-                firstName = firstName,
-                lastName = lastName,
-                birthDate = birthDate,
-                gender = gender,
-                userRole = userRole
+    when (authState) {
+        AuthUiState.Login -> {
+            LoginScreen(
+                onGoogleClick = {
+                    loginViewModel.signInWithGoogle(authManager)
+                }
             )
-        },
+        }
 
-        // ✅ Campos de email/password con datos prellenados
-        email = if (loginViewModel.isNewUser) prefilledEmail else loginViewModel.email,
-        password = loginViewModel.password,
-        onEmailChange = loginViewModel::onEmailChange,
-        onPasswordChange = loginViewModel::onPasswordChange,
+        AuthUiState.RegisterRequired -> {
+            val (email, prefilledFirstName, prefilledLastName) = loginViewModel.getPrefilledData()
 
-        // ✅ Autenticación con email
-        onEmailSignIn = loginViewModel::signInWithEmail,
-        onEmailSignUp = loginViewModel::registerWithEmail,
+            RegisterScreen(
+                email = email,
+                firstName = loginViewModel.firstName.ifBlank { prefilledFirstName },
+                onFirstNameChange = { loginViewModel.updateFirstName(it) },
+                lastName = loginViewModel.lastName.ifBlank { prefilledLastName },
+                onLastNameChange = { loginViewModel.updateLastName(it) },
+                gender = loginViewModel.gender,
+                onGenderSelect = { loginViewModel.gender = it }, // ✅ Asignación directa
+                birthDate = loginViewModel.birthDate, // ✅ Pasamos la fecha del ViewModel
+                onBirthDateChange = { loginViewModel.birthDate = it }, // ✅ Actualizamos la fecha
+                errorMsg = errorMsg,
+                onRegisterClick = {
+                    // Ahora pasamos los datos reales del estado del ViewModel
+                    loginViewModel.completeRegistration(
+                        firstName = loginViewModel.firstName.ifBlank { prefilledFirstName },
+                        lastName = loginViewModel.lastName.ifBlank { prefilledLastName },
+                        birthDate = loginViewModel.birthDate ?: LocalDate.now(),
+                        gender = loginViewModel.gender ?: Gender.OTHER
+                    )
+                },
+                onBack = {
+                    loginViewModel.onBackToLogin()
+                }
+            )
+        }
 
-        // ✅ NUEVOS: Datos prellenados de Google para el formulario
-        prefilledFirstName = prefilledFirstName,
-        prefilledLastName = prefilledLastName,
-        isGoogleSignIn = loginViewModel.googleUserEmail.isNotEmpty()
-    )
+        AuthUiState.Loading -> {
+            // Opcional: LoadingScreen()
+        }
+
+        AuthUiState.LoggedIn -> Unit
+    }
 }

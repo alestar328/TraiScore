@@ -50,4 +50,8 @@ interface SessionDao {
 
     @Query("DELETE FROM sessions WHERE userId = :userId")
     suspend fun clearAllSessions(userId: String)
+
+    @Query("SELECT DISTINCT userId FROM sessions")
+    suspend fun getDistinctUserIds(): List<String>
+
 }
