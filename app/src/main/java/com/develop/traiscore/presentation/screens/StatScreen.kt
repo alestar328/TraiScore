@@ -118,7 +118,6 @@ fun StatScreen(
     ) { success ->
         if (success) {
             photoUri?.let { uri ->
-                Log.d("StatScreen", "Foto capturada: $uri")
                 capturedPhotoUri = uri
                 showSocialShare = true // Mostrar el overlay
             }
@@ -130,10 +129,6 @@ fun StatScreen(
             bodyStatsViewModel.setTargetUser(id)
         }
     }
-    LaunchedEffect(selected, weightData, repsData) {
-        Log.d("StatScreen", "Ejercicio=$selected  pesos=$weightData  reps=$repsData")
-    }
-
     LaunchedEffect(selectedTab) {
         if (selectedTab == StatTab.MEASUREMENTS) {
             isLoadingBodyData = true
@@ -604,7 +599,6 @@ fun StatScreen(
         ChronoScreen(
             isVisible = showChronoScreen,
             onDismiss = {
-                Log.d("StatScreen", "⏱️ Cerrando cronómetro")
                 showChronoScreen = false
             }
         )

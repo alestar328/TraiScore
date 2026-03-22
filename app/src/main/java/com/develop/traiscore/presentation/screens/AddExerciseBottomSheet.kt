@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation.screens
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -66,17 +65,9 @@ fun AddExerciseBottomSheet(
         skipPartiallyExpanded = true
     )
 ) {
-    LaunchedEffect(isVisible) {
-        println("🔍 DEBUG: isVisible = $isVisible")
-        Log.d("AddExerciseSheet", "📩 isVisible cambió a $isVisible")
-    }
-
     if (isVisible) {
         ModalBottomSheet(
-            onDismissRequest = {
-                Log.d("AddExerciseSheet", "❌ onDismissRequest ejecutado")
-                onDismiss()
-            },
+            onDismissRequest = { onDismiss() },
             sheetState = sheetState,
             containerColor = Color.Gray,
             contentColor = Color.White,

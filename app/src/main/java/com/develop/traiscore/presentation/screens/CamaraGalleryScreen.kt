@@ -160,7 +160,6 @@ fun CameraGalleryScreen(
                 }
 
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    Log.d("CameraGallery", "📷 Foto guardada exitosamente")
                     val savedUri = Uri.fromFile(File(context.cacheDir, "TraiScore_$name.jpg"))
                     selectedPhoto = GalleryPhoto(
                         id = System.currentTimeMillis(),
@@ -208,7 +207,6 @@ fun CameraGalleryScreen(
                     selectedPhoto = null
                 },
                 onShare = { bitmap ->
-                    Log.d("CameraGallery", "📤 Compartir bitmap")
                 }
             )
         }
@@ -559,7 +557,6 @@ private suspend fun loadPhotosFromGallery(context: Context): List<GalleryPhoto> 
                 }
             }
 
-            Log.d("CameraGallery", "📸 Cargadas ${photos.size} fotos")
             photos // ✅ TODAS LAS FOTOS, SIN LÍMITE
         } catch (e: Exception) {
             Log.e("CameraGallery", "❌ Error cargando fotos", e)

@@ -81,8 +81,7 @@ class SessionRepository @Inject constructor(
 
                     sessionDao.markAsSynced(sessionId)
 
-                } catch (e: Exception) {
-                    println("Se guardará localmente y sincronizará después: ${e.message}")
+                } catch (_: Exception) {
                 }
             }
 
@@ -123,8 +122,7 @@ class SessionRepository @Inject constructor(
                     "isActive" to session.isActive
                 )
             }
-        } catch (e: Exception) {
-            println("❌ Error obteniendo sesiones offline: ${e.message}")
+        } catch (_: Exception) {
             emptyList()
         }
     }
@@ -140,10 +138,8 @@ class SessionRepository @Inject constructor(
             // Solo intentar sincronizar si hay red Y es necesario
             if (isNetworkAvailable()) {
                 try {
-                    // Sincronizar pero no bloquear si falla
                     syncFromFirebase()
-                } catch (e: Exception) {
-                    println("⚠️ No se pudo sincronizar desde Firebase: ${e.message}")
+                } catch (_: Exception) {
                 }
             }
 
@@ -159,8 +155,7 @@ class SessionRepository @Inject constructor(
                     "isActive" to session.isActive
                 )
             }
-        } catch (e: Exception) {
-            println("❌ Error obteniendo sesiones disponibles: ${e.message}")
+        } catch (_: Exception) {
             emptyList()
         }
     }
@@ -210,8 +205,7 @@ class SessionRepository @Inject constructor(
                         .await()
 
                     sessionDao.markAsSynced(sessionId)
-                } catch (e: Exception) {
-                    println("Error sincronizando: ${e.message}")
+                } catch (_: Exception) {
                 }
             }
 
@@ -476,12 +470,9 @@ class SessionRepository @Inject constructor(
                 )
                 .await()
 
-            println("✅ Contador de workouts incrementado para sesión: $sessionId")
-
             SessionResponse(success = true)
 
         } catch (e: Exception) {
-            println("❌ Error incrementando contador: ${e.message}")
             SessionResponse(
                 success = false,
                 error = "Error al incrementar contador: ${e.message}"
@@ -510,19 +501,14 @@ class SessionRepository @Inject constructor(
 
             if (snapshot.documents.isNotEmpty()) {
                 batch.commit().await()
-                println("✅ ${snapshot.documents.size} sesiones desactivadas")
             }
 
-        } catch (e: Exception) {
-            println("❌ Error desactivando sesiones: ${e.message}")
+        } catch (_: Exception) {
         }
     }
     suspend fun syncPendingSessions() {
         try {
-        if (!isNetworkAvailable()) {
-            println("⚠️ Sin conexión a internet, trabajando offline")
-            return
-        }
+        if (!isNetworkAvailable()) return
 
 
             val userId = auth.currentUser?.uid ?: return
@@ -578,8 +564,7 @@ class SessionRepository @Inject constructor(
                         }
                     }
                     sessionDao.markAsSynced(session.sessionId)
-                } catch (e: Exception) {
-                    println("Error sincronizando sesión ${session.sessionId}: ${e.message}")
+                } catch (_: Exception) {
                 }
             }
 
@@ -609,10 +594,7 @@ class SessionRepository @Inject constructor(
                 sessionDao.insertSession(sessionEntity)
             }
 
-            println("✅ Sincronización completa: ${snapshot.size()} sesiones actualizadas desde Firebase")
-
-        } catch (e: Exception) {
-            println("Error en sincronización general: ${e.message}")
+        } catch (_: Exception) {
         }
     }
     /**
@@ -644,8 +626,7 @@ class SessionRepository @Inject constructor(
 
                 sessionDao.insertSession(sessionEntity)
             }
-        } catch (e: Exception) {
-            println("Error sincronizando desde Firebase: ${e.message}")
+        } catch (_: Exception) {
         }
     }
 

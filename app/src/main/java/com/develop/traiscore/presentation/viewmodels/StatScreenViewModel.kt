@@ -160,7 +160,6 @@ class StatScreenViewModel @Inject constructor(
         viewModelScope.launch {
             routineRepository.routineHistoryUpdated.collect {
                 _selectedExercise.value?.let { exercise ->
-                    Log.d("StatsVM", "🔄 Rutina guardada → refrescando stats")
                     loadAllProgressFor(exercise)
                 }
             }
@@ -203,7 +202,6 @@ class StatScreenViewModel @Inject constructor(
                 }.toSet().size
 
                 _currentMonthTrainingDays.value = trainingDays
-                Log.d("StatsVM", "📅 Días únicos de entrenamiento: $trainingDays")
             } catch (e: Exception) {
                 Log.e("StatsVM", "Error calculando días de entrenamiento", e)
                 _currentMonthTrainingDays.value = 0
@@ -304,8 +302,6 @@ class StatScreenViewModel @Inject constructor(
                     return@launch
                 }
 
-                Log.d("StatsVM", "📊 ${allWorkouts.size} workouts obtenidos del almacenamiento local")
-
                 val uniqueExercises = allWorkouts.map { it.title }.distinct()
                 val progressDataList = uniqueExercises.map { name ->
                     ExerciseProgressCalculator.calculateProgressScore(allWorkouts, name)
@@ -322,46 +318,22 @@ class StatScreenViewModel @Inject constructor(
     }
 
     private fun processRadarChartData(workoutEntries: List<com.develop.traiscore.data.local.entity.WorkoutEntry>) {
-        Log.d("StatsVM", "🔄 Procesando ${workoutEntries.size} workout entries para radar")
-
         if (workoutEntries.isEmpty()) {
-            Log.d("StatsVM", "❌ No hay workout entries, generando datos vacíos")
             _radarChartData.value = ExerciseProgressCalculator.generateRadarChartData(emptyList())
             return
         }
 
-        // ✅ LOGGING DETALLADO: Mostrar algunos ejemplos de workout entries
-        workoutEntries.take(3).forEach { entry ->
-            Log.d("StatsVM", "📄 Sample entry: ${entry.title} - ${entry.weight}kg x ${entry.reps} x ${entry.series} = ${entry.weight * entry.reps * entry.series}kg volumen")
-        }
-
         // Obtener lista única de ejercicios
         val uniqueExercises = workoutEntries.map { it.title }.distinct()
-        Log.d("StatsVM", "🏋️ Ejercicios únicos encontrados: $uniqueExercises")
 
         // Calcular progreso para cada ejercicio
         val progressDataList = uniqueExercises.map { exerciseName ->
-            val exerciseEntries = workoutEntries.filter { it.title == exerciseName }
-            Log.d("StatsVM", "📊 $exerciseName: ${exerciseEntries.size} entradas")
-
             ExerciseProgressCalculator.calculateProgressScore(workoutEntries, exerciseName)
-        }
-
-        // Log de resultados para debugging
-        progressDataList.forEach { progress ->
-            Log.d("StatsVM", "📈 ${progress.exerciseName}: ${progress.getFormattedProgressScore()} " +
-                    "(Vol: ${progress.getFormattedVolume()}, Max: ${progress.getFormattedMaxWeight()}, " +
-                    "Workouts: ${progress.workoutCount}, Consistency: ${"%.1f".format(progress.consistencyScore)})")
         }
 
         // Generar datos para el radar chart
         val radarData = ExerciseProgressCalculator.generateRadarChartData(progressDataList)
         _radarChartData.value = radarData
-
-        Log.d("StatsVM", "✅ Radar chart data generado:")
-        Log.d("StatsVM", "   Categories: ${radarData.categories}")
-        Log.d("StatsVM", "   Data points: ${radarData.dataPoints}")
-        Log.d("StatsVM", "   Top exercises: ${radarData.topExercises.map { "${it.exerciseName}:${it.progressScore}" }}")
     }
 
 
@@ -428,11 +400,6 @@ class StatScreenViewModel @Inject constructor(
 
                 // 3) Unificar
                 val unified = workoutEntries + routineEntries
-
-                Log.d(
-                    "StatsVM",
-                    "📈 $exerciseName → workouts=${workoutEntries.size}, routines=${routineEntries.size}, total=${unified.size}"
-                )
 
                 processLocalWorkoutData(unified)
 
@@ -514,11 +481,6 @@ class StatScreenViewModel @Inject constructor(
         val avgRir = if (allRir.isNotEmpty()) allRir.average().roundToInt() else 0
 
         _circularData.value = Triple(oneRm, maxRp, avgRir)
-
-        Log.d("StatsVM", "📊 Procesados ${sorted.size} registros del ejercicio")
-        Log.d("StatsVM", "📈 Weight data: $wData")
-        Log.d("StatsVM", "📊 Reps data: $rData")
-        Log.d("StatsVM", "🎯 RIR data: $rirData")
     }
 
 
@@ -528,8 +490,6 @@ class StatScreenViewModel @Inject constructor(
         val rData = mutableListOf<Pair<String, Float>>()
         val rirData = mutableListOf<Pair<String, Float>>() // ✅ NUEVA LISTA PARA RIR
         val allRir = mutableListOf<Int>()
-
-        Log.d("StatsVM", "📊 Procesando ${documents.size} documentos")
 
         // CAMBIO CRÍTICO: Ordenar por timestamp ASCENDENTE y tomar últimos 12
         val sortedDocuments = documents.sortedBy { it.getDate("timestamp") ?: Date(0) }
@@ -543,17 +503,11 @@ class StatScreenViewModel @Inject constructor(
             val reps = doc.getLong("reps")?.toFloat() ?: 0f
             val rir = doc.getLong("rir")?.toInt() ?: 0
 
-            Log.d("StatsVM", "📄 Doc: weight=$weight, reps=$reps, rir=$rir, fecha=$label")
-
             wData.add(label to weight)
             rData.add(label to reps)
             rirData.add(label to rir.toFloat()) // ✅ AGREGAR DATOS DE RIR
             allRir.add(rir)
         }
-
-        Log.d("StatsVM", "📈 Weight data ordenado: $wData")
-        Log.d("StatsVM", "📊 Reps data ordenado: $rData")
-        Log.d("StatsVM", "🎯 RIR data ordenado: $rirData") // ✅ LOG PARA RIR
 
         _weightProgress.value = wData
         _repsProgress.value = rData
@@ -567,8 +521,6 @@ class StatScreenViewModel @Inject constructor(
         val oneRm = wData.maxByOrNull { it.second }?.second ?: 0f
         val maxRp = rData.maxByOrNull { it.second }?.second?.toInt() ?: 0
         val avgRir = if (allRir.isNotEmpty()) allRir.average().roundToInt() else 0
-
-        Log.d("StatsVM", "🎯 Circular data: 1RM=$oneRm, MaxReps=$maxRp, AvgRIR=$avgRir")
 
         _circularData.value = Triple(oneRm, maxRp, avgRir)
     }
@@ -584,7 +536,6 @@ class StatScreenViewModel @Inject constructor(
                     .toFloat()
 
                 _totalWeightSum.value = total
-                Log.d("StatsVM", "✅ Peso total calculado: $total kg para $exerciseName")
             } catch (e: Exception) {
                 Log.e("StatsVM", "Error calculando peso total", e)
                 _totalWeightSum.value = 0f
@@ -598,7 +549,6 @@ class StatScreenViewModel @Inject constructor(
                 // ✅ Obtener todos los workouts de Room
                 val allWorkouts = workoutRepository.workouts.first()
                 if (allWorkouts.isEmpty()) {
-                    Log.d("StatsVM", "No hay workouts locales, usando primer ejercicio disponible")
                     exerciseOptions.value.firstOrNull()?.let { // 🔄 CAMBIO AQUÍ
                         _selectedExercise.value = it
                     }
@@ -608,10 +558,8 @@ class StatScreenViewModel @Inject constructor(
                 // ✅ Encontrar el workout más reciente
                 val lastWorkout = allWorkouts.maxByOrNull { it.timestamp }
                 if (lastWorkout != null) {
-                    Log.d("StatsVM", "✅ Último ejercicio encontrado en Room: ${lastWorkout.title}")
                     _selectedExercise.value = lastWorkout.title
                 } else {
-                    Log.d("StatsVM", "No se pudo determinar último ejercicio, usando fallback")
                     exerciseOptions.value.firstOrNull()?.let { // 🔄 CAMBIO AQUÍ
                         _selectedExercise.value = it
                     }

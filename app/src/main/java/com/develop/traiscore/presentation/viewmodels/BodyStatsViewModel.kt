@@ -4,10 +4,10 @@ import android.util.Log
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.develop.traiscore.data.local.entity.BodyStatsEntity
-import com.develop.traiscore.data.local.entity.UserMeasurements
 import com.develop.traiscore.data.repository.BodyStatsRepository
 import com.develop.traiscore.domain.model.BodyMeasurementProgressBuilder
 import com.develop.traiscore.domain.model.BodyMeasurementProgressData
@@ -53,16 +53,12 @@ class BodyStatsViewModel @Inject constructor(
         private set
 
     // Lista de medidas para el historial
-    private var bodyStatsList by mutableStateOf<List<BodyStatsEntity>>(emptyList())
+    private var bodyStatsList: List<BodyStatsEntity> = emptyList()
 
-    private fun getCurrentUserId(): String {
-        val userId = targetUserId ?: FirebaseAuth.getInstance().currentUser?.uid ?: ""
-        Log.d(TAG, "🔧 getCurrentUserId() retorna: $userId (targetUserId=$targetUserId)")
-        return userId
-    }
+    private fun getCurrentUserId(): String =
+        targetUserId ?: FirebaseAuth.getInstance().currentUser?.uid ?: ""
 
     fun setTargetUser(userId: String) {
-        Log.d(TAG, "🔧 setTargetUser llamado con userId: $userId")
         targetUserId = userId
         loadBodyStatsForUser(userId)
     }
@@ -88,12 +84,9 @@ class BodyStatsViewModel @Inject constructor(
                         val latest = statsList.first()
                         selectedGender = latest.gender
                         bodyMeasurements = latest.toMeasurementsMap()
-                        Log.d(TAG, "✅ Medidas cargadas para usuario: $userId (${statsList.size} registros)")
                     } else {
-                        // No hay datos previos
                         bodyMeasurements = getDefaultMeasurements()
                         selectedGender = "Male"
-                        Log.d(TAG, "No hay medidas previas para usuario: $userId")
                     }
                     isLoading = false
                 }
@@ -135,8 +128,6 @@ class BodyStatsViewModel @Inject constructor(
         editingLocalId = localEntity?.id
         selectedGender = item.gender
         bodyMeasurements = item.measurements.toMeasurementsMap()
-
-        Log.d(TAG, "✅ Datos cargados para editar - Firebase: ${item.id}, Local: $editingLocalId")
     }
 
     /**
@@ -155,7 +146,6 @@ class BodyStatsViewModel @Inject constructor(
                 editingLocalId = entity.id
                 selectedGender = entity.gender
                 bodyMeasurements = entity.toMeasurementsMap()
-                Log.d(TAG, "✅ Medida cargada para editar: $documentId")
             } else {
                 errorMessage = "Registro no encontrado"
                 clearEditMode()
@@ -169,7 +159,6 @@ class BodyStatsViewModel @Inject constructor(
         isEditMode = false
         editingDocumentId = null
         editingLocalId = null
-        Log.d(TAG, "✅ Modo edición limpiado")
     }
 
     /**
@@ -181,8 +170,6 @@ class BodyStatsViewModel @Inject constructor(
         subscriptionViewModel: SubscriptionViewModel,
         onComplete: (success: Boolean, error: String?, requiresUpgrade: Boolean) -> Unit
     ) {
-        Log.d(TAG, "Iniciando guardado/actualización. EditMode: $isEditMode, LocalId: $editingLocalId")
-
         if (isEditMode && editingLocalId != null) {
             // Modo edición: actualizar registro existente
             updateBodyStats(editingLocalId!!, gender, measurements) { success, error ->
@@ -207,39 +194,33 @@ class BodyStatsViewModel @Inject constructor(
         onComplete: (success: Boolean, error: String?, requiresUpgrade: Boolean) -> Unit
     ) {
         viewModelScope.launch {
-            Log.d(TAG, "Verificando límites de suscripción...")
-
-            // Verificar límites usando el conteo local
             val currentCount = repository.getBodyStatsCount(getCurrentUserId())
-            subscriptionViewModel.checkCanCreateNewDocumentWithCount(currentCount) { canCreate, message ->
-                if (!canCreate) {
-                    Log.w(TAG, "Límite alcanzado: $message")
-                    onComplete(false, message, true)
-                    return@checkCanCreateNewDocumentWithCount
-                }
 
-                // Guardar en Repository (local + sync)
-                viewModelScope.launch {
-                    isLoading = true
-                    val localId = repository.createBodyStats(gender, measurements)
+            // checkCanCreateNewDocumentWithCount es síncrono — capturamos el resultado
+            var canCreate = false
+            var limitMessage: String? = null
+            subscriptionViewModel.checkCanCreateNewDocumentWithCount(currentCount) { can, msg ->
+                canCreate = can
+                limitMessage = msg
+            }
 
-                    if (localId > 0) {
-                        Log.d(TAG, "✅ Medidas guardadas con ID local: $localId")
+            if (!canCreate) {
+                onComplete(false, limitMessage, true)
+                return@launch
+            }
 
-                        // Actualizar estado local
-                        selectedGender = gender
-                        bodyMeasurements = measurements
+            isLoading = true
+            val localId = repository.createBodyStats(gender, measurements)
 
-                        // Actualizar conteo en subscription
-                        subscriptionViewModel.updateBodyStatsCount(currentCount + 1)
-
-                        isLoading = false
-                        onComplete(true, null, false)
-                    } else {
-                        isLoading = false
-                        onComplete(false, "Error al guardar medidas", false)
-                    }
-                }
+            if (localId > 0) {
+                selectedGender = gender
+                bodyMeasurements = measurements
+                subscriptionViewModel.updateBodyStatsCount(currentCount + 1)
+                isLoading = false
+                onComplete(true, null, false)
+            } else {
+                isLoading = false
+                onComplete(false, "Error al guardar medidas", false)
             }
         }
     }
@@ -261,7 +242,6 @@ class BodyStatsViewModel @Inject constructor(
             if (success) {
                 selectedGender = gender
                 bodyMeasurements = measurements
-                Log.d(TAG, "✅ Medidas actualizadas - ID local: $localId")
                 onComplete(true, null)
             } else {
                 onComplete(false, "Error al actualizar medidas")
@@ -285,14 +265,11 @@ class BodyStatsViewModel @Inject constructor(
             if (entity != null) {
                 val success = repository.deleteBodyStats(entity.id)
                 if (success) {
-                    Log.d(TAG, "✅ Registro eliminado: $documentId")
                     onComplete(true, null)
                 } else {
                     onComplete(false, "Error al eliminar registro")
                 }
             } else {
-                // Si no tiene ID local, intentar eliminar por Firebase ID antiguo
-                Log.w(TAG, "Registro no encontrado localmente: $documentId")
                 onComplete(false, "Registro no encontrado")
             }
         }
@@ -332,49 +309,6 @@ class BodyStatsViewModel @Inject constructor(
     }
 
     /**
-     * Cargar datos del historial (función auxiliar para la UI)
-     */
-    fun loadHistoryData(
-        viewModel: BodyStatsViewModel,
-        onComplete: (List<MeasurementHistoryItem>, String?) -> Unit
-    ) {
-        viewModel.getBodyStatsHistory { success, data, error ->
-            if (success && data != null) {
-                val items = data.mapIndexedNotNull { index, firebaseData ->
-                    try {
-                        val measurements = (firebaseData["measurements"] as? Map<String, Any>)?.let { measMap ->
-                            UserMeasurements(
-                                height = (measMap["Height"] as? String)?.toDoubleOrNull() ?: 0.0,
-                                weight = (measMap["Weight"] as? String)?.toDoubleOrNull() ?: 0.0,
-                                neck = (measMap["Neck"] as? String)?.toDoubleOrNull() ?: 0.0,
-                                chest = (measMap["Chest"] as? String)?.toDoubleOrNull() ?: 0.0,
-                                arms = (measMap["Arms"] as? String)?.toDoubleOrNull() ?: 0.0,
-                                waist = (measMap["Waist"] as? String)?.toDoubleOrNull() ?: 0.0,
-                                thigh = (measMap["Thigh"] as? String)?.toDoubleOrNull() ?: 0.0,
-                                calf = (measMap["Calf"] as? String)?.toDoubleOrNull() ?: 0.0,
-                                lastUpdated = firebaseData["createdAt"] as? Timestamp
-                            )
-                        } ?: UserMeasurements()
-
-                        MeasurementHistoryItem(
-                            id = firebaseData["documentId"] as? String ?: "item_$index",
-                            measurements = measurements,
-                            gender = firebaseData["gender"] as? String ?: "Male",
-                            createdAt = firebaseData["createdAt"] as? Timestamp ?: Timestamp.now(),
-                            isLatest = index == 0
-                        )
-                    } catch (e: Exception) {
-                        null
-                    }
-                }
-                onComplete(items, null)
-            } else {
-                onComplete(emptyList(), error)
-            }
-        }
-    }
-
-    /**
      * Obtener datos de progreso para gráficas
      */
     fun getBodyMeasurementProgressData(
@@ -402,7 +336,6 @@ class BodyStatsViewModel @Inject constructor(
                 }
 
                 val progressData = builder.build(userId)
-                Log.d(TAG, "✅ Datos de progreso generados: ${progressData.getTotalRecords()} registros")
                 onComplete(true, progressData, null)
 
             } catch (e: Exception) {
@@ -429,6 +362,27 @@ class BodyStatsViewModel @Inject constructor(
 
     fun clearError() {
         errorMessage = null
+    }
+
+    fun validateMeasurementInput(input: String): String {
+        if (input.isEmpty()) return input
+        if (input.startsWith("0") && input.length > 1 && input[1] != '.') return input.drop(1)
+        if (input.startsWith("-")) return input.drop(1)
+        val filtered = input.filter { it.isDigit() || it == '.' }
+        val parts = filtered.split(".")
+        return when {
+            parts.size > 2 -> filtered.dropLast(1)
+            parts.size == 1 -> parts[0].take(3)
+            else -> {
+                val intPart = parts[0].take(3)
+                val decPart = parts[1].take(2)
+                when {
+                    intPart.isEmpty() && decPart.isEmpty() -> ""
+                    decPart.isEmpty() -> "$intPart."
+                    else -> "$intPart.$decPart"
+                }
+            }
+        }
     }
 
     fun validateMeasurements(measurements: Map<String, String>): String? {
@@ -495,31 +449,4 @@ class BodyStatsViewModel @Inject constructor(
         }
     }
 
-    // Para compatibilidad con funciones antiguas que aún se llamen
-    @Deprecated("Usar createBodyStats del repository")
-    fun saveBodyStats(
-        gender: String,
-        measurements: Map<String, String>,
-        onComplete: (success: Boolean, error: String?) -> Unit
-    ) {
-        viewModelScope.launch {
-            val localId = repository.createBodyStats(gender, measurements)
-            onComplete(localId > 0, if (localId > 0) null else "Error al guardar")
-        }
-    }
-
-    @Deprecated("Usar updateBodyStats con ID local")
-    fun updateBodyStatsById(
-        documentId: String,
-        gender: String,
-        measurements: Map<String, String>,
-        onComplete: (success: Boolean, error: String?) -> Unit
-    ) {
-        val entity = bodyStatsList.find { it.firebaseId == documentId }
-        if (entity != null) {
-            updateBodyStats(entity.id, gender, measurements, onComplete)
-        } else {
-            onComplete(false, "Registro no encontrado")
-        }
-    }
 }

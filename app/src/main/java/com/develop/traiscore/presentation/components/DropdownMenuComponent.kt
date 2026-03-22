@@ -104,9 +104,7 @@ fun DropdownMenuComponentPreview() {
     TraiScoreTheme {
         DropdownMenuComponent(
             items = lista,
-            onItemSelected = { selected ->
-                println("Seleccionaste: $selected")
-            },
+            onItemSelected = {},
             placeholder = "Selecciona una opcion"
 
         )

@@ -7,6 +7,7 @@ import androidx.compose.runtime.State
 import androidx.lifecycle.viewModelScope
 import com.develop.traiscore.data.repository.SessionRepository
 import com.develop.traiscore.data.repository.WorkoutRepository
+import com.develop.traiscore.utils.toDisplayDate
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -14,8 +15,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Locale
 import javax.inject.Inject
 
 data class SessionWithWorkouts(
@@ -33,7 +32,6 @@ class WorkoutEntryViewModel @Inject constructor(
 ) : ViewModel() {
 
 
-    private val _entries = mutableStateOf<List<WorkoutEntry>>(emptyList())
     val entries: StateFlow<List<WorkoutEntry>> = workoutRepository.workouts
         .stateIn(
             scope = viewModelScope,
@@ -45,38 +43,18 @@ class WorkoutEntryViewModel @Inject constructor(
         mutableStateOf<Map<String, List<SessionWithWorkouts>>>(emptyMap())
     val sessionWorkouts: State<Map<String, List<SessionWithWorkouts>>> = _sessionWorkouts
 
-    // ✅ FORMATO ÓPTIMO: numérico, independiente del idioma
-    companion object {
-        val DATE_FORMAT = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    }
-
     init {
         viewModelScope.launch {
-            // 1️⃣ Importar desde Firebase → (solo si Room está vacío)
             workoutRepository.importWorkoutsFromFirebaseToRoom()
-
-            // 2️⃣ Escuchar cambios locales
-            workoutRepository.workouts.collectLatest { localWorkouts ->
-                _entries.value = localWorkouts
-                updateSessionGrouping(localWorkouts)
-            }
-
-            // 3️⃣ Sincronizar pendientes AUTOMÁTICAMENTE al abrir app
             workoutRepository.syncPendingWorkouts()
         }
-    }
-
-    private suspend fun initializeData() {
-        workoutRepository.importWorkoutsFromFirebaseToRoom()
-
         viewModelScope.launch {
             workoutRepository.workouts.collectLatest { localWorkouts ->
-                _entries.value = localWorkouts
                 updateSessionGrouping(localWorkouts)
-                println("📦 Cargados ${localWorkouts.size} workouts desde Room")
             }
         }
     }
+
     val groupedByDate: StateFlow<Map<String, List<WorkoutEntry>>> =
         entries.map { list -> groupWorkoutsByDate(list) }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyMap())
@@ -103,10 +81,7 @@ class WorkoutEntryViewModel @Inject constructor(
                 }
 
                 workoutRepository.addWorkout(workoutToSave)
-                println("✅ Workout guardado localmente: ${workoutToSave.title}")
-
             } catch (e: Exception) {
-                println("❌ Error guardando workout: ${e.message}")
                 e.printStackTrace()
             }
         }
@@ -114,10 +89,10 @@ class WorkoutEntryViewModel @Inject constructor(
 
     private fun updateSessionGrouping(workouts: List<WorkoutEntry>) {
         val sessionGrouped = workouts
-            .groupBy { DATE_FORMAT.format(it.timestamp) }
+            .groupBy { it.timestamp.toDisplayDate() }
             .mapValues { (_, workoutsForDate) ->
                 workoutsForDate
-                    .groupBy { it.sessionId ?: "legacy_${DATE_FORMAT.format(it.timestamp)}" }
+                    .groupBy { it.sessionId ?: "legacy_${it.timestamp.toDisplayDate()}" }
                     .map { (sessionId, sessionWorkouts) ->
                         val first = sessionWorkouts.first()
                         SessionWithWorkouts(
@@ -125,7 +100,7 @@ class WorkoutEntryViewModel @Inject constructor(
                             sessionName = first.sessionName ?: "Entrenamiento",
                             sessionColor = first.sessionColor ?: "#43f4ff",
                             workouts = sessionWorkouts,
-                            date = DATE_FORMAT.format(first.timestamp)
+                            date = first.timestamp.toDisplayDate()
                         )
                     }
                     .sortedByDescending { it.workouts.first().timestamp }
@@ -142,9 +117,7 @@ class WorkoutEntryViewModel @Inject constructor(
                     pendingAction = "UPDATE"
                 )
                 workoutRepository.updateWorkout(updatedWorkout)
-                println("✅ Workout actualizado localmente: ${workout.title}")
             } catch (e: Exception) {
-                println("❌ Error actualizando workout: ${e.message}")
                 e.printStackTrace()
             }
         }
@@ -154,9 +127,7 @@ class WorkoutEntryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 workoutRepository.removeWorkout(workout)
-                println("✅ Workout eliminado localmente: ${workout.title}")
             } catch (e: Exception) {
-                println("❌ Error eliminando workout: ${e.message}")
                 e.printStackTrace()
             }
         }
@@ -166,9 +137,7 @@ class WorkoutEntryViewModel @Inject constructor(
         viewModelScope.launch {
             try {
                 workoutRepository.syncPendingWorkouts()
-                println("✅ Workouts sincronizados con Firebase")
-            } catch (e: Exception) {
-                println("❌ Error sincronizando: ${e.message}")
+            } catch (_: Exception) {
             }
         }
     }
@@ -183,6 +152,6 @@ class WorkoutEntryViewModel @Inject constructor(
     fun groupWorkoutsByDate(workouts: List<WorkoutEntry>): Map<String, List<WorkoutEntry>> {
         return workouts
             .sortedByDescending { it.timestamp }
-            .groupBy { DATE_FORMAT.format(it.timestamp) }
+            .groupBy { it.timestamp.toDisplayDate() }
     }
 }

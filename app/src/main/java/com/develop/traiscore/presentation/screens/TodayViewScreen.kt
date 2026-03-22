@@ -2,7 +2,9 @@ package com.develop.traiscore.presentation.screens
 
 import android.content.Context
 import android.net.ConnectivityManager
+import android.net.Network
 import android.net.NetworkCapabilities
+import android.net.NetworkRequest
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -34,6 +36,9 @@ import com.develop.traiscore.presentation.components.general.NewSessionUX
 import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.NewSessionViewModel
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
+import com.develop.traiscore.utils.hexToColor
+import com.develop.traiscore.utils.todayFormatted
+import com.develop.traiscore.utils.toDisplayDate
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -46,11 +51,7 @@ fun TodayViewScreen(
     sessionViewModel: NewSessionViewModel = hiltViewModel(),
     workoutViewModel: WorkoutEntryViewModel = hiltViewModel()
 ) {
-    // ✅ CORREGIDO - Usar el mismo formato que WorkoutEntryViewModel
-    val todayFormatted = remember {
-        val calendar = Calendar.getInstance()
-        SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(calendar.time)
-    }
+    val todayFormatted = remember { todayFormatted() }
 
     // ✅ OBSERVAR DATOS REACTIVOS desde WorkoutEntryViewModel
     val allWorkouts by workoutViewModel.entries.collectAsState()
@@ -65,16 +66,32 @@ fun TodayViewScreen(
     val isSyncing by sessionViewModel.isSyncing.collectAsState()
     var showEndSessionDialog by remember { mutableStateOf(false) }
 
-    // ✅ NUEVO: Estado de conexión
     val context = LocalContext.current
     val isOffline = remember { mutableStateOf(!isNetworkAvailable(context)) }
 
-    // ✅ NUEVO: Verificar conexión periódicamente
-    LaunchedEffect(Unit) {
-        while (true) {
-            isOffline.value = !isNetworkAvailable(context)
-            kotlinx.coroutines.delay(5000) // Verificar cada 5 segundos
+    DisposableEffect(Unit) {
+        val connectivityManager =
+            context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val networkCallback = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                isOffline.value = false
+            }
+            override fun onLost(network: Network) {
+                isOffline.value = true
+            }
+            override fun onCapabilitiesChanged(
+                network: Network,
+                networkCapabilities: NetworkCapabilities
+            ) {
+                isOffline.value =
+                    !networkCapabilities.hasCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            }
         }
+        val request = NetworkRequest.Builder()
+            .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+            .build()
+        connectivityManager.registerNetworkCallback(request, networkCallback)
+        onDispose { connectivityManager.unregisterNetworkCallback(networkCallback) }
     }
 
     // ✅ USAR sessionWorkouts agrupados del ViewModel
@@ -84,22 +101,7 @@ fun TodayViewScreen(
 
     // ✅ Workouts de hoy para las estadísticas
     val todayWorkouts = remember(allWorkouts, todayFormatted) {
-        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-        allWorkouts.filter { workout ->
-            val workoutDate = formatter.format(workout.timestamp)
-            workoutDate == todayFormatted
-        }
-    }
-
-    // ✅ DEBUG - Ver datos
-    LaunchedEffect(todayFormatted, sessionWorkouts, availableSessions) {
-        println("🔍 DEBUG TodayViewScreen:")
-        println("   todayFormatted: $todayFormatted")
-        println("   sessionWorkouts keys: ${sessionWorkouts.keys.joinToString()}")
-        println("   todaySessions: ${todaySessions.size}")
-        println("   todayWorkouts: ${todayWorkouts.size}")
-        println("   availableSessions: ${availableSessions.size}")
-        println("   isOffline: ${isOffline.value}")
+        allWorkouts.filter { workout -> workout.timestamp.toDisplayDate() == todayFormatted }
     }
 
     LaunchedEffect(Unit) {
@@ -107,19 +109,8 @@ fun TodayViewScreen(
         sessionViewModel.loadAvailableSessions()
     }
 
-    error?.let { errorMessage ->
-        LaunchedEffect(errorMessage) {
-            println("Error: $errorMessage")
-            sessionViewModel.clearError()
-        }
-    }
-
-    fun hexToColor(hex: String): Color {
-        return try {
-            Color(android.graphics.Color.parseColor(hex))
-        } catch (e: Exception) {
-            Color(0xFF355E58)
-        }
+    LaunchedEffect(error) {
+        if (error != null) sessionViewModel.clearError()
     }
 
     Column(
@@ -263,9 +254,7 @@ fun TodayViewScreen(
                         accent = hexToColor(sessionColor),
                         sessionId = sessionId,
                         onClick = {
-                            if (!isOffline.value || true) { // Permitir activar incluso offline
-                                sessionViewModel.activateSession(sessionId)
-                            }
+                            sessionViewModel.activateSession(sessionId)
                         },
                         onDelete = { id ->
                             sessionViewModel.deleteSession(id)

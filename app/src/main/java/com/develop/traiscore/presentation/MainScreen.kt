@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation
 
-import android.util.Log
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -139,9 +138,7 @@ fun MainScreen(
                         navItemList = navItemList,
                         selectedIndex = selectedIndex,
                         onItemClick = { index ->
-                            Log.d("MainScreen", "👉 Click en BottomNav index=$index flavor=${BuildConfig.FLAVOR}")
                             if (index == 2) {
-                                Log.d("MainScreen", "🟢 Abriendo AddExerciseBottomSheet desde flavor=${BuildConfig.FLAVOR}")
                                 isBottomSheetVisible = true
                             } else {
                                 selectedIndex = index
@@ -220,7 +217,6 @@ fun MainScreen(
                     },
                     onSave = { newWorkout ->
                         workoutEntryViewModel.addWorkout(newWorkout)
-                        Log.d("AddExerciseBS", "✅ Ejercicio guardado localmente: ${newWorkout.title}")
                         isBottomSheetVisible = false
                     }
                 )
@@ -229,7 +225,6 @@ fun MainScreen(
         ChronoScreen(
             isVisible = showChronoScreen,
             onDismiss = {
-                Log.d("MainScreen", "⏱️ Cerrando cronómetro")
                 showChronoScreen = false
             }
         )
@@ -362,9 +357,7 @@ private fun TrainerContent(
             onClientClick = { client ->
                 navController.navigate("client_profile/${client.uid}")
             },
-            onAddClientClick = {
-                println("Agregar nuevo cliente")
-            },
+            onAddClientClick = {},
             onInvitationsClick = {
                 navController.navigate(NavigationRoutes.TrainerInvitations.route)
             }
@@ -521,10 +514,7 @@ private fun AthleteContent(
                 is ScreenState.BODY_MEASUREMENTS_SCREEN ->
                     BodyMeasurementsScreen(
                         onBack = onBackToRoutineMenu,
-                        onSave = { gender, data ->
-                            println("Guardar gender=$gender, medidas=$data")
-                            onBackToRoutineMenu()
-                        },
+                        onSave = { _, _ -> onBackToRoutineMenu() },
                         onMeasurementsClick = onMeasurementsClick,
                         onMeasurementsHistoryClick = onMeasurementsHistoryClick,
                         onConfigureTopBar = onConfigureTopBar,

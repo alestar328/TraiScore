@@ -14,8 +14,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Locale
+import com.develop.traiscore.utils.toDisplayDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -69,8 +68,6 @@ class AchievementsViewModel @Inject constructor() : ViewModel() {
         _isLoading.value = true
         _errorMessage.value = null
 
-        Log.d("AchievementsVM", "Cargando logros para usuario: $userId")
-
         viewModelScope.launch {
             try {
                 db.collection("users")
@@ -78,7 +75,6 @@ class AchievementsViewModel @Inject constructor() : ViewModel() {
                     .collection("workoutEntries")
                     .get()
                     .addOnSuccessListener { snapshot ->
-                        Log.d("AchievementsVM", "Documentos encontrados: ${snapshot.size()}")
                         processWorkoutData(snapshot.documents.mapNotNull { doc ->
                             try {
                                 Triple(
@@ -107,10 +103,7 @@ class AchievementsViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun processWorkoutData(workoutData: List<Triple<String, Float, java.util.Date?>>) {
-        Log.d("AchievementsVM", "Procesando ${workoutData.size} entrenamientos")
-
         if (workoutData.isEmpty()) {
-            Log.d("AchievementsVM", "No hay datos de entrenamientos")
             _achievementsData.value = AchievementsData(
                 topExercises = emptyList(),
                 overallAchievement = createEmptyOverallAchievement()
@@ -127,19 +120,15 @@ class AchievementsViewModel @Inject constructor() : ViewModel() {
                 Triple(totalWeight, workoutCount, lastDate)
             }
 
-        Log.d("AchievementsVM", "Estadísticas por ejercicio: $exerciseStats")
-
         // Crear lista de logros por ejercicio
         val exerciseAchievements = exerciseStats.map { (exerciseName, stats) ->
             val (totalWeight, workoutCount, lastDate) = stats
             val equivalence = WeightEquivalences.getBestEquivalence(totalWeight)
-            val dateFormatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-
             ExerciseAchievement(
                 exerciseName = exerciseName,
                 totalWeightKg = totalWeight,
                 workoutCount = workoutCount,
-                lastWorkoutDate = lastDate?.let { dateFormatter.format(it) },
+                lastWorkoutDate = lastDate?.toDisplayDate(),
                 equivalence = equivalence
             )
         }.sortedByDescending { it.totalWeightKg }
@@ -162,8 +151,6 @@ class AchievementsViewModel @Inject constructor() : ViewModel() {
             nextGoal = nextGoal,
             progressToNext = progressToNext
         )
-
-        Log.d("AchievementsVM", "Logro general: peso total = $totalWeight kg, equivalencia = ${overallEquivalence.name}")
 
         _achievementsData.value = AchievementsData(
             topExercises = exerciseAchievements,

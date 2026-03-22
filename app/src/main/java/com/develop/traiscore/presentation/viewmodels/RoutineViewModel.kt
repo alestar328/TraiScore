@@ -47,7 +47,6 @@ class RoutineViewModel @Inject constructor(
         hasShownEmptyDialog = false
         isLoading = true
 
-        Log.d("RoutineViewModel", "Configurado para cliente: $clientId - Lista limpiada")
     }
     private var hasLoadedRoutines = false
 
@@ -212,14 +211,11 @@ class RoutineViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             val fileName = getFileName(context, uri)
-            Log.d("RoutineViewModel", "Attempting to import file: $fileName")
 
             // NO verificar extensión - validar contenido directamente
             // WhatsApp y otras apps pueden cambiar nombres de archivo
-            Log.d("RoutineViewModel", "Validating file content...")
 
             if (isValidTraiScoreJson(context, uri)) {
-                Log.d("RoutineViewModel", "Valid TraiScore JSON detected, importing...")
 
                 importViewModel.importRoutineFromUri(
                     context = context,
@@ -258,10 +254,8 @@ class RoutineViewModel @Inject constructor(
                 val localRoutines = routineRepository.getAllRoutines(userId)
 
                 if (localRoutines.isEmpty()) {
-                    Log.d("RoutineViewModel", "No hay rutinas en Room, intentando sincronizar desde Firebase")
                     try {
                         routineRepository.syncRoutinesFromFirebase(userId)
-                        Log.d("RoutineViewModel", "Sincronización de Firebase completada")
                     } catch (e: Exception) {
                         Log.e("RoutineViewModel", "Error en sincronización inicial", e)
                     }
@@ -274,8 +268,6 @@ class RoutineViewModel @Inject constructor(
 
                 isLoading = false
                 onComplete(finalList.isNotEmpty())
-
-                Log.d("RoutineViewModel", "Rutinas cargadas: ${finalList.size}")
 
             } catch (e: Exception) {
                 Log.e("RoutineViewModel", "Error cargando rutinas", e)
@@ -290,10 +282,6 @@ class RoutineViewModel @Inject constructor(
             val inputStream = context.contentResolver.openInputStream(uri)
             val content = inputStream?.bufferedReader()?.use { it.readText() }
 
-            Log.d("RoutineViewModel", "=== CONTENT VALIDATION DEBUG ===")
-            Log.d("RoutineViewModel", "Content length: ${content?.length}")
-            Log.d("RoutineViewModel", "Content preview: ${content?.take(300)}...")
-
             if (content.isNullOrBlank()) {
                 Log.w("RoutineViewModel", "File content is empty")
                 return false
@@ -301,7 +289,6 @@ class RoutineViewModel @Inject constructor(
 
             // Verificar estructura JSON básica
             val looksLikeJson = content.trim().startsWith("{") && content.trim().endsWith("}")
-            Log.d("RoutineViewModel", "Looks like JSON: $looksLikeJson")
 
             if (!looksLikeJson) {
                 return false
@@ -318,14 +305,7 @@ class RoutineViewModel @Inject constructor(
                 val hasSections = jsonObject?.has("sections") == true
                 val hasAppVersion = jsonObject?.has("appVersion") == true
 
-                Log.d("RoutineViewModel", "GSON Validation results:")
-                Log.d("RoutineViewModel", "- fileType = TraiScore_Routine: $hasFileType")
-                Log.d("RoutineViewModel", "- Has routineName: $hasRoutineName")
-                Log.d("RoutineViewModel", "- Has sections: $hasSections")
-                Log.d("RoutineViewModel", "- Has appVersion: $hasAppVersion")
-
                 val isValid = hasFileType && hasRoutineName && hasSections && hasAppVersion
-                Log.d("RoutineViewModel", "Overall validation result: $isValid")
 
                 return isValid
 
@@ -481,7 +461,6 @@ class RoutineViewModel @Inject constructor(
         hasShownEmptyDialog = false
         isLoading = true
 
-        Log.d("RoutineViewModel", "Cliente objetivo eliminado, estado limpiado completamente")
     }
 
     fun cleanRoutine() {

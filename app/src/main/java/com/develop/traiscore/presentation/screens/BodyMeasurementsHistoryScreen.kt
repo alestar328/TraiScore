@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation.screens
 
-import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -193,8 +192,7 @@ fun BodyMeasurementsHistoryScreen(
                                         },
                                         // ✅ CAMBIO: Pasar el item completo en lugar de solo ejecutar callback
                                         onEdit = {
-                                            Log.d("HistoryScreen", "Editando item: ${item.id}")
-                                            onEditMeasurement(item.id) // Pass just the document ID to the callback
+                                            onEditMeasurement(item.id)
                                         },
                                         onCompareToggle = { itemId ->
                                             selectedForComparison = if (selectedForComparison.contains(itemId)) {

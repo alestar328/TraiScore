@@ -95,7 +95,7 @@ fun WorkoutCardListPreview() {
 
     WorkoutCardList(
         workouts = mockWorkouts,
-        onEditClick = { workout -> println("Edit: ${workout.title}") },
-        onDeleteClick = { workout -> println("Delete: ${workout.title}") }
+        onEditClick = {},
+        onDeleteClick = {}
     )
 }

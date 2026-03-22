@@ -119,30 +119,21 @@ class InvitationRepository @Inject constructor(
      */
     suspend fun findInvitationByCode(code: String): Result<InvitationEntity?> {
         return try {
-            android.util.Log.d("InvitationRepo", "=== BUSCANDO CÓDIGO ===")
-            android.util.Log.d("InvitationRepo", "Código buscado: '$code'")
-
             val snapshot = invitationsCollection
                 .whereEqualTo("invitationCode", code.uppercase())
                 .whereEqualTo("isActive", true)
                 .get()
                 .await()
 
-            android.util.Log.d("InvitationRepo", "Documentos encontrados: ${snapshot.size()}")
-
             if (snapshot.isEmpty) {
-                android.util.Log.d("InvitationRepo", "No se encontraron invitaciones")
                 Result.success(null)
             } else {
                 val doc = snapshot.documents.first()
-                android.util.Log.d("InvitationRepo", "Documento encontrado: ${doc.id}")
-                android.util.Log.d("InvitationRepo", "Datos: ${doc.data}")
 
                 val invitation = InvitationEntity.fromFirestore(
                     doc.data ?: emptyMap(),
                     doc.id
                 )
-                android.util.Log.d("InvitationRepo", "Invitación parseada: $invitation")
                 Result.success(invitation)
             }
         } catch (e: Exception) {
@@ -155,10 +146,6 @@ class InvitationRepository @Inject constructor(
      */
     suspend fun acceptInvitation(invitationId: String, clientId: String): Result<Unit> {
         return try {
-            android.util.Log.d("InvitationRepo", "=== INICIANDO ACEPTACIÓN ===")
-            android.util.Log.d("InvitationRepo", "InvitationId: $invitationId")
-            android.util.Log.d("InvitationRepo", "ClientId: $clientId")
-
             firestore.runTransaction { transaction ->
                 // Obtener la invitación
                 val invitationRef = invitationsCollection.document(invitationId)
@@ -173,13 +160,10 @@ class InvitationRepository @Inject constructor(
                     invitationDoc.id
                 )
 
-                android.util.Log.d("InvitationRepo", "Invitación actual: $invitation")
-
                 if (!invitation.isAvailable()) {
                     throw Exception("La invitación no está disponible")
                 }
 
-                android.util.Log.d("InvitationRepo", "Actualizando invitación...")
                 // Actualizar la invitación
                 transaction.update(invitationRef, mapOf(
                     "usedBy" to clientId,
@@ -188,7 +172,6 @@ class InvitationRepository @Inject constructor(
                     "isActive" to false // Marcar como inactiva cuando se usa
                 ))
 
-                android.util.Log.d("InvitationRepo", "Actualizando cliente...")
                 // Actualizar el cliente con el trainer
                 val clientRef = usersCollection.document(clientId)
                 transaction.update(clientRef, mapOf(
@@ -196,7 +179,6 @@ class InvitationRepository @Inject constructor(
                     "updatedAt" to Timestamp.now()
                 ))
 
-                android.util.Log.d("InvitationRepo", "Creando documento en subcolección...")
                 // Crear documento en la subcolección de clientes del trainer
                 val trainerClientRef = usersCollection
                     .document(invitation.trainerId)
@@ -211,7 +193,6 @@ class InvitationRepository @Inject constructor(
 
             }.await()
 
-            android.util.Log.d("InvitationRepo", "✅ Transacción completada exitosamente")
             Result.success(Unit)
         } catch (e: Exception) {
             android.util.Log.e("InvitationRepo", "❌ Error en transacción: ${e.message}", e)

@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation.screens
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -108,7 +107,6 @@ fun BodyMeasurementsScreen(
     LaunchedEffect(subscriptionViewModel.userSubscription, subscriptionViewModel.actualDocumentsCount) {
         if (subscriptionViewModel.userSubscription != null) {
             subscriptionLimits = subscriptionViewModel.checkBodyStatsLimits()
-            Log.d("BodyMeasurementsScreen", "Límites actualizados: $subscriptionLimits")
         }
     }
 
@@ -166,49 +164,6 @@ fun BodyMeasurementsScreen(
             }
         }
     }
-    fun validateMeasurementInput(input: String): String {
-        if (input.isEmpty()) return input
-
-        // No permitir números que empiecen con 0 (excepto 0 solo o 0.x)
-        if (input.startsWith("0") && input.length > 1 && input[1] != '.') {
-            return input.drop(1)
-        }
-
-        // No permitir negativos
-        if (input.startsWith("-")) return input.drop(1)
-
-        // Filterar solo números y punto decimal
-        val filtered = input.filter { it.isDigit() || it == '.' }
-
-        // Manejar punto decimal
-        val parts = filtered.split(".")
-
-        return when {
-            // Más de un punto decimal
-            parts.size > 2 -> filtered.dropLast(1)
-
-            // Solo parte entera
-            parts.size == 1 -> {
-                val intPart = parts[0].take(3) // Máximo 3 dígitos enteros
-                intPart
-            }
-
-            // Parte entera + decimal
-            else -> {
-                val intPart = parts[0].take(3)  // Máximo 3 dígitos enteros
-                val decPart = parts[1].take(2)  // Máximo 2 dígitos decimales
-
-                if (intPart.isEmpty() && decPart.isEmpty()) {
-                    ""
-                } else if (decPart.isEmpty()) {
-                    "$intPart."
-                } else {
-                    "$intPart.$decPart"
-                }
-            }
-        }
-    }
-
     // Diálogo de actualización de plan
     if (showUpgradeDialog) {
         UpgradeDialog(
@@ -375,8 +330,7 @@ fun BodyMeasurementsScreen(
                                     OutlinedTextField(
                                         value = measurements[measurementType.key] ?: "",
                                         onValueChange = { newValue ->
-                                            val validatedValue = validateMeasurementInput(newValue)
-                                            measurements[measurementType.key] = validatedValue
+                                            measurements[measurementType.key] = bodyStatsViewModel.validateMeasurementInput(newValue)
                                         },
                                         singleLine = true,
                                         label = {

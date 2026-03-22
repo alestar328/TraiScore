@@ -29,19 +29,11 @@ suspend fun migrarDesdeRoomAFirestore(
 
     val sourceUid = roomUserIds.firstOrNull { it != targetUid } ?: targetUid
 
-    Log.d("Migration", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-    Log.d("Migration", "🔄 MIGRACIÓN ROOM → FIRESTORE")
-    Log.d("Migration", "UID ORIGEN : $sourceUid")
-    Log.d("Migration", "UID DESTINO: $targetUid")
-    Log.d("Migration", "Email      : $email")
-    Log.d("Migration", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-
     try {
         /* ───────────────────────────────────────────────
          * 2️⃣ RUTINAS
          * ─────────────────────────────────────────────── */
         val routines = database.routineDao().getRoutines(sourceUid)
-        Log.d("Migration", "📦 Rutinas: ${routines.size}")
 
         for (routine in routines) {
             val map = mapOf(
@@ -72,8 +64,6 @@ suspend fun migrarDesdeRoomAFirestore(
             .getAllExercises()
             .filter { !it.isDefault }
 
-        Log.d("Migration", "📦 Ejercicios personalizados: ${exercises.size}")
-
         for (e in exercises) {
             val map = mapOf(
                 "idIntern" to e.idIntern,
@@ -99,7 +89,6 @@ suspend fun migrarDesdeRoomAFirestore(
          * 4️⃣ SESIONES
          * ─────────────────────────────────────────────── */
         val sessions = database.sessionDao().getAvailableSessionsList(sourceUid)
-        Log.d("Migration", "📦 Sesiones: ${sessions.size}")
 
         for (s in sessions) {
             val map = mapOf(
@@ -126,7 +115,6 @@ suspend fun migrarDesdeRoomAFirestore(
          * 5️⃣ BODY STATS
          * ─────────────────────────────────────────────── */
         val stats = database.bodyStatsDao().getBodyStatsForUser(sourceUid)
-        Log.d("Migration", "📦 BodyStats: ${stats.size}")
 
         for (b in stats) {
             val map = mapOf(
@@ -158,7 +146,6 @@ suspend fun migrarDesdeRoomAFirestore(
          * 6️⃣ WORKOUT ENTRIES
          * ─────────────────────────────────────────────── */
         val workouts = database.workoutDao().getAllWorkoutsWithExercise()
-        Log.d("Migration", "📦 WorkoutEntries: ${workouts.size}")
 
         for (entry in workouts) {
             val w = entry.workout
@@ -185,10 +172,6 @@ suspend fun migrarDesdeRoomAFirestore(
                 .set(map)
                 .await()
         }
-
-        Log.d("Migration", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-        Log.d("Migration", "✅ MIGRACIÓN COMPLETADA CON ÉXITO")
-        Log.d("Migration", "━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 
     } catch (e: Exception) {
         Log.e("Migration", "❌ Error durante la migración", e)

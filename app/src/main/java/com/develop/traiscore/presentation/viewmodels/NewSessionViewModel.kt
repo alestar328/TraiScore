@@ -7,6 +7,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.develop.traiscore.data.firebaseData.CreateSessionRequest
 import com.develop.traiscore.data.repository.SessionRepository
+import com.develop.traiscore.utils.colorToHex
+import com.develop.traiscore.utils.hexToColor
 import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -73,8 +75,7 @@ class NewSessionViewModel @Inject constructor(
                 sessionRepository.syncPendingSessions()
                 // Recargar sesiones después de sincronizar
                 loadAvailableSessions()
-            } catch (e: Exception) {
-                println("Error sincronizando en background: ${e.message}")
+            } catch (_: Exception) {
             } finally {
                 _isSyncing.value = false
             }
@@ -98,9 +99,7 @@ class NewSessionViewModel @Inject constructor(
                 val response = sessionRepository.createInactiveSession(createRequest)
 
                 if (response.success) {
-                    // Recargar lista inmediatamente (ahora es desde local, más rápido)
                     loadAvailableSessions()
-                    println("✅ SessionCard creada: ${response.session?.name}")
                 } else {
                     _error.value = response.error ?: "Error al crear sesión"
                 }
@@ -129,11 +128,7 @@ class NewSessionViewModel @Inject constructor(
                         isActive = true
                     )
                     _hasActiveSession.value = true
-
-                    // NUEVO: Recargar sesiones para actualizar UI
                     loadAvailableSessions()
-
-                    println("✅ Sesión activada: ${session.name}")
                 } else {
                     _error.value = response.error ?: "Error al activar sesión"
                 }
@@ -153,9 +148,7 @@ class NewSessionViewModel @Inject constructor(
                 val response = sessionRepository.deleteSession(sessionId)
 
                 if (response.success) {
-                    // Recargar la lista de sesiones disponibles (ahora desde local)
                     loadAvailableSessions()
-                    println("✅ Sesión eliminada correctamente")
                 } else {
                     _error.value = response.error ?: "Error al eliminar sesión"
                 }
@@ -174,34 +167,23 @@ class NewSessionViewModel @Inject constructor(
     fun loadAvailableSessions() {
         viewModelScope.launch {
             try {
-                println("🔍 Cargando sesiones disponibles...")
-
-                // PRIMERO: Cargar sesiones locales siempre
                 val sessions = sessionRepository.getUserAvailableSessions()
                 _availableSessions.value = sessions
                 _hasSessionsLoaded.value = true
-                println("✅ ${sessions.size} sesiones cargadas desde local")
 
-                // DESPUÉS: Intentar sincronizar en background si hay red
                 try {
                     sessionRepository.syncPendingSessions()
-                    // Recargar después de sincronizar
                     val updatedSessions = sessionRepository.getUserAvailableSessions()
                     _availableSessions.value = updatedSessions
-                    println("✅ Sesiones sincronizadas con Firebase")
-                } catch (syncError: Exception) {
-                    // No es crítico si falla la sincronización
-                    println("⚠️ No se pudo sincronizar con Firebase: ${syncError.message}")
+                } catch (_: Exception) {
                 }
 
             } catch (e: Exception) {
-                println("❌ Error al cargar sesiones: ${e.message}")
                 _error.value = "Error al cargar sesiones: ${e.message}"
-                // Intentar cargar al menos las locales
                 try {
                     val localSessions = sessionRepository.getUserAvailableSessionsOffline()
                     _availableSessions.value = localSessions
-                } catch (localError: Exception) {
+                } catch (_: Exception) {
                     _availableSessions.value = emptyList()
                 }
             }
@@ -227,16 +209,13 @@ class NewSessionViewModel @Inject constructor(
                         isActive = session.isActive
                     )
                     _hasActiveSession.value = true
-                    println("✅ Sesión activa encontrada: ${session.name}")
                 } else {
                     _activeSession.value = null
                     _hasActiveSession.value = false
-                    println("ℹ️ No hay sesión activa")
                 }
 
             } catch (e: Exception) {
                 _error.value = "Error al verificar sesión activa: ${e.message}"
-                println("❌ Error verificando sesión activa: ${e.message}")
             }
         }
     }
@@ -256,12 +235,8 @@ class NewSessionViewModel @Inject constructor(
                     _activeSession.value = null
                     _hasActiveSession.value = false
                     _error.value = null
-
-                    // ✅ Recargar de Firebase, no solo local
                     sessionRepository.syncPendingSessions()
                     loadAvailableSessions()
-
-                    println("✅ Sesión terminada exitosamente y sincronizada con Firebase")
                 } else {
                     _error.value = response.error ?: "Error al terminar sesión"
                 }
@@ -273,21 +248,6 @@ class NewSessionViewModel @Inject constructor(
         }
     }
 
-
-    private fun hexToColor(hex: String): Color {
-        return try {
-            Color(android.graphics.Color.parseColor(hex))
-        } catch (e: Exception) {
-            Color.Cyan
-        }
-    }
-
-    private fun colorToHex(color: Color): String {
-        val red = (color.red * 255).toInt()
-        val green = (color.green * 255).toInt()
-        val blue = (color.blue * 255).toInt()
-        return String.format("#%02X%02X%02X", red, green, blue)
-    }
 
     fun getSessionDataForWorkout(): Triple<String, String, String>? {
         val session = _activeSession.value

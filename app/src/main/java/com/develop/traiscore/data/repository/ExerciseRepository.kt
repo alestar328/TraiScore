@@ -36,7 +36,6 @@ class ExerciseRepository @Inject constructor(
     suspend fun importGlobalExercisesIfNeeded() {
         // 👉 Primera protección: bandera en memoria (evita doble llamada simultánea)
         if (globalExercisesImported) {
-            Log.d("ExerciseRepo", "⏭️ Importación global ignorada (ya realizada en memoria)")
             return
         }
 
@@ -46,12 +45,10 @@ class ExerciseRepository @Inject constructor(
         // 👉 Segunda protección: verificar si Room ya tiene globales guardados
         val count = exerciseDao.getGlobalExerciseCount()
         if (count > 0) {
-            Log.d("ExerciseRepo", "📦 Ya hay $count ejercicios globales importados (Room)")
             return
         }
 
         try {
-            Log.d("ExerciseRepo", "📥 Importando ejercicios globales desde Firebase...")
 
             val snapshot = firestore.collection("exercises").get().await()
 
@@ -77,9 +74,6 @@ class ExerciseRepository @Inject constructor(
 
             if (toInsert.isNotEmpty()) {
                 exerciseDao.insertExercises(toInsert)
-                Log.d("ExerciseRepo", "✅ Importados ${toInsert.size} ejercicios globales")
-            } else {
-                Log.d("ExerciseRepo", "⏭️ Ningún ejercicio global nuevo para insertar")
             }
 
         } catch (e: Exception) {
@@ -105,7 +99,6 @@ class ExerciseRepository @Inject constructor(
             }
 
             toDelete.forEach { exerciseDao.deleteExercise(it) }
-            Log.d("ExerciseRepo", "🧹 Eliminados ${toDelete.size} ejercicios duplicados")
         } catch (e: Exception) {
             Log.e("ExerciseRepo", "❌ Error limpiando duplicados", e)
         }
@@ -116,7 +109,6 @@ class ExerciseRepository @Inject constructor(
      */
     suspend fun importUserExercises() {
         if (userExercisesImported) {
-            Log.d("ExerciseRepo", "⏭️ Ejercicios del usuario ya importados")
             return
         }
 
@@ -124,7 +116,6 @@ class ExerciseRepository @Inject constructor(
         val userId = auth.currentUser?.uid ?: return
 
         try {
-            Log.d("ExerciseRepo", "📥 Importando ejercicios del usuario desde Firebase...")
             val snapshot = firestore.collection("users")
                 .document(userId)
                 .collection("exercises")
@@ -160,16 +151,11 @@ class ExerciseRepository @Inject constructor(
 
                 if (existing == null && !existingSameNameCategory) {
                     exercisesToInsert.add(fbExercise)
-                } else {
-                    Log.d("ExerciseRepo", "⏭️ Ejercicio ya existe: ${fbExercise.name}")
                 }
             }
 
             if (exercisesToInsert.isNotEmpty()) {
                 exerciseDao.insertExercises(exercisesToInsert)
-                Log.d("ExerciseRepo", "✅ Importados ${exercisesToInsert.size} ejercicios nuevos del usuario")
-            } else {
-                Log.d("ExerciseRepo", "✅ Todos los ejercicios del usuario ya están importados")
             }
         } catch (e: Exception) {
             Log.e("ExerciseRepo", "❌ Error importando ejercicios del usuario", e)
@@ -195,7 +181,6 @@ class ExerciseRepository @Inject constructor(
         )
 
         val localId = exerciseDao.insertExercise(exercise)
-        Log.d("ExerciseRepo", "📝 Ejercicio guardado localmente: $name (ID: $localId)")
 
         // Intentar sincronizar inmediatamente
         syncPendingExercises()
@@ -214,7 +199,6 @@ class ExerciseRepository @Inject constructor(
         )
 
         exerciseDao.updateExercise(updated)
-        Log.d("ExerciseRepo", "📝 Ejercicio actualizado localmente: ${exercise.name}")
 
         // Intentar sincronizar inmediatamente
         syncPendingExercises()
@@ -236,7 +220,6 @@ class ExerciseRepository @Inject constructor(
         )
 
         exerciseDao.updateExercise(marked)
-        Log.d("ExerciseRepo", "📝 Ejercicio marcado para eliminación: ${exercise.name}")
 
         // Intentar sincronizar inmediatamente
         syncPendingExercises()
@@ -254,8 +237,6 @@ class ExerciseRepository @Inject constructor(
         if (unsynced.isEmpty()) {
             return
         }
-
-        Log.d("ExerciseRepo", "🔄 Sincronizando ${unsynced.size} ejercicios pendientes")
 
         unsynced.forEach { exercise ->
             try {
@@ -280,7 +261,6 @@ class ExerciseRepository @Inject constructor(
                                 pendingAction = null
                             )
                         )
-                        Log.d("ExerciseRepo", "✅ Ejercicio creado en Firebase: ${exercise.name}")
                     }
 
                     "UPDATE" -> {
@@ -301,7 +281,6 @@ class ExerciseRepository @Inject constructor(
                                     pendingAction = null
                                 )
                             )
-                            Log.d("ExerciseRepo", "✅ Ejercicio actualizado en Firebase: ${exercise.name}")
                         }
                     }
 
@@ -315,7 +294,6 @@ class ExerciseRepository @Inject constructor(
                                 .await()
 
                             exerciseDao.deleteExercise(exercise)
-                            Log.d("ExerciseRepo", "✅ Ejercicio eliminado en Firebase: ${exercise.name}")
                         }
                     }
                 }

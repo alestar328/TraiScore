@@ -145,11 +145,8 @@ class RoutineRepository(
                 .await()
 
             if (firebaseRoutines.isEmpty) {
-                Log.d("RoutineRepository", "No hay rutinas en Firebase para sincronizar")
                 return
             }
-
-            Log.d("RoutineRepository", "Sincronizando ${firebaseRoutines.size()} rutinas desde Firebase")
 
             // 2. Para cada rutina de Firebase
             firebaseRoutines.documents.forEach { doc ->
@@ -165,7 +162,6 @@ class RoutineRepository(
                 val alreadyExists = existingRoutines.any { it.routineIdFirebase == firebaseId }
 
                 if (alreadyExists) {
-                    Log.d("RoutineRepository", "Rutina $routineName ya existe en Room, saltando")
                     return@forEach
                 }
 
@@ -217,10 +213,7 @@ class RoutineRepository(
                     }
                 }
 
-                Log.d("RoutineRepository", "✅ Rutina '$routineName' sincronizada a Room")
             }
-
-            Log.d("RoutineRepository", "Sincronización completada exitosamente")
 
         } catch (e: Exception) {
             Log.e("RoutineRepository", "Error sincronizando rutinas desde Firebase", e)
@@ -317,7 +310,6 @@ class RoutineRepository(
         // ✅ CORREGIDO: Actualizar si existe, crear si no existe
         if (routine.routineIdFirebase != null) {
             // Ya tiene ID de Firebase → ACTUALIZAR documento existente
-            Log.d("RoutineRepository", "Actualizando rutina existente en Firebase: ${routine.routineIdFirebase}")
             firestore.collection("users")
                 .document(userId)
                 .collection("routines")
@@ -326,7 +318,6 @@ class RoutineRepository(
                 .await()
         } else {
             // No tiene ID de Firebase → CREAR nuevo documento
-            Log.d("RoutineRepository", "Creando nueva rutina en Firebase")
             val docRef = firestore.collection("users")
                 .document(userId)
                 .collection("routines")
@@ -335,7 +326,6 @@ class RoutineRepository(
 
             // Actualizar la rutina local con el ID de Firebase
             updateRoutineFirebaseId(routineLocalId, docRef.id)
-            Log.d("RoutineRepository", "Rutina creada en Firebase con ID: ${docRef.id}")
         }
     }
     suspend fun getSections(routineLocalId: Int): List<RoutineSectionEntity> {

@@ -1,7 +1,6 @@
 package com.develop.traiscore.presentation.components
 
 import android.text.TextPaint
-import android.util.Log
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -16,7 +15,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
@@ -281,12 +279,6 @@ private fun ProgressLegend(
     topExercises: List<ExerciseProgressData>,
     modifier: Modifier = Modifier
 ) {
-    LaunchedEffect(topExercises) {
-        Log.d("RadarChart", "ProgressLegend called with ${topExercises.size} exercises")
-        topExercises.take(3).forEachIndexed { index, exercise ->
-            Log.d("RadarChart", "Exercise $index: ${exercise.exerciseName} = ${exercise.progressScore}%")
-        }
-    }
     Column(
         modifier = modifier
             .background(Color.Red.copy(alpha = 0.1f)) // ✅ TEMPORAL: fondo rojo para debug

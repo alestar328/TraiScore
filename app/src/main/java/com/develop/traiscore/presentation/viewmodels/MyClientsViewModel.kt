@@ -49,8 +49,6 @@ class MyClientsViewModel @Inject constructor(
         _isLoading.value = true
         _error.value = null
 
-        android.util.Log.d("MyClientsVM", "Configurando listener para trainer: $currentTrainerId")
-
         // Limpiar listener anterior si existe
         clientsListener?.remove()
 
@@ -67,8 +65,6 @@ class MyClientsViewModel @Inject constructor(
                 }
 
                 if (snapshot != null) {
-                    android.util.Log.d("MyClientsVM", "Listener - Documentos encontrados: ${snapshot.size()}")
-
                     val clientList = snapshot.documents.mapNotNull { doc ->
                         try {
                             val data = doc.data ?: return@mapNotNull null
@@ -76,11 +72,9 @@ class MyClientsViewModel @Inject constructor(
                             // Verificar que el cliente esté realmente vinculado al trainer
                             val linkedTrainerUid = data["linkedTrainerUid"] as? String
                             if (linkedTrainerUid != currentTrainerId) {
-                                android.util.Log.d("MyClientsVM", "Cliente ${doc.id} ya no está vinculado a este trainer")
                                 return@mapNotNull null
                             }
 
-                            android.util.Log.d("MyClientsVM", "Cliente activo: ${doc.id} - ${data}")
                             UserEntity.fromFirestore(data, doc.id)
                         } catch (e: Exception) {
                             android.util.Log.e("MyClientsVM", "Error parseando cliente ${doc.id}", e)
@@ -88,7 +82,6 @@ class MyClientsViewModel @Inject constructor(
                         }
                     }.sortedBy { it.getFullName() }
 
-                    android.util.Log.d("MyClientsVM", "Clientes actualizados en tiempo real: ${clientList.size}")
                     _clients.value = clientList
                     _isLoading.value = false
                 } else {
@@ -122,8 +115,6 @@ class MyClientsViewModel @Inject constructor(
                     return@launch
                 }
 
-                android.util.Log.d("MyClientsVM", "Dando de baja cliente: $clientId")
-
                 // Eliminar la vinculación del cliente con el trainer
                 firestore.collection("users")
                     .document(clientId)
@@ -134,8 +125,6 @@ class MyClientsViewModel @Inject constructor(
                         )
                     )
                     .await()
-
-                android.util.Log.d("MyClientsVM", "Cliente dado de baja exitosamente: $clientId")
 
                 // NO necesitamos actualizar manualmente _clients.value aquí
                 // El listener en tiempo real se encargará automáticamente de actualizar la lista
@@ -163,6 +152,5 @@ class MyClientsViewModel @Inject constructor(
     override fun onCleared() {
         super.onCleared()
         clientsListener?.remove()
-        android.util.Log.d("MyClientsVM", "Listener de clientes limpiado")
     }
 }

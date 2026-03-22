@@ -364,8 +364,8 @@ fun ExercisesScreenPreview() {
             ) { item ->
                 WorkoutCard(
                     workoutEntry = item.workout,
-                    onEditClick = { println("Edit ${item.exercise?.name}") },
-                    onDeleteClick = { println("Delete ${item.exercise?.name}") }
+                    onEditClick = {},
+                    onDeleteClick = {}
                 )
             }
         }

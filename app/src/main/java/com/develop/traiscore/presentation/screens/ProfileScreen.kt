@@ -31,8 +31,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.develop.traiscore.BuildConfig
 import com.develop.traiscore.R
-import com.develop.traiscore.core.UserRole
-import com.develop.traiscore.data.local.AppDatabase
 import com.develop.traiscore.presentation.MainActivity
 import com.develop.traiscore.presentation.ScreenState
 import com.develop.traiscore.presentation.components.TraiScoreTopBar
@@ -40,19 +38,9 @@ import com.develop.traiscore.presentation.components.general.ProfilePhotoCompone
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.theme.*
 import com.develop.traiscore.presentation.viewmodels.ProfileViewModel
+import com.develop.traiscore.presentation.viewmodels.TrainerInfo
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.ListenerRegistration
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
-
-data class TrainerInfo(
-    val name: String,
-    val email: String,
-    val photoUrl: String? = null
-)
 
 @Composable
 fun ProfileScreen(
@@ -68,6 +56,8 @@ fun ProfileScreen(
 
     ) {
     val profileUiState by profileViewModel.uiState.collectAsStateWithLifecycle()
+    val trainerInfo = profileUiState.trainerInfo
+    val isTrainerLoading = profileUiState.isTrainerLoading
     var showAchievements by remember { mutableStateOf(false) }
 
     val auth = FirebaseAuth.getInstance()
@@ -78,50 +68,11 @@ fun ProfileScreen(
         mainActivity?.googleSignInClient
     }
 
-    var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
-    var trainerInfo by remember { mutableStateOf<TrainerInfo?>(null) }
-    var isLoading by remember { mutableStateOf(true) }
-
-    // Estado para controlar el listener de Firestore
-    var firestoreListener by remember { mutableStateOf<ListenerRegistration?>(null) }
     val isAthlete = BuildConfig.FLAVOR == "athlete"
     val isLite = BuildConfig.FLAVOR == "lite"
     val isProduction = BuildConfig.FLAVOR == "production"
     val isTrainer = BuildConfig.FLAVOR == "trainer"
     var showLogoutDialog by remember { mutableStateOf(false) }
-
-    // Función para limpiar el listener
-    fun cleanupListener() {
-        firestoreListener?.remove()
-        firestoreListener = null
-    }
-
-    // Función para obtener información del trainer
-    suspend fun fetchTrainerInfo(trainerId: String): TrainerInfo? {
-        return try {
-            val trainerDoc = FirebaseFirestore.getInstance()
-                .collection("users")
-                .document(trainerId)
-                .get()
-                .await()
-
-            android.util.Log.d("ProfileScreen", "Datos del trainer: ${trainerDoc.data}")
-
-            val trainerName =
-                "${trainerDoc.getString("firstName") ?: ""} ${trainerDoc.getString("lastName") ?: ""}".trim()
-            val trainerEmail = trainerDoc.getString("email") ?: ""
-            val trainerPhoto = trainerDoc.getString("photoURL")
-
-            android.util.Log.d("ProfileScreen", "Trainer encontrado: $trainerName")
-
-            if (trainerName.isNotEmpty()) {
-                TrainerInfo(trainerName, trainerEmail, trainerPhoto)
-            } else null
-        } catch (e: Exception) {
-            android.util.Log.e("ProfileScreen", "Error cargando trainer info", e)
-            null
-        }
-    }
 
 
    /* MIGRACION POR SI EL USUARIO HA PERDIDO SUS DATOS
@@ -133,19 +84,9 @@ fun ProfileScreen(
         }
     }*/
     LaunchedEffect(profileUiState.error) {
-        profileUiState.error?.let { error ->
-            // Aquí puedes mostrar un Toast o Snackbar con el error
-            android.util.Log.e("ProfileScreen", "Error: $error")
-            profileViewModel.clearError()
-        }
+        if (profileUiState.error != null) profileViewModel.clearError()
     }
 
-
-    DisposableEffect(Unit) {
-        onDispose {
-            cleanupListener()
-        }
-    }
     LaunchedEffect(Unit) {
 
         // 1️⃣ Cargar foto del usuario
@@ -201,47 +142,9 @@ fun ProfileScreen(
         // 3️⃣ Configurar FAB global
         onConfigureFAB(null)
 
-        // 4️⃣ Listener Firestore SOLO para athletes
+        // 4️⃣ Cargar info del trainer SOLO para athletes
         if (isAthlete || isProduction || isLite) {
-            val currentUser = auth.currentUser ?: return@LaunchedEffect
-            isLoading = true
-            trainerInfo = null
-
-            try {
-                FirebaseFirestore.getInstance()
-                    .collection("users")
-                    .document(currentUser.uid)
-                    .get()
-                    .await()
-
-                cleanupListener()
-                firestoreListener = FirebaseFirestore.getInstance()
-                    .collection("users")
-                    .document(currentUser.uid)
-                    .addSnapshotListener { snapshot, error ->
-                        if (error != null) {
-                            android.util.Log.e("ProfileScreen", "Error listener", error)
-                            isLoading = false
-                            return@addSnapshotListener
-                        }
-
-                        val trainerId = snapshot?.getString("linkedTrainerUid")
-
-                        if (trainerId != null) {
-                            scope.launch {
-                                trainerInfo = fetchTrainerInfo(trainerId)
-                                isLoading = false
-                            }
-                        } else {
-                            trainerInfo = null
-                            isLoading = false
-                        }
-                    }
-
-            } catch (e: Exception) {
-                android.util.Log.e("ProfileScreen", "Error inicial", e)
-                isLoading = false
-            }
+            profileViewModel.loadTrainerInfo()
         }
     }
 
@@ -286,13 +189,12 @@ fun ProfileScreen(
 
                 Spacer(Modifier.height(24.dp))
 
-                // Sección de Trainer para CLIENTES
-                if (currentUserRole == UserRole.CLIENT) {
+                // Sección de Trainer para athletes
+                if (isAthlete || isProduction || isLite) {
                     TrainerSection(
                         trainerInfo = trainerInfo,
-                        isLoading = isLoading,
+                        isLoading = isTrainerLoading,
                         onAddTrainer = {
-                            // Navegamos directamente a la pantalla de invitación
                             navController.navigate(NavigationRoutes.EnterInvitation.route)
                         }
                     )
@@ -380,8 +282,6 @@ fun ProfileScreen(
                 onConfirm = {
                     showLogoutDialog = false
                     scope.launch {
-                        // 🔁 lo mismo que hacías en el onClick original
-                        cleanupListener()
                         auth.signOut()
                         googleSignInClient?.signOut()?.addOnCompleteListener {
                             navController.navigate(NavigationRoutes.Login.route) {

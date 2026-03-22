@@ -108,7 +108,6 @@ object RoutineExportManager {
                 file
             )
 
-            Log.d("RoutineExport", "Routine exported successfully: $fileName")
             onSuccess(fileUri)
 
         } catch (e: Exception) {
@@ -194,7 +193,6 @@ object RoutineExportManager {
                 return
             }
 
-            Log.d("RoutineExport", "Routine imported successfully: ${exportableRoutine.routineName}")
             onSuccess(exportableRoutine)
 
         } catch (e: Exception) {

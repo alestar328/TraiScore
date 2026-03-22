@@ -95,33 +95,22 @@ class InvitationViewModel @Inject constructor(
     fun acceptInvitation(code: String, clientId: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            android.util.Log.d("InvitationVM", "=== INICIANDO ACEPTACIÓN DE INVITACIÓN ===")
-            android.util.Log.d("InvitationVM", "Código: $code")
-            android.util.Log.d("InvitationVM", "Cliente ID: $clientId")
 
             // Primero buscar la invitación
             invitationRepository.findInvitationByCode(code).fold(
                 onSuccess = { invitation ->
-                    android.util.Log.d("InvitationVM", "Resultado búsqueda: ${invitation != null}")
                     if (invitation == null) {
                         _error.value = "Código de invitación no válido"
                         android.util.Log.e("InvitationVM", "Código no encontrado en BD")
                     } else {
-                        android.util.Log.d("InvitationVM", "Invitación encontrada: ID=${invitation.id}, Trainer=${invitation.trainerId}")
-                        android.util.Log.d("InvitationVM", "isAvailable: ${invitation.isAvailable()}")
-                        android.util.Log.d("InvitationVM", "isActive: ${invitation.isActive}")
-                        android.util.Log.d("InvitationVM", "usedBy: ${invitation.usedBy}")
-
                         if (!invitation.isAvailable()) {
                             _error.value = "Esta invitación ya no está disponible"
                             android.util.Log.w("InvitationVM", "Invitación no disponible")
                         } else {
-                            android.util.Log.d("InvitationVM", "Aceptando invitación...")
                             // Aceptar la invitación
                             invitationRepository.acceptInvitation(invitation.id, clientId).fold(
                                 onSuccess = {
                                     _error.value = null
-                                    android.util.Log.d("InvitationVM", "✅ Invitación aceptada exitosamente")
                                 },
                                 onFailure = { exception ->
                                     _error.value = "Error al aceptar invitación: ${exception.message}"
@@ -138,7 +127,6 @@ class InvitationViewModel @Inject constructor(
             )
 
             _isLoading.value = false
-            android.util.Log.d("InvitationVM", "=== FIN ACEPTACIÓN DE INVITACIÓN ===")
         }
     }
     }

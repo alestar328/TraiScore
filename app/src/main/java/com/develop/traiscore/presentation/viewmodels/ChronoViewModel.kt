@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation.viewmodels
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -47,8 +46,6 @@ class ChronoViewModel @Inject constructor() : ViewModel() {
      * Inicia el cronómetro normal (hacia adelante)
      */
     fun startChrono() {
-        Log.d("ChronoVM", "🚀 Iniciando cronómetro")
-
         if (_chronoState.value == ChronoState.PAUSED) {
             // Continuar desde pausa
             startTime = System.currentTimeMillis() - pausedTime
@@ -68,8 +65,6 @@ class ChronoViewModel @Inject constructor() : ViewModel() {
      */
     fun startCountDown(minutes: Int, seconds: Int = 0) {
         val totalMs = (minutes * 60L + seconds) * 1000L
-        Log.d("ChronoVM", "⏰ Iniciando countdown: ${minutes}m ${seconds}s")
-
         _isCountDown.value = true
         _countDownTime.value = totalMs
         _remainingTime.value = totalMs
@@ -86,8 +81,6 @@ class ChronoViewModel @Inject constructor() : ViewModel() {
      * Pausa el cronómetro
      */
     fun pauseChrono() {
-        Log.d("ChronoVM", "⏸️ Pausando cronómetro")
-
         chronoJob?.cancel()
         _chronoState.value = ChronoState.PAUSED
 
@@ -102,8 +95,6 @@ class ChronoViewModel @Inject constructor() : ViewModel() {
      * Continúa el cronómetro desde la pausa
      */
     fun resumeChrono() {
-        Log.d("ChronoVM", "▶️ Reanudando cronómetro")
-
         if (_isCountDown.value) {
             startTime = System.currentTimeMillis()
             _chronoState.value = ChronoState.RUNNING
@@ -117,8 +108,6 @@ class ChronoViewModel @Inject constructor() : ViewModel() {
      * Resetea el cronómetro
      */
     fun resetChrono() {
-        Log.d("ChronoVM", "🔄 Reseteando cronómetro")
-
         chronoJob?.cancel()
         _chronoState.value = ChronoState.STOPPED
         _elapsedTime.value = 0L
@@ -161,9 +150,7 @@ class ChronoViewModel @Inject constructor() : ViewModel() {
                 _remainingTime.value = remaining
                 _elapsedTime.value = elapsed
 
-                // Verificar si el countdown terminó
                 if (remaining <= 0L) {
-                    Log.d("ChronoVM", "⏰ ¡Countdown terminado!")
                     onCountDownFinished()
                     break
                 }
@@ -179,8 +166,6 @@ class ChronoViewModel @Inject constructor() : ViewModel() {
     private fun onCountDownFinished() {
         _chronoState.value = ChronoState.STOPPED
         _remainingTime.value = 0L
-        // Aquí podrías agregar notificaciones, sonidos, etc.
-        Log.d("ChronoVM", "🔔 Tiempo terminado - agregar notificación aquí")
     }
 
     /**
@@ -219,6 +204,5 @@ class ChronoViewModel @Inject constructor() : ViewModel() {
     override fun onCleared() {
         super.onCleared()
         chronoJob?.cancel()
-        Log.d("ChronoVM", "🧹 ChronoViewModel limpiado")
     }
 }

@@ -5,6 +5,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import com.develop.traiscore.data.local.entity.WorkoutEntry
 import androidx.compose.ui.Modifier
+import com.develop.traiscore.utils.hexToColor
 
 
 @Composable
@@ -18,14 +19,6 @@ fun SessionWorkoutCard(
     onExpandClick: () -> Unit = {},
     modifier: Modifier = Modifier
 ) {
-    fun hexToColor(hex: String): Color {
-        return try {
-            Color(android.graphics.Color.parseColor(hex))
-        } catch (e: Exception) {
-            Color(0xFF355E58) // Color por defecto
-        }
-    }
-
     val hexColor = hexToColor(sessionColor)
     val backgroundColor = if (isActive) {
         hexColor.copy(alpha = 0.15f)

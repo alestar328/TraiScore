@@ -144,8 +144,6 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     .set(userEntity)
                     .await()
 
-                Log.d("Registration", "✅ Usuario registrado: ${userEntity.uid}")
-
                 resetRegistrationState()
                 authUiState.value = AuthUiState.LoggedIn
 

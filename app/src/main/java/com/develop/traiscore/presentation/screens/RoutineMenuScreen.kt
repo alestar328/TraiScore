@@ -1,7 +1,6 @@
 package com.develop.traiscore.presentation.screens
 
 import android.net.Uri
-import android.util.Log
 import android.widget.Toast
 import com.develop.traiscore.BuildConfig
 import android.widget.Toast.LENGTH_SHORT
@@ -91,8 +90,6 @@ fun RoutineMenuScreen(
     }
 
     LaunchedEffect(currentTargetUser) {
-        Log.d("RoutineMenuScreen", "LaunchedEffect triggered for user: $currentTargetUser")
-
         if (currentTargetUser != null) {
             viewModel.loadRoutines(context) { hasRoutines ->
                 if (!hasRoutines && !viewModel.hasShownEmptyDialog) {
@@ -222,7 +219,7 @@ fun RoutineMenuScreen(
                     {
                         TopBarTrainersRoutines(
                             title = screenTitle,
-                            onShareClick = { println("Compartir rutinas") }
+                            onShareClick = {}
                         )
                     }
                 )

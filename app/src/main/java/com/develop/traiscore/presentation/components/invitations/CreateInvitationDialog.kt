@@ -13,7 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.viewmodels.InvitationViewModel
-import java.text.SimpleDateFormat
+import com.develop.traiscore.utils.toDisplayDate
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -70,10 +70,7 @@ fun CreateInvitationDialog(
     )
 }
 
-fun formatDate(date: Date): String {
-    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-    return formatter.format(date)
-}
+fun formatDate(date: Date): String = date.toDisplayDate()
 
 fun shareInvitation(context: Context, code: String, trainerName: String) {
     val shareIntent = Intent().apply {

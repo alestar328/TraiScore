@@ -41,31 +41,20 @@ class ProfileRepository @Inject constructor(
         val currentUserId = firebaseAuth.currentUser?.uid
             ?: throw IllegalStateException("Usuario no autenticado")
 
-        android.util.Log.d("ProfileRepo", "🚀 Subiendo foto para UID: $currentUserId")
-        android.util.Log.d("ProfileRepo", "📁 URI original: $imageUri")
-
         try {
             // 1. Subir a Firebase Storage
             val timestamp = System.currentTimeMillis()
             val storageRef = storage.reference
                 .child("profile_photos/$currentUserId/$timestamp.jpg")
 
-            android.util.Log.d("ProfileRepo", "📤 Subiendo a Storage...")
-
             storageRef.putFile(imageUri).await()
             val downloadUrl = storageRef.downloadUrl.await().toString()
 
-            android.util.Log.d("ProfileRepo", "✅ Storage URL: $downloadUrl")
-
             // 2. Actualizar Firestore
-            android.util.Log.d("ProfileRepo", "💾 Actualizando Firestore...")
-
             firestore.collection("users")
                 .document(currentUserId)
                 .update("photoURL", downloadUrl)
                 .await()
-
-            android.util.Log.d("ProfileRepo", "✅ Firestore actualizado correctamente")
 
             return@withContext downloadUrl
 
@@ -86,8 +75,6 @@ class ProfileRepository @Inject constructor(
             return@withContext null
         }
 
-        android.util.Log.d("ProfileRepo", "🔍 Obteniendo foto para UID: $currentUserId")
-
         try {
             val userDoc = firestore.collection("users")
                 .document(currentUserId)
@@ -95,8 +82,6 @@ class ProfileRepository @Inject constructor(
                 .await()
 
             val photoUrl = userDoc.getString("photoURL")
-
-            android.util.Log.d("ProfileRepo", "📸 Foto obtenida: $photoUrl")
 
             return@withContext photoUrl
 

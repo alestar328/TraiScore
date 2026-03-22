@@ -50,11 +50,8 @@ fun NewSessionUX(
     val error by viewModel.error.collectAsState()
 
     // Mostrar errores si existen
-    error?.let { errorMessage ->
-        LaunchedEffect(errorMessage) {
-            // Aquí podrías mostrar un Snackbar o Toast
-            println("Error: $errorMessage")
-        }
+    LaunchedEffect(error) {
+        if (error != null) viewModel.clearError()
     }
 
     AlertDialog(
@@ -85,11 +82,9 @@ fun NewSessionUX(
                 ColorBarUX(
                     selectedColor = colorSeleccionado,
                     onColorSelected = { nuevoColor ->
-                        colorSeleccionado = nuevoColor
                         if (!isLoading) {
                             colorSeleccionado = nuevoColor
                         }
-                        println("Color seleccionado: $nuevoColor")
                     }
                 )
                 Box(

@@ -31,8 +31,6 @@ class AuthenticationManager(
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
     fun signInWithGoogle(): Flow<AuthResponse> = callbackFlow {
         try {
-            Log.d("jejeje", "=== STARTING GOOGLE SIGN-IN ===")
-
             val googleIdOption = GetGoogleIdOption.Builder()
                 .setServerClientId(context.getString(R.string.default_web_client_id))
                 .setFilterByAuthorizedAccounts(false) // Permite cuentas no autorizadas previamente
@@ -43,25 +41,14 @@ class AuthenticationManager(
                 .addCredentialOption(googleIdOption)
                 .build()
 
-            Log.d("AuthDebug", "Requesting credentials...")
-
             val credentialManager = CredentialManager.create(context)
             val credentialResponse = credentialManager.getCredential(context, request)
-
-            Log.d("AuthDebug", "Credential type: ${credentialResponse.credential::class.java.simpleName}")
-            Log.d("AuthDebug", "Credential data keys: ${credentialResponse.credential.data.keySet()}")
 
             // Parsear la credencial de Google
             val googleCredential = GoogleIdTokenCredential.createFrom(credentialResponse.credential.data)
 
-            Log.d("AuthDebug", "Google credential parsed successfully")
-            Log.d("AuthDebug", "User email: ${googleCredential.id}")
-            Log.d("AuthDebug", "User name: ${googleCredential.displayName}")
-
             // Crear credencial de Firebase
             val firebaseCredential = GoogleAuthProvider.getCredential(googleCredential.idToken, null)
-
-            Log.d("AuthDebug", "Firebase credential created, signing in...")
 
             // Autenticar con Firebase
             val authResult = auth.signInWithCredential(firebaseCredential).await()
@@ -74,18 +61,12 @@ class AuthenticationManager(
                 return@callbackFlow
             }
 
-            Log.d("AuthDebug", "Firebase Auth Success. UID: ${firebaseUser.uid}")
-            Log.d("AuthDebug", "User email: ${firebaseUser.email}")
-            Log.d("AuthDebug", "User name: ${firebaseUser.displayName}")
-
             // Verificar si el usuario ya existe en Firestore
             val userDoc = firestore.collection("users").document(firebaseUser.uid).get().await()
 
             if (userDoc.exists()) {
-                Log.d("AuthDebug", "User exists in Firestore - Success")
                 trySend(AuthResponse.Success)
             } else {
-                Log.d("AuthDebug", "New user - needs registration")
                 trySend(AuthResponse.NewUser(
                     email = firebaseUser.email ?: "",
                     displayName = firebaseUser.displayName ?: "",
@@ -115,7 +96,6 @@ class AuthenticationManager(
         }
 
         awaitClose {
-            Log.d("AuthDebug", "Google Sign-In flow closed")
         }
     }
 }

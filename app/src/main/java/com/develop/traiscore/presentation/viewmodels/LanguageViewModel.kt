@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation.viewmodels
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -18,12 +17,10 @@ class LanguageViewModel @Inject constructor() : ViewModel() {
     init {
         // Set current language from system locale
         _currentLanguage.value = Locale.getDefault().language // ✅ CORREGIDO
-        Log.d("LanguageViewModel", "Initial language: ${_currentLanguage.value}") // ✅ CORREGIDO
     }
 
 
     fun setLanguage(languageCode: String) {
-        Log.d("LanguageViewModel", "Setting language to: $languageCode")
         _currentLanguage.value = languageCode // ✅ CORREGIDO
     }
 }

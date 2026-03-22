@@ -73,8 +73,7 @@ fun SettingsScreen(
                     try {
                         viewModel.saveExerciseToDatabase(name, category)
                         // El refresh ya se maneja en el callback interno
-                    } catch (e: Exception) {
-                        println("Error guardando ejercicio: ${e.message}")
+                    } catch (_: Exception) {
                     }
                 }
             }

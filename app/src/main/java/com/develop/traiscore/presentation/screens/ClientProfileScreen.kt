@@ -22,8 +22,7 @@ import coil3.compose.AsyncImage
 import com.develop.traiscore.core.Gender
 import com.develop.traiscore.data.local.entity.UserEntity
 import com.develop.traiscore.presentation.theme.*
-import java.text.SimpleDateFormat
-import java.util.*
+import com.develop.traiscore.utils.toDisplayDate
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -358,7 +357,6 @@ private fun AdditionalInfoCard(client: UserEntity) {
             Spacer(modifier = Modifier.height(8.dp))
 
             // Fecha de registro
-            val dateFormat = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -369,7 +367,7 @@ private fun AdditionalInfoCard(client: UserEntity) {
                     color = Color.Gray
                 )
                 Text(
-                    text = dateFormat.format(client.createdAt.toDate()),
+                    text = client.createdAt.toDate().toDisplayDate(),
                     fontSize = 14.sp,
                     color = Color.Black,
                     fontWeight = FontWeight.Medium

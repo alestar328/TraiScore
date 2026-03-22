@@ -196,19 +196,10 @@ fun MyExercisesUI(
                         documentId = documentId,
                         newName = name,
                         newCategory = category
-                    ) { success, error ->
-                        if (!success) {
-                            println("❌ Error al actualizar: $error")
-                        }
-                    }
+                    ) { _, _ -> }
                 } else null,
                 onDelete = if (isEditing) { documentId ->
-                    // Eliminar ejercicio
-                    addExerciseViewModel.deleteUserExercise(documentId) { success, error ->
-                        if (!success) {
-                            println("❌ Error al eliminar: $error")
-                        }
-                    }
+                    addExerciseViewModel.deleteUserExercise(documentId) { _, _ -> }
                 } else null
             )
         }

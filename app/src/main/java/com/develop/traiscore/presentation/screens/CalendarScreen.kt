@@ -56,6 +56,8 @@ import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.develop.traiscore.presentation.viewmodels.SessionWithWorkouts
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.develop.traiscore.utils.DATE_FORMAT
+import com.develop.traiscore.utils.toDisplayDate
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -120,8 +122,7 @@ fun CalendarScreen(
                     calendar.set(year, month, day, 0, 0, 0)
                     calendar.set(Calendar.MILLISECOND, 0)
 
-                    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                    val formattedDate = formatter.format(calendar.time)
+                    val formattedDate = calendar.time.toDisplayDate()
                     groupedEntries[formattedDate] ?: emptyList()
                 } else {
                     emptyList()
@@ -147,8 +148,7 @@ fun CalendarScreen(
                     calendar.set(year, month, day, 0, 0, 0)
                     calendar.set(Calendar.MILLISECOND, 0)
 
-                    val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                    val formattedDate = formatter.format(calendar.time)
+                    val formattedDate = calendar.time.toDisplayDate()
                     sessionWorkouts[formattedDate] ?: emptyList()
                 } else {
                     emptyList()
@@ -596,10 +596,9 @@ fun HorizontalDaysScrollCompat(
     // ✅ Obtener días con sesiones (solo modo SESSIONS)
     val sessionDates = remember(sessionWorkouts, defaultCyanColor, mode) {
         if (mode == CalendarMode.SESSIONS) {
-            val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
             sessionWorkouts.mapNotNull { (dateString, sessions) ->
                 try {
-                    val date = formatter.parse(dateString)
+                    val date = DATE_FORMAT.parse(dateString)
                     date?.let {
                         val calendar = Calendar.getInstance()
                         calendar.time = it

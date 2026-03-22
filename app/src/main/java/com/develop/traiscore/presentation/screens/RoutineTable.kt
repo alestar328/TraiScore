@@ -547,9 +547,7 @@ fun RoutineTablePreview() {
         exercises = dummyExercises,
         exerciseNames = dummyExerciseNames,   // ✅ USAMOS LA LISTA DUMMY
         onDeleteExercise = { /* nada */ },
-        onFieldChanged = { row, column, value ->
-            println("Fila $row, columna $column → $value")
-        },
+        onFieldChanged = { _, _, _ -> },
         validateInput = fakeValidateInput
     )
 }

@@ -147,19 +147,14 @@ class MainActivity : ComponentActivity() {
 
 
     private fun handleIncomingIntent(intent: Intent?) {
-        Log.d("MainActivity", "Handling intent: ${intent?.action}, data: ${intent?.data}")
-
         when (intent?.action) {
             Intent.ACTION_VIEW -> {
                 // Archivo .traiscore abierto directamente
                 val uri = intent.data
                 if (uri != null) {
-                    Log.d("MainActivity", "Received VIEW intent with URI: $uri")
                     if (isTraiScoreFile(uri)) {
-                        Log.d("MainActivity", "Confirmed TraiScore file via VIEW: $uri")
                         showImportDialog(uri)
                     } else {
-                        Log.d("MainActivity", "Not a TraiScore file: $uri")
                         showNotTraiScoreFileDialog()
                     }
                 }
@@ -169,12 +164,9 @@ class MainActivity : ComponentActivity() {
                 // Archivo .traiscore compartido
                 val uri = intent.getParcelableExtra<Uri>(Intent.EXTRA_STREAM)
                 if (uri != null) {
-                    Log.d("MainActivity", "Received SEND intent with URI: $uri")
                     if (isTraiScoreFile(uri)) {
-                        Log.d("MainActivity", "Confirmed TraiScore file via SEND: $uri")
                         showImportDialog(uri)
                     } else {
-                        Log.d("MainActivity", "Not a TraiScore file: $uri")
                         showNotTraiScoreFileDialog()
                     }
                 }
@@ -185,10 +177,6 @@ class MainActivity : ComponentActivity() {
     // MEJORADO: Detectar archivos .traiscore con mejor validación
     private fun isTraiScoreFile(uri: Uri): Boolean {
         val fileName = getFileName(uri)
-
-        Log.d("MainActivity", "=== FILE VALIDATION DEBUG ===")
-        Log.d("MainActivity", "URI: $uri")
-        Log.d("MainActivity", "File name: $fileName")
 
         // NO confiar solo en la extensión - WhatsApp puede cambiar nombres de archivo
         // En su lugar, validar SIEMPRE el contenido
@@ -201,10 +189,6 @@ class MainActivity : ComponentActivity() {
             val inputStream = contentResolver.openInputStream(uri)
             val content = inputStream?.bufferedReader()?.use { it.readText() }
 
-            Log.d("MainActivity", "=== CONTENT VALIDATION DEBUG ===")
-            Log.d("MainActivity", "Content length: ${content?.length}")
-            Log.d("MainActivity", "Content preview: ${content?.take(300)}...")
-
             if (content.isNullOrBlank()) {
                 Log.w("MainActivity", "Content is null or blank")
                 return false
@@ -212,7 +196,6 @@ class MainActivity : ComponentActivity() {
 
             // Primero verificar si es JSON válido
             val looksLikeJson = content.trim().startsWith("{") && content.trim().endsWith("}")
-            Log.d("MainActivity", "Looks like JSON: $looksLikeJson")
 
             if (!looksLikeJson) {
                 Log.w("MainActivity", "Content doesn't look like JSON")
@@ -230,14 +213,7 @@ class MainActivity : ComponentActivity() {
                 val hasSections = jsonObject?.has("sections") == true
                 val hasAppVersion = jsonObject?.has("appVersion") == true
 
-                Log.d("MainActivity", "GSON Validation checks:")
-                Log.d("MainActivity", "- fileType = TraiScore_Routine: $hasFileType")
-                Log.d("MainActivity", "- has routineName: $hasRoutineName")
-                Log.d("MainActivity", "- has sections: $hasSections")
-                Log.d("MainActivity", "- has appVersion: $hasAppVersion")
-
                 val isValid = hasFileType && hasRoutineName && hasSections && hasAppVersion
-                Log.d("MainActivity", "Final validation result: $isValid")
 
                 isValid
 

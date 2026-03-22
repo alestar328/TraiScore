@@ -43,20 +43,16 @@ class CheckoutViewModel(
     val paymentUiState : StateFlow<PaymentUiState> = _paymentUiState.asStateFlow()
 
     init {
-        Log.d(TAG, "ViewModel initialized, verifying Google Pay readiness...")
         viewModelScope.launch(dispatcher){
             verifyGooglePayReadiness()
         }
     }
     private suspend fun verifyGooglePayReadiness() {
-        Log.d(TAG, "verifyGooglePayReadiness() called")
         val requestJson = PaymentsUtil.isReadyToPayRequest()
-        Log.d(TAG, "isReadyToPayRequest JSON: $requestJson")
 
         val iRtpRequest = IsReadyToPayRequest.fromJson(requestJson.toString())
         val newState = try {
             val result = payClient.isReadyToPay(iRtpRequest).await()
-            Log.d(TAG, "isReadyToPay result: $result")
             if (result) PaymentUiState.Available else {
                 Log.w(TAG, "Google Pay not available on this device")
                 PaymentUiState.Error(CommonStatusCodes.ERROR)
@@ -66,16 +62,12 @@ class CheckoutViewModel(
             PaymentUiState.Error(ae.statusCode)
         }
         _paymentUiState.update { newState }
-        Log.d(TAG, "paymentUiState updated to: $newState")
     }
 
 
     fun startPaymentProcess(priceLabel: String): Task<PaymentData> {
-        Log.d(TAG, "startPaymentProcess() called with priceLabel: $priceLabel")
         val pdRequestJson = PaymentsUtil.getPaymentDataRequest(priceLabel)
-        Log.d(TAG, "PaymentDataRequest JSON: $pdRequestJson")
         val pdRequest = PaymentDataRequest.fromJson(pdRequestJson.toString())
-        Log.d(TAG, "Returning loadPaymentData Task")
         return payClient.loadPaymentData(pdRequest)
     }
 
@@ -94,12 +86,10 @@ class CheckoutViewModel(
         }
     }
     suspend fun <T> Task<T>.awaitTask(cancellationTokenSource: CancellationTokenSource? = null): Task<T> {
-        Log.d(TAG, "awaitTask() called, isComplete=$isComplete")
         return if (isComplete) {
-            this.also { Log.d(TAG, "Task already complete, returning immediately") }
+            this
         } else suspendCancellableCoroutine { cont ->
             addOnCompleteListener(DirectExecutor) { task ->
-                Log.d(TAG, "Task completed with result: ${task.result}")
                 cont.resume(task)
             }
             cancellationTokenSource?.let { cancellationSource ->

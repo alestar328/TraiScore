@@ -26,7 +26,7 @@ class SubscriptionViewModel @Inject constructor() : ViewModel() {
         private set
     var actualDocumentsCount by mutableStateOf(0)
         private set
-    private var localDocumentsCount by mutableStateOf(0)
+    private var localDocumentsCount: Int = 0
 
     private val db = Firebase.firestore
     private val auth = FirebaseAuth.getInstance()
@@ -35,9 +35,6 @@ class SubscriptionViewModel @Inject constructor() : ViewModel() {
         currentCount: Int,
         onComplete: (canCreate: Boolean, message: String?) -> Unit
     ) {
-        Log.d("SubscriptionVM", "Verificando límites con conteo local: $currentCount")
-
-        // Actualizar contador local
         localDocumentsCount = currentCount
 
         val subscription = userSubscription
@@ -50,32 +47,18 @@ class SubscriptionViewModel @Inject constructor() : ViewModel() {
         val limit = currentPlan.bodyStatsDocumentsLimit
 
         when {
-            // Plan premium/pro - sin límites
-            limit == -1 -> {
-                Log.d("SubscriptionVM", "Plan sin límites - puede crear")
-                onComplete(true, null)
-            }
-            // Verificar contra límite
-            currentCount < limit -> {
-                val remaining = limit - currentCount
-                Log.d("SubscriptionVM", "Puede crear - Quedan $remaining de $limit")
-                onComplete(true, null)
-            }
-            // Límite alcanzado
-            else -> {
-                val message = "Has alcanzado el límite de $limit registros para tu plan ${currentPlan.name}"
-                Log.d("SubscriptionVM", "Límite alcanzado: $message")
-                onComplete(false, message)
-            }
+            limit == -1 -> onComplete(true, null)
+            currentCount < limit -> onComplete(true, null)
+            else -> onComplete(
+                false,
+                "Has alcanzado el límite de $limit registros para tu plan ${currentPlan.name}"
+            )
         }
     }
 
     fun updateBodyStatsCount(newCount: Int) {
-        Log.d("SubscriptionVM", "Actualizando contador local: $localDocumentsCount → $newCount")
         localDocumentsCount = newCount
         actualDocumentsCount = newCount
-
-        // Opcionalmente, sincronizar con Firebase en background
         syncDocumentCountInSubscription(newCount)
     }
 
@@ -91,11 +74,6 @@ class SubscriptionViewModel @Inject constructor() : ViewModel() {
         val currentPlan = subscription.currentPlan
         // Usar contador local si está disponible, sino usar actualDocumentsCount
         val currentCount = if (localDocumentsCount > 0) localDocumentsCount else actualDocumentsCount
-
-        Log.d("SubscriptionVM", "=== VERIFICANDO LÍMITES LOCALES ===")
-        Log.d("SubscriptionVM", "Plan: ${currentPlan.planId}")
-        Log.d("SubscriptionVM", "Límite: ${currentPlan.bodyStatsDocumentsLimit}")
-        Log.d("SubscriptionVM", "Documentos locales: $currentCount")
 
         return when {
             currentPlan.bodyStatsDocumentsLimit == -1 -> {
@@ -165,32 +143,23 @@ class SubscriptionViewModel @Inject constructor() : ViewModel() {
                         startDate = data["startDate"] as? Timestamp,
                         endDate = data["endDate"] as? Timestamp,
                         isActive = data["isActive"] as? Boolean ?: true,
-                        bodyStatsDocumentsCount = (data["bodyStatsDocumentsCount"] as? Number)?.toInt()
-                            ?: 0,
+                        bodyStatsDocumentsCount = (data["bodyStatsDocumentsCount"] as? Number)?.toInt() ?: 0,
                         lastBodyStatsUpdate = data["lastBodyStatsUpdate"] as? Timestamp,
                         createdAt = data["createdAt"] as? Timestamp,
                         updatedAt = data["updatedAt"] as? Timestamp
                     )
-                    countActualBodyStatsDocuments { realCount ->
+                    countActualBodyStatsDocuments { _ ->
                         isLoading = false
                         onComplete(userSubscription)
                     }
                 } else {
                     createDefaultSubscription { newSub ->
                         userSubscription = newSub
-                        // Después de crear, contar documentos
-                        countActualBodyStatsDocuments { realCount ->
+                        countActualBodyStatsDocuments { _ ->
                             isLoading = false
                             onComplete(userSubscription)
                         }
                     }
-                    return@addOnSuccessListener
-                }
-                // DESPUÉS de cargar suscripción, contar documentos reales
-                countActualBodyStatsDocuments { realCount ->
-                    isLoading = false
-                    // userSubscription YA fue asignada arriba
-                    onComplete(userSubscription)
                 }
             }
             .addOnFailureListener { exception ->
@@ -204,10 +173,7 @@ class SubscriptionViewModel @Inject constructor() : ViewModel() {
         val userId = auth.currentUser?.uid ?: return
         val currentStoredCount = userSubscription?.bodyStatsDocumentsCount ?: 0
 
-        // Solo actualizar si hay diferencia
         if (realCount != currentStoredCount) {
-            Log.d("SubscriptionVM", "Sincronizando contador: $currentStoredCount → $realCount")
-
             db.collection("subscriptions")
                 .document(userId)
                 .update(
@@ -217,21 +183,16 @@ class SubscriptionViewModel @Inject constructor() : ViewModel() {
                     )
                 )
                 .addOnSuccessListener {
-                    // Actualizar estado local
-                    userSubscription = userSubscription?.copy(
-                        bodyStatsDocumentsCount = realCount
-                    )
+                    userSubscription = userSubscription?.copy(bodyStatsDocumentsCount = realCount)
                 }
-                .addOnFailureListener {
-                    Log.e("SubscriptionVM", "Error sincronizando contador", it)
+                .addOnFailureListener { e ->
+                    Log.e("SubscriptionVM", "Error sincronizando contador", e)
                 }
         }
     }
 
     fun countActualBodyStatsDocuments(onComplete: (Int) -> Unit) {
         val userId = auth.currentUser?.uid ?: return onComplete(0)
-
-        Log.d("SubscriptionVM", "Contando documentos para usuario: $userId")
 
         db.collection("users")
             .document(userId)
@@ -240,20 +201,11 @@ class SubscriptionViewModel @Inject constructor() : ViewModel() {
             .addOnSuccessListener { querySnapshot ->
                 val count = querySnapshot.size()
                 actualDocumentsCount = count
-
-                Log.d("SubscriptionVM", "✅ Documentos encontrados: $count")
-
-                // Listar documentos para debug
-                querySnapshot.documents.forEachIndexed { index, doc ->
-                    Log.d("SubscriptionVM", "Doc $index: ${doc.id}")
-                }
-
-                // Sincronizar contador
                 syncDocumentCountInSubscription(count)
                 onComplete(count)
             }
             .addOnFailureListener { exception ->
-                Log.e("SubscriptionVM", "❌ Error contando documentos", exception)
+                Log.e("SubscriptionVM", "Error contando documentos", exception)
                 onComplete(0)
             }
     }
@@ -273,33 +225,17 @@ class SubscriptionViewModel @Inject constructor() : ViewModel() {
         val currentPlan = subscription.currentPlan
         val currentCount = actualDocumentsCount
 
-        // AGREGAR LOGGING PARA DEBUG
-        Log.d("SubscriptionVM", "=== VERIFICANDO LÍMITES ===")
-        Log.d("SubscriptionVM", "Plan actual: ${currentPlan.planId}")
-        Log.d("SubscriptionVM", "Límite del plan: ${currentPlan.bodyStatsDocumentsLimit}")
-        Log.d("SubscriptionVM", "Documentos actuales: $currentCount")
-        Log.d(
-            "SubscriptionVM",
-            "¿Puede crear?: ${currentCount < currentPlan.bodyStatsDocumentsLimit}"
-        )
-
         return when {
-            // Plan premium/pro - sin límites
-            currentPlan.bodyStatsDocumentsLimit == -1 -> {
-                Log.d("SubscriptionVM", "Plan premium/pro - sin límites")
-                SubscriptionLimits(
-                    canCreateBodyStats = true,
-                    remainingDocuments = -1,
-                    requiresUpgrade = false,
-                    currentPlan = currentPlan,
-                    message = "Registros ilimitados"
-                )
-            }
+            currentPlan.bodyStatsDocumentsLimit == -1 -> SubscriptionLimits(
+                canCreateBodyStats = true,
+                remainingDocuments = -1,
+                requiresUpgrade = false,
+                currentPlan = currentPlan,
+                message = "Registros ilimitados"
+            )
 
-            // Plan gratuito - verificar límite
             currentCount < currentPlan.bodyStatsDocumentsLimit -> {
                 val remaining = currentPlan.bodyStatsDocumentsLimit - currentCount
-                Log.d("SubscriptionVM", "Plan gratuito - puede crear. Quedan: $remaining")
                 SubscriptionLimits(
                     canCreateBodyStats = true,
                     remainingDocuments = remaining,
@@ -309,17 +245,13 @@ class SubscriptionViewModel @Inject constructor() : ViewModel() {
                 )
             }
 
-            // Límite alcanzado
-            else -> {
-                Log.d("SubscriptionVM", "Límite alcanzado - no puede crear más")
-                SubscriptionLimits(
-                    canCreateBodyStats = false,
-                    remainingDocuments = 0,
-                    requiresUpgrade = true,
-                    currentPlan = currentPlan,
-                    message = "Has alcanzado el límite de ${currentPlan.bodyStatsDocumentsLimit} registros. Actualiza tu plan."
-                )
-            }
+            else -> SubscriptionLimits(
+                canCreateBodyStats = false,
+                remainingDocuments = 0,
+                requiresUpgrade = true,
+                currentPlan = currentPlan,
+                message = "Has alcanzado el límite de ${currentPlan.bodyStatsDocumentsLimit} registros. Actualiza tu plan."
+            )
         }
     }
     /**
@@ -331,15 +263,7 @@ class SubscriptionViewModel @Inject constructor() : ViewModel() {
      * Crea suscripción gratuita por defecto
      */
     fun checkCanCreateNewDocument(onComplete: (Boolean, String?) -> Unit) {
-        Log.d("SubscriptionVM", "Verificando si puede crear nuevo documento...")
-
-        // Contar documentos y verificar límites en secuencia
         checkBodyStatsLimitsWithCount { limits ->
-            Log.d(
-                "SubscriptionVM",
-                "Límites verificados: canCreate=${limits.canCreateBodyStats}, remaining=${limits.remainingDocuments}"
-            )
-
             if (limits.canCreateBodyStats) {
                 onComplete(true, null)
             } else {
@@ -377,11 +301,10 @@ class SubscriptionViewModel @Inject constructor() : ViewModel() {
             .set(subscriptionMap)
             .addOnSuccessListener {
                 userSubscription = defaultSubscription
-                Log.d("SubscriptionVM", "Default subscription created")
                 onComplete(defaultSubscription)
             }
             .addOnFailureListener { exception ->
-                Log.e("SubscriptionVM", "Error creating default subscription", exception)
+                Log.e("SubscriptionVM", "Error al crear suscripción por defecto", exception)
             }
     }
 

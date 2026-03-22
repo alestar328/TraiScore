@@ -9,9 +9,7 @@ import com.google.firebase.Firebase
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.firestore
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.util.Date
 
 fun updateRoutineInFirebase(documentId: String, routineDoc: RoutineDocument): Task<Void> {
@@ -70,18 +68,15 @@ suspend fun saveExerciseToFirebase(
     name: String,
     category: String,
     exerciseDao: ExerciseDao,
-    onComplete: (Boolean) -> Unit = {} // Agregar callback
+    onComplete: (Boolean) -> Unit = {}
 ) {
     val currentUser = FirebaseAuth.getInstance().currentUser
     if (currentUser == null) {
-        println("❌ Usuario no autenticado")
         onComplete(false)
         return
     }
 
     val userId = currentUser.uid
-
-    // Primero guardar en local
     val localExercise = ExerciseEntity(
         id = 0,
         idIntern = "",
@@ -91,54 +86,34 @@ suspend fun saveExerciseToFirebase(
     )
 
     val localId = exerciseDao.insertExercise(localExercise)
-
     val db = Firebase.firestore
     val userExercisesCollection = db.collection("users")
         .document(userId)
         .collection("exercises")
 
-    userExercisesCollection.get()
-        .addOnSuccessListener { snapshot ->
-            val userExerciseDocs = snapshot.documents.filter {
-                it.id.startsWith("userExer")
-            }
+    try {
+        val snapshot = userExercisesCollection.get().await()
+        val userExerciseDocs = snapshot.documents.filter { it.id.startsWith("userExer") }
+        val nextNumber = (userExerciseDocs.mapNotNull {
+            it.id.removePrefix("userExer").toIntOrNull()
+        }.maxOrNull() ?: 0) + 1
 
-            val nextNumber = (userExerciseDocs.mapNotNull {
-                it.id.removePrefix("userExer").toIntOrNull()
-            }.maxOrNull() ?: 0) + 1
+        val newDocId = "userExer$nextNumber"
+        val newExercise = hashMapOf(
+            "name" to name,
+            "category" to category,
+            "isDefault" to false,
+            "createdBy" to userId,
+            "localId" to localId
+        )
 
-            val newDocId = "userExer$nextNumber"
+        userExercisesCollection.document(newDocId).set(newExercise).await()
 
-            val newExercise = hashMapOf(
-                "name" to name,
-                "category" to category,
-                "isDefault" to false,
-                "createdBy" to userId,
-                "localId" to localId
-            )
-
-            userExercisesCollection
-                .document(newDocId)
-                .set(newExercise)
-                .addOnSuccessListener {
-                    println("✅ Ejercicio guardado con ID: $newDocId")
-
-                    CoroutineScope(Dispatchers.IO).launch {
-                        val updatedExercise = localExercise.copy(
-                            id = localId.toInt(),
-                            idIntern = newDocId
-                        )
-                        exerciseDao.updateExercise(updatedExercise)
-                        onComplete(true) // ✅ Callback de éxito
-                    }
-                }
-                .addOnFailureListener { e ->
-                    println("❌ Error al guardar el ejercicio: ${e.message}")
-                    onComplete(false) // ✅ Callback de error
-                }
-        }
-        .addOnFailureListener { e ->
-            println("❌ Error al obtener ejercicios existentes: ${e.message}")
-            onComplete(false) // ✅ Callback de error
-        }
+        exerciseDao.updateExercise(
+            localExercise.copy(id = localId.toInt(), idIntern = newDocId)
+        )
+        onComplete(true)
+    } catch (e: Exception) {
+        onComplete(false)
+    }
 }

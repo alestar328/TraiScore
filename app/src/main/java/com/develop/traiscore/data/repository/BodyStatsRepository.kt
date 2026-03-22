@@ -82,7 +82,6 @@ class BodyStatsRepository @Inject constructor(
         )
 
         val localId = bodyStatsDao.insertBodyStats(entity)
-        Log.d(TAG, "📝 Medidas guardadas localmente (ID: $localId)")
 
         // Sincronizar en background
         syncPendingBodyStats()
@@ -114,7 +113,6 @@ class BodyStatsRepository @Inject constructor(
         )
 
         bodyStatsDao.updateBodyStats(updated)
-        Log.d(TAG, "📝 Medidas actualizadas localmente (ID: $bodyStatsId)")
 
         // Sincronizar en background
         syncPendingBodyStats()
@@ -131,7 +129,6 @@ class BodyStatsRepository @Inject constructor(
         if (existing.firebaseId.isEmpty()) {
             // Si nunca se sincronizó, eliminar directamente
             bodyStatsDao.deleteBodyStatsById(bodyStatsId)
-            Log.d(TAG, "🗑️ Medida eliminada localmente (nunca sincronizada)")
         } else {
             // Marcar para eliminación
             val marked = existing.copy(
@@ -140,7 +137,6 @@ class BodyStatsRepository @Inject constructor(
                 updatedAt = System.currentTimeMillis()
             )
             bodyStatsDao.updateBodyStats(marked)
-            Log.d(TAG, "📝 Medida marcada para eliminación")
 
             // Sincronizar
             syncPendingBodyStats()
@@ -156,8 +152,6 @@ class BodyStatsRepository @Inject constructor(
         val userId = auth.currentUser?.uid ?: return
 
         try {
-            Log.d(TAG, "📥 Importando medidas desde Firebase...")
-
             val snapshot = firestore.collection("users")
                 .document(userId)
                 .collection("bodyStats")
@@ -172,7 +166,6 @@ class BodyStatsRepository @Inject constructor(
                 // Verificar si ya existe localmente
                 val existingLocal = bodyStatsDao.getBodyStatsByFirebaseId(doc.id)
                 if (existingLocal != null) {
-                    Log.d(TAG, "⏭️ Medida ya existe localmente: ${doc.id}")
                     return@mapNotNull null
                 }
 
@@ -199,9 +192,6 @@ class BodyStatsRepository @Inject constructor(
 
             if (firebaseStats.isNotEmpty()) {
                 bodyStatsDao.insertMultipleBodyStats(firebaseStats)
-                Log.d(TAG, "✅ Importadas ${firebaseStats.size} medidas desde Firebase")
-            } else {
-                Log.d(TAG, "✅ No hay medidas nuevas para importar")
             }
 
         } catch (e: Exception) {
@@ -217,8 +207,6 @@ class BodyStatsRepository @Inject constructor(
         val unsynced = bodyStatsDao.getUnsyncedBodyStatsForUser(userId)
 
         if (unsynced.isEmpty()) return
-
-        Log.d(TAG, "🔄 Sincronizando ${unsynced.size} medidas pendientes")
 
         unsynced.forEach { bodyStats ->
             try {
@@ -249,7 +237,6 @@ class BodyStatsRepository @Inject constructor(
                                 pendingAction = null
                             )
                         )
-                        Log.d(TAG, "✅ Medida creada en Firebase: $documentId")
                     }
 
                     "UPDATE" -> {
@@ -273,7 +260,6 @@ class BodyStatsRepository @Inject constructor(
                                     pendingAction = null
                                 )
                             )
-                            Log.d(TAG, "✅ Medida actualizada en Firebase: ${bodyStats.firebaseId}")
                         }
                     }
 
@@ -288,7 +274,6 @@ class BodyStatsRepository @Inject constructor(
 
                             // Eliminar localmente
                             bodyStatsDao.deleteBodyStatsById(bodyStats.id)
-                            Log.d(TAG, "✅ Medida eliminada en Firebase: ${bodyStats.firebaseId}")
                         }
                     }
                 }

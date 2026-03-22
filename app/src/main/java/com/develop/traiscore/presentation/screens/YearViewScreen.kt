@@ -23,6 +23,7 @@ import com.develop.traiscore.presentation.theme.tsColors
 import com.develop.traiscore.presentation.viewmodels.CalendarMode
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.google.firebase.auth.FirebaseAuth
+import com.develop.traiscore.utils.DATE_FORMAT
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -48,10 +49,9 @@ fun YearViewScreen(
     // ✅ Procesar fechas según modo
     val workoutDates = remember(groupedEntries, mode) {
         if (mode == CalendarMode.SESSIONS) {
-            val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
             groupedEntries.keys.mapNotNull { dateString ->
                 try {
-                    val date = formatter.parse(dateString)
+                    val date = DATE_FORMAT.parse(dateString)
                     date?.let {
                         val calendar = Calendar.getInstance()
                         calendar.time = it

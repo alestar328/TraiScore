@@ -1,6 +1,5 @@
 package com.develop.traiscore.presentation.screens
 
-import android.util.Log
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -316,10 +315,6 @@ fun CreateRoutineScreen(
                         selectedMuscleGroupImage = imageRes
                         selectedCategoryEnum = resToEnum(imageRes) // 👈 guarda el enum
                         showSelectedImage = true
-                        Log.d(
-                            "CreateRoutineScreen",
-                            "Imagen seleccionada: $imageRes -> ${selectedCategoryEnum?.name}"
-                        )
                     }
                 )
                 Spacer(modifier = Modifier.height(50.dp))
