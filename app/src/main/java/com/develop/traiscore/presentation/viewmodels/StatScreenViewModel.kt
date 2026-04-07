@@ -149,11 +149,21 @@ class StatScreenViewModel @Inject constructor(
                 }
         }
 
-        // 🆕 BLOQUE 2 (AÑADIR ESTE)
+        // BLOQUE 2: Live update cuando se agregan/modifican workouts
         viewModelScope.launch {
-            workoutRepository.workouts.collect {
-                _selectedExercise.value?.let { exercise ->
-                    loadAllProgressFor(exercise)
+            workoutRepository.workouts.collect { workouts ->
+                val latestExercise = workouts.maxByOrNull { it.timestamp }?.title
+                val currentSelected = _selectedExercise.value
+
+                if (latestExercise != null && latestExercise != currentSelected) {
+                    // New exercise added — auto-select it so graph updates immediately
+                    _selectedExercise.value = latestExercise
+                    // Block 1 (distinctUntilChanged) will fire and call loadAllProgressFor
+                } else {
+                    // Same exercise or no workouts — reload current selection
+                    currentSelected?.let { exercise ->
+                        loadAllProgressFor(exercise)
+                    }
                 }
             }
         }
@@ -416,28 +426,37 @@ class StatScreenViewModel @Inject constructor(
             try {
                 val userId = getTargetUserId() ?: return@launch
 
-                // 1) Workouts (Room)
+                // 1) Workouts (Room) - always available, show first
                 val workoutEntries = workoutRepository.workouts.first()
                     .filter { it.title == exerciseName }
 
-                // 2) Rutinas guardadas (snapshots -> WorkoutEntry-like)
-                val routineEntries = routineRepository.getWorkoutEntriesFromRoutineHistory(
-                    userId = userId,
-                    exerciseName = exerciseName
-                )
+                // Show local data immediately so graph is never blank due to Firestore errors
+                processLocalWorkoutData(workoutEntries)
 
-                // 3) Unificar
-                val unified = workoutEntries + routineEntries
+                // 2) Try to add routine history from Firestore (optional enrichment)
+                try {
+                    val routineEntries = routineRepository.getWorkoutEntriesFromRoutineHistory(
+                        userId = userId,
+                        exerciseName = exerciseName
+                    )
 
-                Log.d(
-                    "StatsVM",
-                    "📈 $exerciseName → workouts=${workoutEntries.size}, routines=${routineEntries.size}, total=${unified.size}"
-                )
-
-                processLocalWorkoutData(unified)
+                    if (routineEntries.isNotEmpty()) {
+                        val unified = workoutEntries + routineEntries
+                        Log.d(
+                            "StatsVM",
+                            "📈 $exerciseName → workouts=${workoutEntries.size}, routines=${routineEntries.size}, total=${unified.size}"
+                        )
+                        processLocalWorkoutData(unified)
+                    } else {
+                        Log.d("StatsVM", "📈 $exerciseName → workouts=${workoutEntries.size}, no routine history")
+                    }
+                } catch (firestoreEx: Exception) {
+                    // Firestore failed, but local Room data is already shown — do NOT clear it
+                    Log.w("StatsVM", "Firestore routine history unavailable for $exerciseName, showing local data only", firestoreEx)
+                }
 
             } catch (e: Exception) {
-                Log.e("StatsVM", "Error cargando progreso unificado para $exerciseName", e)
+                Log.e("StatsVM", "Error cargando progreso local para $exerciseName", e)
                 _weightProgress.value = emptyList()
                 _repsProgress.value = emptyList()
                 _rirProgress.value = emptyList()

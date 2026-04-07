@@ -414,7 +414,9 @@ fun RowScope.BodyCellAutocomplete(
                 focusedBorderColor = focusedBorderColor,
                 cursorColor = cursorColor,
                 focusedContainerColor = if (transparentCells) Color.Transparent else Color(0xFF1A1A1A),
-                unfocusedContainerColor = if (transparentCells) Color.Transparent else Color.Transparent
+                unfocusedContainerColor = if (transparentCells) Color.Transparent else Color(0xFF1C1C1D),
+                disabledContainerColor = if (transparentCells) Color.Transparent else Color(0xFF1C1C1D),
+                errorContainerColor = if (transparentCells) Color.Transparent else Color(0xFF1C1C1D),
             ),
             trailingIcon = null // ✅ Sin ícono de dropdown (no queremos el icono estándar)
         )
@@ -516,7 +518,9 @@ private fun RowScope.BodyCell(
             focusedBorderColor = focusedBorderColor,
             cursorColor = cursorColor,
             focusedContainerColor = if (transparentCells) Color.Transparent else Color(0xFF1A1A1A),
-            unfocusedContainerColor = if (transparentCells) Color.Transparent else Color.Transparent
+            unfocusedContainerColor = if (transparentCells) Color.Transparent else Color(0xFF1C1C1D),
+            disabledContainerColor = if (transparentCells) Color.Transparent else Color(0xFF1C1C1D),
+            errorContainerColor = if (transparentCells) Color.Transparent else Color(0xFF1C1C1D),
         )
     )
 }

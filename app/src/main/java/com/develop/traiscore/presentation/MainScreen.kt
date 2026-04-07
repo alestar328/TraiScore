@@ -1,6 +1,13 @@
 package com.develop.traiscore.presentation
 
 import android.util.Log
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -130,11 +137,14 @@ fun MainScreen(
                     TrainerBottomNavigationBar(
                         selectedIndex = selectedIndex,
                         onItemClick = { index ->
+                            if (index != selectedIndex) {
+                                routineScreenState = ScreenState.MAIN_ROUTINE_MENU
+                            }
                             selectedIndex = index
                         }
                     )
                 }
-                "athlete", "production" -> { // 👈 INCLUYE production
+                "athlete", "production" -> {
                     BottomNavigationBar(
                         navItemList = navItemList,
                         selectedIndex = selectedIndex,
@@ -144,13 +154,15 @@ fun MainScreen(
                                 Log.d("MainScreen", "🟢 Abriendo AddExerciseBottomSheet desde flavor=${BuildConfig.FLAVOR}")
                                 isBottomSheetVisible = true
                             } else {
+                                if (index != selectedIndex) {
+                                    routineScreenState = ScreenState.MAIN_ROUTINE_MENU
+                                }
                                 selectedIndex = index
                             }
                         }
                     )
                 }
                 else -> {
-                    // Default para debug o main
                     BottomNavigationBar(
                         navItemList = navItemList,
                         selectedIndex = selectedIndex,
@@ -158,6 +170,9 @@ fun MainScreen(
                             if (index == 2) {
                                 isBottomSheetVisible = true
                             } else {
+                                if (index != selectedIndex) {
+                                    routineScreenState = ScreenState.MAIN_ROUTINE_MENU
+                                }
                                 selectedIndex = index
                             }
                         }
@@ -357,7 +372,22 @@ private fun TrainerContent(
     onOpenChrono: () -> Unit
 
 ) {
-    when (selectedIndex) {
+    AnimatedContent(
+        targetState = selectedIndex,
+        transitionSpec = {
+            val animSpec = tween<Float>(durationMillis = 280)
+            val offset = { width: Int -> (width * 0.25f).toInt() }
+            if (targetState > initialState) {
+                (slideInHorizontally(tween(280)) { offset(it) } + fadeIn(animSpec)) togetherWith
+                (slideOutHorizontally(tween(280)) { -offset(it) } + fadeOut(animSpec))
+            } else {
+                (slideInHorizontally(tween(280)) { -offset(it) } + fadeIn(animSpec)) togetherWith
+                (slideOutHorizontally(tween(280)) { offset(it) } + fadeOut(animSpec))
+            }
+        },
+        label = "trainer_tab_transition"
+    ) { currentIndex ->
+    when (currentIndex) {
         0 -> MyClients(
             onClientClick = { client ->
                 navController.navigate("client_profile/${client.uid}")
@@ -370,7 +400,8 @@ private fun TrainerContent(
             }
         )
         1 -> {
-            when (routineScreenState) {
+            val state = routineScreenState
+            when (state) {
                 is ScreenState.MAIN_ROUTINE_MENU ->
                     RoutineMenuScreen(
                         onRoutineClick = { docId, type -> onRoutineSelected(docId, type) },
@@ -384,11 +415,11 @@ private fun TrainerContent(
                     )
                 is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
                     RoutineScreen(
-                        documentId = routineScreenState.documentId,
-                        selectedType = routineScreenState.selectedType,
+                        documentId = state.documentId,
+                        selectedType = state.selectedType,
                         onBack = onBackToRoutineMenu,
                         onConfigureTopBar = { left, right, title ->
-                            onConfigureTopBar(left, right, title)  // ✅ Pasar los 3 parámetros
+                            onConfigureTopBar(left, right, title)
                         },
                         onConfigureFAB = { fab -> onConfigureFAB(fab) },
                         onOpenChrono = onOpenChrono
@@ -398,7 +429,7 @@ private fun TrainerContent(
                     CreateRoutineScreen(
                         onBack = onBackToRoutineMenu,
                         navController = navController,
-                        onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) }, // ✅ Pasar null
+                        onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) },
                         onConfigureFAB = onConfigureFAB
                     )
                 }
@@ -406,7 +437,6 @@ private fun TrainerContent(
             }
         }
         2 -> {
-            // ✅ AGREGAR manejo de ScreenState para medidas también en Trainer
             when (routineScreenState) {
                 is ScreenState.BODY_MEASUREMENTS_SCREEN -> BodyMeasurementsScreen(
                     onBack = onBackToRoutineMenu,
@@ -432,11 +462,11 @@ private fun TrainerContent(
                     onConfigureFAB = onConfigureFAB,
                     setRoutineScreenState = setRoutineScreenState,
                     onSettingsClick = { setRoutineScreenState(ScreenState.SETTINGS_SCREEN) }
-
                 )
             }
         }
-    }
+    } // end when(currentIndex)
+    } // end AnimatedContent
 }
 
 @Composable
@@ -459,20 +489,50 @@ private fun AthleteContent(
     onOpenChrono: () -> Unit
 ) {
 
-    when (selectedIndex) {
+    AnimatedContent(
+        targetState = selectedIndex,
+        transitionSpec = {
+            val animSpec = tween<Float>(durationMillis = 280)
+            val offset = { width: Int -> (width * 0.25f).toInt() }
+            if (targetState > initialState) {
+                (slideInHorizontally(tween(280)) { offset(it) } + fadeIn(animSpec)) togetherWith
+                (slideOutHorizontally(tween(280)) { -offset(it) } + fadeOut(animSpec))
+            } else {
+                (slideInHorizontally(tween(280)) { -offset(it) } + fadeIn(animSpec)) togetherWith
+                (slideOutHorizontally(tween(280)) { offset(it) } + fadeOut(animSpec))
+            }
+        },
+        label = "tab_transition"
+    ) { currentIndex ->
+    when (currentIndex) {
         0 -> ExercisesScreen(
             navController = navController,
-            onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) }, // ✅ Pasar null
+            onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) },
             onConfigureFAB = onConfigureFAB
         )
         1 -> StatScreen(
             navController = navController,
-            onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) }, // ✅ Pasar null
+            onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) },
             onConfigureFAB = onConfigureFAB
         )
         2 -> Text("Pantalla Add (opcional)")
         3 -> {
-            when (routineScreenState) {
+            AnimatedContent(
+                targetState = routineScreenState,
+                transitionSpec = {
+                    val isBack = targetState is ScreenState.MAIN_ROUTINE_MENU
+                    val animSpec = tween<Float>(durationMillis = 260)
+                    if (!isBack) {
+                        (slideInHorizontally(tween(260)) { it } + fadeIn(animSpec)) togetherWith
+                        (slideOutHorizontally(tween(260)) { -it / 3 } + fadeOut(animSpec))
+                    } else {
+                        (slideInHorizontally(tween(260)) { -it / 3 } + fadeIn(animSpec)) togetherWith
+                        (slideOutHorizontally(tween(260)) { it } + fadeOut(animSpec))
+                    }
+                },
+                label = "routine_sub_transition"
+            ) { state ->
+            when (state) {
                 is ScreenState.MAIN_ROUTINE_MENU ->
                     RoutineMenuScreen(
                         onRoutineClick = { docId, type -> onRoutineSelected(docId, type) },
@@ -480,14 +540,14 @@ private fun AthleteContent(
                         viewModel = routineViewModel,
                         screenTitle = "Mis Rutinas",
                         clientName = null,
-                        onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) }, // ✅ Pasar null
+                        onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) },
                         onConfigureFAB = onConfigureFAB,
                         onOpenChrono = onOpenChrono
                     )
                 is ScreenState.FIREBASE_ROUTINE_SCREEN -> {
                     RoutineScreen(
-                        documentId = routineScreenState.documentId,
-                        selectedType = routineScreenState.selectedType,
+                        documentId = state.documentId,
+                        selectedType = state.selectedType,
                         onBack = onBackToRoutineMenu,
                         onConfigureTopBar = { left, right, title ->
                             onConfigureTopBar(left, right, title)
@@ -500,14 +560,25 @@ private fun AthleteContent(
                     CreateRoutineScreen(
                         onBack = onBackToRoutineMenu,
                         navController = navController,
-                        onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) }, // ✅ Pasar null
+                        onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) },
                         onConfigureFAB = onConfigureFAB
                     )
-
                 }
-
-                else -> Unit
+                else -> {
+                    // Any non-routine state (e.g. MY_EXERCISES_SCREEN from tab 4) falls back to menu
+                    RoutineMenuScreen(
+                        onRoutineClick = { docId, type -> onRoutineSelected(docId, type) },
+                        onAddClick = { onCreateRoutine() },
+                        viewModel = routineViewModel,
+                        screenTitle = "Mis Rutinas",
+                        clientName = null,
+                        onConfigureTopBar = { left, right -> onConfigureTopBar(left, right, null) },
+                        onConfigureFAB = onConfigureFAB,
+                        onOpenChrono = onOpenChrono
+                    )
+                }
             }
+            } // end AnimatedContent routine
         }
         4 -> {
             when (routineScreenState) {
@@ -572,5 +643,6 @@ private fun AthleteContent(
             }
         }
 
-    }
+    } // end when(currentIndex)
+    } // end AnimatedContent
 }
