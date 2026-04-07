@@ -7,7 +7,7 @@ import androidx.activity.compose.setContent
 import com.develop.traiscore.presentation.MainActivity
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 
-class SplashActivity : ComponentActivity() {
+/*/class SplashActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
@@ -20,4 +20,4 @@ class SplashActivity : ComponentActivity() {
             }
         }
     }
-}
+}*/
