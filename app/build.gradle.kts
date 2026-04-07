@@ -54,20 +54,20 @@ android {
             dimension = "version"
             applicationId = "com.develop.traiscore"
         }
-        create("athlete") {
+        /*create("athlete") {
             dimension = "version"
             //applicationId = "com.develop.traiscore.athlete"
             applicationId = "com.traiscore.athlete"
-        }
+        }*/
         create("trainer") {
             dimension = "version"
             applicationId = "com.traiscore.trainer"
         }
-        create("lite") {
+        /*create("lite") {
             dimension = "version"
             applicationId = "com.traiscore.lite"
             minSdk = 24 // Compatible con Android 7+
-        }
+        }*/
     }
     compileOptions {
         isCoreLibraryDesugaringEnabled = true
@@ -193,15 +193,18 @@ dependencies {
     // UTILS
     implementation("com.google.guava:guava:33.4.8-android")
     implementation(libs.gson)
+    implementation("androidx.core:core-splashscreen:1.0.0")
 
     // ---------------------------------------------------------------------------------------------
     // IA / GEMINI (solo para non-Lite flavors)
-    listOf("athlete", "trainer", "production").forEach { flavor ->
-        add("${flavor}Implementation", "com.google.firebase:firebase-ai")
-        add("${flavor}Implementation", "com.google.ai.edge.aicore:aicore:0.0.1-exp01")
-        add("${flavor}Implementation", "com.google.ai.client.generativeai:generativeai:0.9.0")
-    }
-
+    // listOf("athlete", "trainer", "production").forEach { flavor ->
+    //     add("${flavor}Implementation", "com.google.firebase:firebase-ai")
+    //    add("${flavor}Implementation", "com.google.ai.edge.aicore:aicore:0.0.1-exp01")
+    //    add("${flavor}Implementation", "com.google.ai.client.generativeai:generativeai:0.9.0")
+    // }
+    implementation("com.google.firebase:firebase-ai")
+    implementation("com.google.ai.edge.aicore:aicore:0.0.1-exp01")
+    implementation("com.google.ai.client.generativeai:generativeai:0.9.0")
     // ---------------------------------------------------------------------------------------------
     // TESTS
     testImplementation(libs.junit)

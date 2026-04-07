@@ -75,7 +75,6 @@ fun CreateRoutineScreen(
 
 ) {
     val context = LocalContext.current
-    val routineVM: RoutineViewModel = hiltViewModel()
     val isTrainerVersion = BuildConfig.FLAVOR == "trainer"
 
     var exercises by remember {
@@ -84,6 +83,7 @@ fun CreateRoutineScreen(
     var workoutName by remember { mutableStateOf("") }
     val exerciseVM: AddExerciseViewModel = viewModel()
 
+    var isCreating by remember { mutableStateOf(false) }
     var exerciseCategory by remember { mutableStateOf<DefaultCategoryExer?>(null) }
     var nameError by remember { mutableStateOf<String?>(null) }
     var showDialog by remember { mutableStateOf(false) }
@@ -233,6 +233,31 @@ fun CreateRoutineScreen(
 
             }
             item {
+                // ✅ Carousel de grupos musculares - SIEMPRE VISIBLE
+                Text(
+                    text = "Selecciona el grupo muscular principal",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 8.dp)
+                )
+
+                MuscleGroupCarousel(
+                    modifier = Modifier.fillMaxWidth(),
+                    onImageSelected = { imageRes ->
+                        selectedMuscleGroupImage = imageRes
+                        selectedCategoryEnum = resToEnum(imageRes) // 👈 guarda el enum
+                        showSelectedImage = true
+                        Log.d(
+                            "CreateRoutineScreen",
+                            "Imagen seleccionada: $imageRes -> ${selectedCategoryEnum?.name}"
+                        )
+                    }
+                )
+                Spacer(modifier = Modifier.height(50.dp))
+            }
+            item {
                 // Sección de ejercicios
                 Text(
                     text = "Ejercicios",
@@ -278,7 +303,7 @@ fun CreateRoutineScreen(
                                 updateExerciseField(exerciseIndex, columnType, newValue)
                             },
                             enableSwipe = true,
-                            validateInput = routineVM::validateInput
+                            validateInput = routineViewModel::validateInput
                         )
                     }
                 } else {
@@ -299,31 +324,7 @@ fun CreateRoutineScreen(
                 }
 
             }
-            item {
-                // ✅ Carousel de grupos musculares - SIEMPRE VISIBLE
-                Text(
-                    text = "Selecciona el grupo muscular principal",
-                    style = MaterialTheme.typography.labelLarge,
-                    color = MaterialTheme.colorScheme.onBackground,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 8.dp)
-                )
 
-                MuscleGroupCarousel(
-                    modifier = Modifier.fillMaxWidth(),
-                    onImageSelected = { imageRes ->
-                        selectedMuscleGroupImage = imageRes
-                        selectedCategoryEnum = resToEnum(imageRes) // 👈 guarda el enum
-                        showSelectedImage = true
-                        Log.d(
-                            "CreateRoutineScreen",
-                            "Imagen seleccionada: $imageRes -> ${selectedCategoryEnum?.name}"
-                        )
-                    }
-                )
-                Spacer(modifier = Modifier.height(50.dp))
-            }
         }
 
         Row(
@@ -403,6 +404,9 @@ fun CreateRoutineScreen(
             // 🔸 BOTÓN GUARDAR
             ExtendedFloatingActionButton(
                 onClick = {
+                    // Guard: evitar múltiples taps mientras se procesa
+                    if (isCreating) return@ExtendedFloatingActionButton
+
                     if (!canSave()) {
                         when {
                             workoutName.trim().isEmpty() ->
@@ -426,6 +430,7 @@ fun CreateRoutineScreen(
                     }
 
                     if (effectiveUserId != null) {
+                        isCreating = true
                         routineViewModel.createRoutineForUser(
                             userId = effectiveUserId,
                             clientName = workoutName,
@@ -434,6 +439,7 @@ fun CreateRoutineScreen(
                             routineType = selectedCategoryEnum?.name
                         ) { newRoutineId, createError ->
                             if (createError != null || newRoutineId == null) {
+                                isCreating = false
                                 Toast.makeText(
                                     context,
                                     "Error creando rutina: $createError",
@@ -458,10 +464,8 @@ fun CreateRoutineScreen(
                                         Toast.LENGTH_SHORT
                                     ).show()
                                     onBack()
-                                    exercises = emptyList()
-                                    workoutName = ""
-                                    selectedCategoryEnum = null
                                 } else {
+                                    isCreating = false
                                     Toast.makeText(
                                         context,
                                         "Error al guardar: $errorMsg",
@@ -476,7 +480,7 @@ fun CreateRoutineScreen(
                 text = {
                     Text(if (targetClientId != null) "Crear para cliente" else "Guardar rutina")
                 },
-                containerColor = if (canSave()) Color.Green else Color.Gray,
+                containerColor = if (canSave() && !isCreating) Color.Green else Color.Gray,
                 contentColor = Color.Black
             )
 
