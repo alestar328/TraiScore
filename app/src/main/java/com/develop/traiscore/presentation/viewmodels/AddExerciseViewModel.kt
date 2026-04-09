@@ -224,6 +224,28 @@ class AddExerciseViewModel @Inject constructor(
 
 
 
+    /**
+     * Busca la categoría de un ejercicio.
+     * 1. Consulta Room directamente (case-insensitive, sin red, siempre disponible).
+     * 2. Solo si Room no lo tiene, cae a Firestore como fallback.
+     */
+    fun getCategoryFor(exerciseName: String, onResult: (DefaultCategoryExer?) -> Unit) {
+        viewModelScope.launch {
+            // Fast path: Room (no depende de que el StateFlow esté subscrito)
+            val exercises = exerciseRepository.getExercises()
+            val rawCategory = exercises
+                .firstOrNull { it.name.equals(exerciseName, ignoreCase = true) }
+                ?.category
+            val localResult = resolveCategoryEnum(rawCategory)
+            if (localResult != null) {
+                onResult(localResult)
+                return@launch
+            }
+            // Slow path: Firestore (solo si Room no lo tiene)
+            fetchCategoryFor(exerciseName, onResult)
+        }
+    }
+
     fun fetchCategoryFor(exerciseName: String, onResult: (DefaultCategoryExer?) -> Unit) {
         val currentUser = FirebaseAuth.getInstance().currentUser ?: return onResult(null)
         val userId = currentUser.uid

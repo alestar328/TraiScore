@@ -1,6 +1,7 @@
 package com.develop.traiscore.presentation
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -118,6 +119,20 @@ fun MainScreen(
     LaunchedEffect(Unit) {
         newSessionViewModel.checkForActiveSession()
     }
+
+    // Intercepta el back del sistema cuando hay un estado hijo activo.
+    // MAIN_ROUTINE_MENU es el estado raíz — desde ahí el back se deja pasar al sistema.
+    BackHandler(enabled = routineScreenState !is ScreenState.MAIN_ROUTINE_MENU) {
+        routineScreenState = when (routineScreenState) {
+            // Jerarquía de 2 niveles: pantalla hija → pantalla intermedia
+            is ScreenState.MEASUREMENTS_HISTORY_SCREEN -> ScreenState.BODY_MEASUREMENTS_SCREEN
+            is ScreenState.LANGUAGE_SCREEN             -> ScreenState.SETTINGS_SCREEN
+            is ScreenState.SCREEN_MODE                 -> ScreenState.SETTINGS_SCREEN
+            // Todo lo demás (rutina, crear rutina, medidas, ajustes, mis ejercicios...) → raíz
+            else -> ScreenState.MAIN_ROUTINE_MENU
+        }
+    }
+
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         topBar = {

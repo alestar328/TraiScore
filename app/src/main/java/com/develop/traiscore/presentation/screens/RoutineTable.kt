@@ -470,7 +470,7 @@ private fun RowScope.HeaderCell(
             fontSize = fontSize.sp,
             fontWeight = fontWeight,
             color = color,
-            textAlign = TextAlign.Center
+            textAlign = TextAlign.Start
         )
     }
 }

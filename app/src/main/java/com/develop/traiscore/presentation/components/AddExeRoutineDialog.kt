@@ -47,8 +47,9 @@ fun AddExeRoutineDialog(
         confirmButton = {
             TextButton(
                 onClick = {
-                    if (name.isNotBlank() && selectedCategory != null) {
-                        onSave(name, selectedCategory.name)
+                    if (name.isNotBlank()) {
+                        // La categoría es informativa — la sección ya está determinada por selectedType
+                        onSave(name, selectedCategory?.name ?: "BACK")
                         Toast.makeText(context, "Añadido!", Toast.LENGTH_SHORT).show()
                         onDismiss()
                     }

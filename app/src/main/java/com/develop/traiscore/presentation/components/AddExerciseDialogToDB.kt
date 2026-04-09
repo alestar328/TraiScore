@@ -49,7 +49,7 @@ fun AddExerciseDialogToDB(
     documentId: String = ""
 ) {
     val context = LocalContext.current
-    var name by remember { mutableStateOf("") }
+    var name by remember { mutableStateOf(initialName) }
     var selectedCategory by remember {
         mutableStateOf<DefaultCategoryExer?>(
             if (initialCategory.isNotEmpty()) {
