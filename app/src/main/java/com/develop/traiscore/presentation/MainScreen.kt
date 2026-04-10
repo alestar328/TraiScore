@@ -28,11 +28,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.google.firebase.auth.FirebaseAuth
 import androidx.navigation.NavHostController
 import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.presentation.components.ChronoScreen
@@ -60,6 +62,7 @@ import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import com.develop.traiscore.presentation.viewmodels.AddExerciseViewModel
 import com.develop.traiscore.presentation.viewmodels.NewSessionViewModel
 import com.develop.traiscore.presentation.viewmodels.WorkoutEntryViewModel
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -115,6 +118,27 @@ fun MainScreen(
     var showTopBarTitle by remember { mutableStateOf<(@Composable () -> Unit)?>(null) }
 
 
+
+    val context = LocalContext.current
+    val auth = remember { FirebaseAuth.getInstance() }
+    val googleSignInClient = remember {
+        (context as? MainActivity)?.googleSignInClient
+    }
+    val mainScope = rememberCoroutineScope()
+    val logoutAction: () -> Unit = {
+        mainScope.launch {
+            auth.signOut()
+            googleSignInClient?.signOut()?.addOnCompleteListener {
+                navController.navigate(NavigationRoutes.Login.route) {
+                    popUpTo(navController.graph.id) { inclusive = true }
+                }
+            } ?: run {
+                navController.navigate(NavigationRoutes.Login.route) {
+                    popUpTo(navController.graph.id) { inclusive = true }
+                }
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         newSessionViewModel.checkForActiveSession()
@@ -195,7 +219,6 @@ fun MainScreen(
                 }
             }
         }
-
     ) { innerPadding ->
         Box(Modifier.padding(innerPadding)) {
             ContentScreen(
@@ -221,7 +244,7 @@ fun MainScreen(
                 onEditMeasurementFromHistory = {
                     routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
                 },
-                onBackToMeasurements = {  // ✅ AGREGAR ESTA LÍNEA
+                onBackToMeasurements = {
                     routineScreenState = ScreenState.BODY_MEASUREMENTS_SCREEN
                 },
                 routineViewModel = routineViewModel,
@@ -235,11 +258,11 @@ fun MainScreen(
                 },
                 onOpenChrono = { showChronoScreen = true },
                 setRoutineScreenState = { routineScreenState = it },
+                onLogout = logoutAction,
                 )
             // ✅ NUEVO: Solo mostrar AddExerciseBottomSheet en la versión athlete
             if (BuildConfig.FLAVOR == "athlete" || BuildConfig.FLAVOR == "production" || BuildConfig.FLAVOR == "lite") {
                 val addExerciseViewModel: AddExerciseViewModel = hiltViewModel()
-                val context = LocalContext.current
                 //Log.d("AddExerciseBS", "FLAVOR=${BuildConfig.FLAVOR}, isBottomSheetVisible=$isBottomSheetVisible")
 
                 AddExerciseBottomSheet(
@@ -299,11 +322,9 @@ fun ContentScreen(
     routineViewModel: RoutineViewModel,
     onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit, title: (@Composable () -> Unit)?) -> Unit = { _, _, _ -> },
     onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit = {},
-    onOpenChrono: () -> Unit = {}
-
-    // ✅ ELIMINADO: currentUserRole: UserRole?
+    onOpenChrono: () -> Unit = {},
+    onLogout: () -> Unit = {}
 ) {
-    // ✅ NUEVO: UI completamente basada en flavor
     when (BuildConfig.FLAVOR) {
         "trainer" -> {
             TrainerContent(
@@ -321,7 +342,8 @@ fun ContentScreen(
                 onConfigureTopBar = onConfigureTopBar,
                 onConfigureFAB = onConfigureFAB,
                 setRoutineScreenState = setRoutineScreenState,
-                onOpenChrono = onOpenChrono
+                onOpenChrono = onOpenChrono,
+                onLogout = onLogout
             )
         }
         "athlete" -> {
@@ -341,11 +363,11 @@ fun ContentScreen(
                 onConfigureTopBar = onConfigureTopBar,
                 onConfigureFAB = onConfigureFAB,
                 setRoutineScreenState = setRoutineScreenState,
-                onOpenChrono = onOpenChrono
+                onOpenChrono = onOpenChrono,
+                onLogout = onLogout
             )
         }
         else -> {
-            // Default para debug - mostrar UI de athlete
             AthleteContent(
                 selectedIndex = selectedIndex,
                 navController = navController,
@@ -360,9 +382,10 @@ fun ContentScreen(
                 onBackToMeasurements = onBackToMeasurements,
                 routineViewModel = routineViewModel,
                 onConfigureTopBar = onConfigureTopBar,
-                onConfigureFAB = onConfigureFAB      ,
+                onConfigureFAB = onConfigureFAB,
                 setRoutineScreenState = setRoutineScreenState,
-                onOpenChrono = onOpenChrono
+                onOpenChrono = onOpenChrono,
+                onLogout = onLogout
             )
         }
     }
@@ -381,11 +404,11 @@ private fun TrainerContent(
     onEditMeasurementFromHistory: () -> Unit,
     onBackToMeasurements: () -> Unit,
     routineViewModel: RoutineViewModel,
-    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit, title: (@Composable () -> Unit)?) -> Unit, // ✅ AGREGAR title
+    onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit, title: (@Composable () -> Unit)?) -> Unit,
     onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit,
     setRoutineScreenState: (ScreenState) -> Unit,
-    onOpenChrono: () -> Unit
-
+    onOpenChrono: () -> Unit,
+    onLogout: () -> Unit = {}
 ) {
     AnimatedContent(
         targetState = selectedIndex,
@@ -501,7 +524,8 @@ private fun AthleteContent(
     onConfigureTopBar: (left: @Composable () -> Unit, right: @Composable () -> Unit, title: (@Composable () -> Unit)?) -> Unit,
     onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit,
     setRoutineScreenState: (ScreenState) -> Unit,
-    onOpenChrono: () -> Unit
+    onOpenChrono: () -> Unit,
+    onLogout: () -> Unit = {}
 ) {
 
     AnimatedContent(
@@ -631,10 +655,11 @@ private fun AthleteContent(
                     onConfigureFAB = onConfigureFAB
                 )
                 is ScreenState.SETTINGS_SCREEN -> SettingsScreen(
-                    onBack = { onBackToRoutineMenu() }, // vuelve al ProfileScreen
+                    onBack = { onBackToRoutineMenu() },
                     onNavigateToScreenMode = { setRoutineScreenState(ScreenState.SCREEN_MODE) },
                     onNavigateToCreateCategory = { navController.navigate("createCategory") },
-                    onNavigateToLanguage = {   setRoutineScreenState(ScreenState.LANGUAGE_SCREEN) },
+                    onNavigateToLanguage = { setRoutineScreenState(ScreenState.LANGUAGE_SCREEN) },
+                    onLogout = onLogout,
                     onConfigureTopBar = { left, right, title ->
                         onConfigureTopBar(left, right, title)
                     },

@@ -78,19 +78,40 @@ class AuthenticationManager(
             Log.d("AuthDebug", "User email: ${firebaseUser.email}")
             Log.d("AuthDebug", "User name: ${firebaseUser.displayName}")
 
-            // Verificar si el usuario ya existe en Firestore
-            val userDoc = firestore.collection("users").document(firebaseUser.uid).get().await()
+            // isNewUser: Firebase Auth indica si acabó de crear la cuenta ahora mismo
+            val isNewFirebaseUser = authResult.additionalUserInfo?.isNewUser == true
+            Log.d("AuthDebug", "isNewUser (Firebase Auth): $isNewFirebaseUser")
 
-            if (userDoc.exists()) {
-                Log.d("AuthDebug", "User exists in Firestore - Success")
-                trySend(AuthResponse.Success)
-            } else {
-                Log.d("AuthDebug", "New user - needs registration")
-                trySend(AuthResponse.NewUser(
-                    email = firebaseUser.email ?: "",
-                    displayName = firebaseUser.displayName ?: "",
-                    photoUrl = firebaseUser.photoUrl?.toString()
-                ))
+            // Verificar si el usuario ya tiene documento en Firestore (fuente de verdad final)
+            val userDoc = firestore.collection("users").document(firebaseUser.uid).get().await()
+            val hasFirestoreProfile = userDoc.exists()
+            Log.d("AuthDebug", "Firestore profile exists: $hasFirestoreProfile")
+
+            when {
+                hasFirestoreProfile -> {
+                    // Perfil completo en Firestore → login normal
+                    Log.d("AuthDebug", "Existing user with Firestore profile - Success")
+                    trySend(AuthResponse.Success)
+                }
+                isNewFirebaseUser -> {
+                    // Firebase Auth acaba de crear la cuenta → necesita completar registro
+                    Log.d("AuthDebug", "Brand new Firebase user - needs registration")
+                    trySend(AuthResponse.NewUser(
+                        email = firebaseUser.email ?: "",
+                        displayName = firebaseUser.displayName ?: "",
+                        photoUrl = firebaseUser.photoUrl?.toString()
+                    ))
+                }
+                else -> {
+                    // Firebase Auth ya conoce al usuario pero no tiene perfil en Firestore
+                    // (registro previo incompleto) → completar registro
+                    Log.w("AuthDebug", "Existing Firebase user but NO Firestore profile - needs registration")
+                    trySend(AuthResponse.NewUser(
+                        email = firebaseUser.email ?: "",
+                        displayName = firebaseUser.displayName ?: "",
+                        photoUrl = firebaseUser.photoUrl?.toString()
+                    ))
+                }
             }
 
         } catch (e: GetCredentialException) {

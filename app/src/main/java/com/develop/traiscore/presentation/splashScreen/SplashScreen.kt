@@ -15,15 +15,32 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-    import com.develop.traiscore.R
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.develop.traiscore.R
 import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen(onNavigate: () -> Unit) {
+fun SplashScreen(
+    viewModel: SplashViewModel = hiltViewModel(),
+    onNavigate: () -> Unit
+) {
     // Estados para las animaciones
     var startAnimation by remember { mutableStateOf(false) }
     var typewriterText by remember { mutableStateOf("") }
     val fullText = "Track your trainings"
+    // true cuando la animación mínima ha terminado
+    var animationDone by remember { mutableStateOf(false) }
+    val isDataReady by viewModel.isDataReady.collectAsState()
+    // Evitar doble navegación
+    var navigationTriggered by remember { mutableStateOf(false) }
+
+    // Navegar cuando AMBOS (animación terminada Y datos listos) se cumplan
+    LaunchedEffect(isDataReady, animationDone) {
+        if (isDataReady && animationDone && !navigationTriggered) {
+            navigationTriggered = true
+            onNavigate()
+        }
+    }
 
     // Animación de aparición del logo (fade in + scale)
     val logoAlpha = animateFloatAsState(
@@ -61,9 +78,17 @@ fun SplashScreen(onNavigate: () -> Unit) {
             delay(100) // Velocidad de escritura
         }
 
-        // Esperar un poco más antes de navegar
-        delay(1500)
-        onNavigate()
+        // Esperar un poco más y marcar animación como completada
+        delay(800)
+        animationDone = true
+        // Fallback: si los datos tardan más de 3s extra, navegar igualmente
+        if (!isDataReady) {
+            delay(3000)
+            if (!navigationTriggered) {
+                navigationTriggered = true
+                onNavigate()
+            }
+        }
     }
 
     Box(

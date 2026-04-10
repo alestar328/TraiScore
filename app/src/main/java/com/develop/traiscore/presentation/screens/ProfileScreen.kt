@@ -73,10 +73,6 @@ fun ProfileScreen(
     val auth = FirebaseAuth.getInstance()
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
-    val googleSignInClient = remember {
-        val mainActivity = context as? MainActivity
-        mainActivity?.googleSignInClient
-    }
 
     var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
     var trainerInfo by remember { mutableStateOf<TrainerInfo?>(null) }
@@ -88,8 +84,6 @@ fun ProfileScreen(
     val isLite = BuildConfig.FLAVOR == "lite"
     val isProduction = BuildConfig.FLAVOR == "production"
     val isTrainer = BuildConfig.FLAVOR == "trainer"
-    var showLogoutDialog by remember { mutableStateOf(false) }
-
     // Función para limpiar el listener
     fun cleanupListener() {
         firestoreListener?.remove()
@@ -148,8 +142,7 @@ fun ProfileScreen(
     }
     LaunchedEffect(Unit) {
 
-        // 1️⃣ Cargar foto del usuario
-        profileViewModel.loadCurrentUserPhoto()
+        // 1️⃣ La foto se carga automáticamente en ProfileViewModel.init (sin llamada de red extra)
 
         // 2️⃣ Configuración del TopBar según flavor
         when (BuildConfig.FLAVOR) {
@@ -362,37 +355,7 @@ fun ProfileScreen(
                     }
                 }
                 Spacer(modifier = Modifier.weight(1f))
-
-                Text(
-                    text = stringResource(R.string.profile_close_session),
-                    color = Color.Red, // 👈 Texto en rojo
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(bottom = 30.dp) // Espaciado vertical
-                        .clickable { showLogoutDialog = true },
-                    textAlign = TextAlign.Center // 👈 Centrado en la fila
-                )
             }
-
-        if (showLogoutDialog) {
-            LogoutConfirmDialog(
-                onConfirm = {
-                    showLogoutDialog = false
-                    scope.launch {
-                        // 🔁 lo mismo que hacías en el onClick original
-                        cleanupListener()
-                        auth.signOut()
-                        googleSignInClient?.signOut()?.addOnCompleteListener {
-                            navController.navigate(NavigationRoutes.Login.route) {
-                                popUpTo(navController.graph.id) { inclusive = true }
-                            }
-                        }
-                    }
-                },
-                onDismiss = { showLogoutDialog = false }
-            )
-        }
 
 
 
@@ -558,7 +521,7 @@ private fun TrainerSection(
     }
 }
 @Composable
-private fun LogoutConfirmDialog(
+fun LogoutConfirmDialog(
     onConfirm: () -> Unit,
     onDismiss: () -> Unit
 ) {

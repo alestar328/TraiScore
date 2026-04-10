@@ -1,6 +1,7 @@
 package com.develop.traiscore.presentation.navigation
 
 sealed class NavigationRoutes(val route: String) {
+    object Splash : NavigationRoutes("splash")
     object Login : NavigationRoutes("login")
     object Settings : NavigationRoutes("settings")
     object Main : NavigationRoutes("main")

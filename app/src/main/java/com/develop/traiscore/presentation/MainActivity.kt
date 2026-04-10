@@ -63,6 +63,7 @@ import com.google.firebase.auth.FirebaseAuth
 import dagger.hilt.android.AndroidEntryPoint
 import com.develop.traiscore.presentation.screens.LoginScreenRoute
 import com.develop.traiscore.presentation.screens.MedicalHistoryScreenUI
+import com.develop.traiscore.presentation.splashScreen.SplashScreen
 import com.develop.traiscore.presentation.screens.MyHealthWithIAScreen
 import com.develop.traiscore.presentation.screens.PhotoPreviewTempScreen
 import com.develop.traiscore.presentation.screens.RoutineMenuScreen
@@ -331,7 +332,7 @@ class MainActivity : ComponentActivity() {
 fun AppNavigation(navController: NavHostController) {
     val auth = FirebaseAuth.getInstance()
     val startRoute = if (auth.currentUser != null) {
-        NavigationRoutes.Main.route
+        NavigationRoutes.Splash.route
     } else {
         NavigationRoutes.Login.route
     }
@@ -341,6 +342,16 @@ fun AppNavigation(navController: NavHostController) {
         navController = navController,
         startDestination = startRoute
     ) {
+        composable(NavigationRoutes.Splash.route) {
+            SplashScreen(
+                onNavigate = {
+                    navController.navigate(NavigationRoutes.Main.route) {
+                        popUpTo(NavigationRoutes.Splash.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable(NavigationRoutes.Pricing.route) {
          /*   PricingScreenUI(
                 onProIconClick = {

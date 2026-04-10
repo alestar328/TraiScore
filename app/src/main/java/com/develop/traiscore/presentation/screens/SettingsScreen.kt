@@ -10,11 +10,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Divider
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -31,8 +30,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.rememberVectorPainter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -52,6 +53,7 @@ fun SettingsScreen(
     onNavigateToScreenMode: () -> Unit = {},
     onNavigateToCreateCategory: () -> Unit = {},
     onNavigateToLanguage: () -> Unit = {},
+    onLogout: () -> Unit = {},
     onConfigureTopBar: (
         @Composable () -> Unit,      // left
         @Composable () -> Unit,      // right
@@ -60,6 +62,7 @@ fun SettingsScreen(
 
 ) {
     var showDialog by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
     val viewModel: AddExerciseViewModel = hiltViewModel()
     val coroutineScope = rememberCoroutineScope()
@@ -107,8 +110,7 @@ fun SettingsScreen(
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.background)
                     .fillMaxSize()
-                    .padding(horizontal = TraiScoreTheme.dimens.paddingMedium)
-                    .verticalScroll(rememberScrollState()),
+                    .padding(horizontal = TraiScoreTheme.dimens.paddingMedium),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
 
@@ -140,7 +142,32 @@ fun SettingsScreen(
                     iconTint = Color.Cyan,
                     onClick = { onNavigateToScreenMode()}
                 )
+
+                Spacer(modifier = Modifier.weight(1f))
+
+                Divider()
+
+                Text(
+                    text = "Cerrar sesión",
+                    color = Color.Red,
+                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Normal),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 20.dp)
+                        .clickable { showLogoutDialog = true },
+                    textAlign = TextAlign.Center
+                )
             }
+
+    if (showLogoutDialog) {
+        LogoutConfirmDialog(
+            onConfirm = {
+                showLogoutDialog = false
+                onLogout()
+            },
+            onDismiss = { showLogoutDialog = false }
+        )
+    }
 }
 @Composable
 fun SettingsOptionRow(

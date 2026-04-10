@@ -116,19 +116,6 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     return@launch
                 }
 
-                // ✅ VERIFICACIÓN: No sobrescribir si ya existe
-                val existingDoc = db.collection("users")
-                    .document(currentUser.uid)
-                    .get()
-                    .await()
-
-                if (existingDoc.exists()) {
-                    Log.w("Registration", "⚠️ El documento ya existe, no se sobrescribe")
-                    resetRegistrationState()
-                    authUiState.value = AuthUiState.LoggedIn
-                    return@launch
-                }
-
                 val userEntity = UserEntity(
                     uid = currentUser.uid,
                     firstName = finalFirstName.trim(),
@@ -139,12 +126,26 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     photoURL = currentUser.photoUrl?.toString() ?: googleUserPhotoUrl
                 )
 
-                db.collection("users")
-                    .document(currentUser.uid)
-                    .set(userEntity)
-                    .await()
+                val docRef = db.collection("users").document(currentUser.uid)
 
-                Log.d("Registration", "✅ Usuario registrado: ${userEntity.uid}")
+                // ✅ Transacción atómica: solo crea el documento si NO existe.
+                // Previene duplicados por doble tap, reintentos o condiciones de carrera.
+                val wasCreated = db.runTransaction { transaction ->
+                    val snapshot = transaction.get(docRef)
+                    if (snapshot.exists()) {
+                        Log.w("Registration", "⚠️ Documento ya existe (transacción), no se sobrescribe")
+                        false
+                    } else {
+                        transaction.set(docRef, userEntity)
+                        true
+                    }
+                }.await()
+
+                if (wasCreated) {
+                    Log.d("Registration", "✅ Usuario registrado: ${userEntity.uid}")
+                } else {
+                    Log.d("Registration", "ℹ️ Usuario ya existía, sesión iniciada directamente")
+                }
 
                 resetRegistrationState()
                 authUiState.value = AuthUiState.LoggedIn

@@ -175,39 +175,54 @@ fun RoutineScreen(
         )
     }
 
-    LaunchedEffect(isTrainerVersion) {
-        if (isTrainerVersion) {
-            onConfigureFAB {
-                FloatingActionButton(
-                    onClick = {
-                        val routine = routineViewModel.routineDocument ?: return@FloatingActionButton
-                        if (routine.sections.isEmpty()) {
-                            Toast.makeText(context, "La rutina no tiene secciones", Toast.LENGTH_SHORT).show()
-                            return@FloatingActionButton
-                        }
-                        com.develop.traiscore.exports.RoutineExportManager.exportRoutine(
-                            context = context,
-                            routine = routine,
-                            onSuccess = { fileUri ->
-                                com.develop.traiscore.exports.RoutineExportManager.shareRoutineFile(
-                                    context,
-                                    fileUri,
-                                    routine.routineName
-                                )
-                            },
-                            onError = { err ->
-                                Toast.makeText(context, "❌ Error: $err", Toast.LENGTH_LONG).show()
+    LaunchedEffect(currentViewMode, isTrainerVersion) {
+        when {
+            isTrainerVersion -> {
+                onConfigureFAB {
+                    FloatingActionButton(
+                        onClick = {
+                            val routine = routineViewModel.routineDocument ?: return@FloatingActionButton
+                            if (routine.sections.isEmpty()) {
+                                Toast.makeText(context, "La rutina no tiene secciones", Toast.LENGTH_SHORT).show()
+                                return@FloatingActionButton
                             }
-                        )
-                    },
-                    containerColor = Color.Yellow,
-                    contentColor = Color.Black
-                ) {
-                    Icon(Icons.Default.Email, contentDescription = "Enviar Rutina")
+                            com.develop.traiscore.exports.RoutineExportManager.exportRoutine(
+                                context = context,
+                                routine = routine,
+                                onSuccess = { fileUri ->
+                                    com.develop.traiscore.exports.RoutineExportManager.shareRoutineFile(
+                                        context,
+                                        fileUri,
+                                        routine.routineName
+                                    )
+                                },
+                                onError = { err ->
+                                    Toast.makeText(context, "❌ Error: $err", Toast.LENGTH_LONG).show()
+                                }
+                            )
+                        },
+                        containerColor = Color.Yellow,
+                        contentColor = Color.Black
+                    ) {
+                        Icon(Icons.Default.Email, contentDescription = "Enviar Rutina")
+                    }
                 }
             }
-        } else {
-            onConfigureFAB(null)
+            currentViewMode == ViewMode.TODAY -> {
+                onConfigureFAB {
+                    FloatingActionButton(
+                        onClick = { showAddDialog = true },
+                        containerColor = traiBlue,
+                        contentColor = Color.White
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Añadir ejercicio"
+                        )
+                    }
+                }
+            }
+            else -> onConfigureFAB(null)
         }
     }
 
@@ -284,7 +299,8 @@ fun RoutineScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .padding(vertical = 5.dp),
+                                .padding(vertical = 5.dp)
+                                .padding(bottom = 80.dp),
                             horizontalArrangement = Arrangement.SpaceEvenly,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
@@ -316,17 +332,6 @@ fun RoutineScreen(
                                 Icon(
                                     painter = painterResource(id = R.drawable.save_icon),
                                     contentDescription = "Guardar rutina",
-                                    tint = Color.White
-                                )
-                            }
-
-                            Button(
-                                onClick = { showAddDialog = true },
-                                colors = ButtonDefaults.buttonColors(containerColor = com.develop.traiscore.presentation.theme.traiBlue)
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Add,
-                                    contentDescription = "Añadir ejercicio",
                                     tint = Color.White
                                 )
                             }
