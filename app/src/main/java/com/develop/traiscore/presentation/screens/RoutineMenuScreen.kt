@@ -91,19 +91,11 @@ fun RoutineMenuScreen(
 
     LaunchedEffect(currentTargetUser) {
         Log.d("RoutineMenuScreen", "LaunchedEffect triggered for user: $currentTargetUser")
-
         if (currentTargetUser != null) {
             viewModel.loadRoutines(context) { hasRoutines ->
                 if (!hasRoutines && !viewModel.hasShownEmptyDialog) {
                     showEmptyDialog = true
                 }
-            }
-        }
-    }
-    LaunchedEffect(Unit) {
-        viewModel.ensureRoutinesLoaded(context) { hasRoutines ->
-            if (!hasRoutines && !viewModel.hasShownEmptyDialog) {
-                showEmptyDialog = true
             }
         }
     }

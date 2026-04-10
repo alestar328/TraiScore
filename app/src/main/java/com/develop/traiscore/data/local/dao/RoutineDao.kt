@@ -32,6 +32,14 @@ interface RoutineDao {
     @Query("SELECT * FROM routine_exercises WHERE sectionId = :sectionId")
     suspend fun getExercises(sectionId: Int): List<RoutineExerciseEntity>
 
+    // Obtener una rutina por id local
+    @Query("SELECT * FROM routines WHERE id = :id LIMIT 1")
+    suspend fun getRoutineById(id: Int): RoutineEntity?
+
+    // Borrar rutinas ya sincronizadas con Firebase (para re-sync limpio)
+    @Query("DELETE FROM routines WHERE userId = :userId AND routineIdFirebase IS NOT NULL")
+    suspend fun deleteFirebaseSyncedRoutines(userId: String)
+
     // Borrados
     @Query("DELETE FROM routines WHERE id = :id")
     suspend fun deleteRoutine(id: Int)

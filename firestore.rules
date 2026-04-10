@@ -3,130 +3,138 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    /************************************************************
-     * 🧩 OPCIÓN DE DEBUG GLOBAL (activar solo para pruebas)
-     ************************************************************/
-    /*
-    match /{document=**} {
-      allow read, write, create, update, delete: if true;
+    // Helper: true si el usuario autenticado es el trainer vinculado a userId
+    // La subcolección clients vive bajo el documento del trainer:
+    //   users/{trainerId}/clients/{clientId}
+    function isTrainerOf(userId) {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(request.auth.uid)/clients/$(userId));
     }
-    */
 
-    /************************************************************
-     * 🔐 REGLAS REALES
-     ************************************************************/
+    // Helper: true si el usuario autenticado es el cliente cuyo trainer es userId
+    // Útil para que el cliente lea el perfil de su propio trainer
+    function isClientOf(userId) {
+      return request.auth != null &&
+        exists(/databases/$(database)/documents/users/$(userId)/clients/$(request.auth.uid));
+    }
+
+    // =====================================================================
+    // FOTOS DE PERFIL
+    // =====================================================================
     match /profile_photos/{userId}/{fileName} {
-      // Solo el dueño puede subir/actualizar su foto
       allow write: if request.auth != null && request.auth.uid == userId;
-
-      // Todos pueden leer las fotos (para verlas en la app)
-      allow read: if request.auth != null;
+      allow read:  if request.auth != null;
     }
 
-    // === USERS ===
+    // =====================================================================
+    // USUARIOS
+    // =====================================================================
     match /users/{userId} {
 
-      // Solo el propio usuario puede gestionar su documento raíz
+      // El propio usuario gestiona su documento
       allow get, create, update, delete: if request.auth != null && request.auth.uid == userId;
 
-      // Los trainers pueden leer el documento de un cliente vinculado a ellos
-      allow get: if request.auth != null
-                 && resource.data.linkedTrainerUid == request.auth.uid;
+      // El trainer puede leer el documento de sus clientes vinculados
+      allow get: if isTrainerOf(userId);
 
-      // Los clientes pueden leer el perfil de su trainer (para mostrar info en ProfileScreen)
-      allow get: if request.auth != null
-                 && exists(/databases/$(database)/documents/users/$(userId)/clients/$(request.auth.uid));
+      // El cliente puede leer el perfil de su trainer
+      allow get: if isClientOf(userId);
 
-      // ✅ NUEVO: Los trainers pueden hacer queries sobre users filtrando por linkedTrainerUid.
-      // Firestore evalúa esta regla por cada documento devuelto; como el cliente ya consulta
-      // con .whereEqualTo("linkedTrainerUid", trainerId), todos los docs pasan la regla.
+      // Query .whereEqualTo("linkedTrainerUid", trainerId) — Firestore evalúa por documento
       allow list: if request.auth != null
                   && resource.data.linkedTrainerUid == request.auth.uid;
 
-      // ✅ NUEVO: Los trainers pueden actualizar linkedTrainerUid e isActive en sus clientes
-      // (usado por la función removeClient del ViewModel)
+      // El trainer puede desactivar/desvincular a un cliente (removeClient)
       allow update: if request.auth != null
                     && resource.data.linkedTrainerUid == request.auth.uid
                     && request.resource.data.diff(resource.data).affectedKeys()
                        .hasOnly(['linkedTrainerUid', 'isActive']);
 
-      // === CLIENTES ===
+      // =================================================================
+      // SUBCOLECCIÓN: clients  (lista de clientes del trainer)
+      // =================================================================
       match /clients/{clientId} {
-        // El propio trainer gestiona su lista de clientes
+        // El trainer gestiona su propia lista
         allow read, write, delete: if request.auth != null && request.auth.uid == userId;
-        // Un cliente puede crearse a sí mismo en la lista de su trainer (al aceptar invitación)
+        // El cliente puede añadirse a sí mismo al aceptar una invitación
         allow create: if request.auth != null &&
           (request.auth.uid == userId || request.auth.uid == clientId);
       }
 
-      // === BODY STATS ===
+      // =================================================================
+      // SUBCOLECCIÓN: bodyStats
+      // =================================================================
       match /bodyStats/{bodyStatsId} {
-        // Usuario puede leer y escribir sus medidas
         allow read, write, create, update, delete: if request.auth != null && request.auth.uid == userId;
-
-        // Trainer puede leer medidas de sus clientes
-        allow read: if request.auth != null &&
-          exists(/databases/$(database)/documents/users/$(request.auth.uid)/clients/$(userId));
+        allow read: if isTrainerOf(userId);
       }
 
-      // === WORKOUT ENTRIES ===
+      // =================================================================
+      // SUBCOLECCIÓN: workoutEntries
+      // =================================================================
       match /workoutEntries/{workoutId} {
         allow read, write, update, delete: if request.auth != null && request.auth.uid == userId;
-        // El trainer puede leer los entrenamientos de sus clientes vinculados
-        allow read: if request.auth != null &&
-          exists(/databases/$(database)/documents/users/$(userId)/clients/$(request.auth.uid));
+        allow read: if isTrainerOf(userId);
       }
 
-      // === EJERCICIOS PERSONALIZADOS ===
+      // =================================================================
+      // SUBCOLECCIÓN: exercises  (ejercicios personalizados del usuario)
+      // =================================================================
       match /exercises/{exerciseId} {
         allow read, write, create, update, delete: if request.auth != null && request.auth.uid == userId;
+        allow read: if isTrainerOf(userId);
       }
 
-      // === RUTINAS ===
+      // =================================================================
+      // SUBCOLECCIÓN: routines
+      // =================================================================
       match /routines/{routineId} {
-        // Usuario o su trainer puede leer y escribir
+        // El propio usuario o su trainer puede leer/escribir/borrar
         allow read, write, update, delete: if request.auth != null &&
-          (
-            request.auth.uid == userId ||
-            resource.data.trainerId == request.auth.uid
-          );
+          (request.auth.uid == userId || isTrainerOf(userId));
 
-        // Permitir crear rutina desde trainer hacia cliente
+        // Crear rutina: el propio usuario o el trainer vinculado
         allow create: if request.auth != null &&
-          request.resource.data.trainerId == request.auth.uid &&
-          request.resource.data.userId == userId;
+          (request.auth.uid == userId || isTrainerOf(userId));
       }
 
-      // === SESIONES ===
+      // =================================================================
+      // SUBCOLECCIÓN: sessions
+      // =================================================================
       match /sessions/{sessionId} {
-        // Solo el usuario puede crear, leer, actualizar o eliminar sus sesiones
         allow read, write, create, update, delete: if request.auth != null && request.auth.uid == userId;
+        allow read: if isTrainerOf(userId);
       }
     }
 
-    // === COLECCIÓN GLOBAL DE EJERCICIOS ===
+    // =====================================================================
+    // EJERCICIOS GLOBALES (catálogo compartido)
+    // =====================================================================
     match /exercises/{exerciseId} {
-      // Cualquier usuario autenticado puede leer (ver ejercicios por defecto)
-      allow read: if request.auth != null;
-      // Solo administradores o sistema podrían escribir, restringido a uid concreto si quieres
+      allow read:  if request.auth != null;
       allow write: if request.auth != null && request.auth.token.admin == true;
     }
 
-    // === SUSCRIPCIONES ===
+    // =====================================================================
+    // SUSCRIPCIONES
+    // =====================================================================
     match /subscriptions/{userId} {
       allow read, write, create, update, delete: if request.auth != null && request.auth.uid == userId;
     }
 
-    // === INVITACIONES ===
+    // =====================================================================
+    // INVITACIONES
+    // =====================================================================
     match /invitations/{invitationId} {
-      // Todos los autenticados pueden leer (para buscar códigos)
+      // Cualquier autenticado puede leer (necesario para buscar el código)
       allow read: if request.auth != null;
 
-      // Solo usuarios autenticados pueden crear invitaciones (la app trainer es la única que expone esta funcionalidad)
+      // Solo el trainer que la crea puede crear (trainerId debe coincidir)
       allow create: if request.auth != null &&
         request.resource.data.trainerId == request.auth.uid;
 
-      // Permitir actualización si el trainer o el cliente la usa
+      // El trainer puede actualizar/eliminar sus propias invitaciones;
+      // el cliente puede marcarla como usada al aceptar
       allow update: if request.auth != null &&
         (
           resource.data.trainerId == request.auth.uid ||
@@ -138,7 +146,6 @@ service cloud.firestore {
           )
         );
 
-      // Trainer puede eliminar sus invitaciones
       allow delete: if request.auth != null && resource.data.trainerId == request.auth.uid;
     }
   }

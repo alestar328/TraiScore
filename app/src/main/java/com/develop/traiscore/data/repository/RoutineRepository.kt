@@ -137,7 +137,6 @@ class RoutineRepository(
     }
     suspend fun syncRoutinesFromFirebase(userId: String) {
         try {
-            // 1. Obtener rutinas desde Firebase
             val firebaseRoutines = firestore.collection("users")
                 .document(userId)
                 .collection("routines")
@@ -151,7 +150,17 @@ class RoutineRepository(
 
             Log.d("RoutineRepository", "Sincronizando ${firebaseRoutines.size()} rutinas desde Firebase")
 
-            // 2. Para cada rutina de Firebase
+            // Borrar las que ya vienen de Firebase antes de re-insertar
+            // (evita duplicados si el sync se llama varias veces en paralelo)
+            // Las rutinas locales sin routineIdFirebase se conservan.
+            val existingFirebase = routineDao.getRoutines(userId).filter { it.routineIdFirebase != null }
+            existingFirebase.forEach { r ->
+                val sections = routineDao.getSections(r.id)
+                routineDao.deleteExercises(sections.map { it.id })
+                routineDao.deleteSections(r.id)
+                routineDao.deleteRoutine(r.id)
+            }
+
             firebaseRoutines.documents.forEach { doc ->
                 val firebaseId = doc.id
                 val routineName = doc.getString("routineName") ?: "Rutina sin nombre"
@@ -160,16 +169,6 @@ class RoutineRepository(
                 val trainerId = doc.getString("trainerId")
                 val createdAt = doc.getLong("createdAt") ?: System.currentTimeMillis()
 
-                // 3. Verificar si ya existe en Room (por firebaseId)
-                val existingRoutines = routineDao.getRoutines(userId)
-                val alreadyExists = existingRoutines.any { it.routineIdFirebase == firebaseId }
-
-                if (alreadyExists) {
-                    Log.d("RoutineRepository", "Rutina $routineName ya existe en Room, saltando")
-                    return@forEach
-                }
-
-                // 4. Crear rutina en Room
                 val routineEntity = RoutineEntity(
                     id = 0,
                     routineIdFirebase = firebaseId,
@@ -182,24 +181,19 @@ class RoutineRepository(
                 )
                 val localRoutineId = routineDao.insertRoutine(routineEntity).toInt()
 
-                // 5. Obtener secciones de Firebase
                 @Suppress("UNCHECKED_CAST")
                 val sectionsData = doc.get("sections") as? List<Map<String, Any>> ?: emptyList()
 
                 sectionsData.forEach { sectionMap ->
                     val sectionType = sectionMap["type"] as? String ?: "Unknown"
-
-                    // 6. Crear sección en Room
                     val sectionEntity = RoutineSectionEntity(
                         routineLocalId = localRoutineId,
                         type = sectionType
                     )
                     val localSectionId = routineDao.insertSections(listOf(sectionEntity))[0].toInt()
 
-                    // 7. Obtener ejercicios
                     @Suppress("UNCHECKED_CAST")
                     val exercisesData = sectionMap["exercises"] as? List<Map<String, Any>> ?: emptyList()
-
                     val exerciseEntities = exercisesData.map { exerciseMap ->
                         RoutineExerciseEntity(
                             sectionId = localSectionId,
@@ -210,8 +204,6 @@ class RoutineRepository(
                             rir = (exerciseMap["rir"] as? Long)?.toInt() ?: 0
                         )
                     }
-
-                    // 8. Insertar ejercicios en Room
                     if (exerciseEntities.isNotEmpty()) {
                         routineDao.insertExercises(exerciseEntities)
                     }
@@ -220,7 +212,7 @@ class RoutineRepository(
                 Log.d("RoutineRepository", "✅ Rutina '$routineName' sincronizada a Room")
             }
 
-            Log.d("RoutineRepository", "Sincronización completada exitosamente")
+            Log.d("RoutineRepository", "Sincronización completada: ${firebaseRoutines.size()} rutinas")
 
         } catch (e: Exception) {
             Log.e("RoutineRepository", "Error sincronizando rutinas desde Firebase", e)
@@ -354,8 +346,26 @@ class RoutineRepository(
         routineDao.deleteSections(routineLocalId)
     }
 
-    /** Borrar la rutina completa */
+    /** Borrar la rutina completa de Room y de Firebase */
     suspend fun deleteRoutine(localRoutineId: Int) {
+        // Obtener el Firebase ID antes de borrar de Room
+        val routine = routineDao.getRoutineById(localRoutineId)
+
+        // Borrar de Firebase si tiene ID
+        if (routine?.routineIdFirebase != null && routine.userId.isNotBlank()) {
+            try {
+                firestore.collection("users")
+                    .document(routine.userId)
+                    .collection("routines")
+                    .document(routine.routineIdFirebase!!)
+                    .delete()
+                    .await()
+                Log.d("RoutineRepository", "Rutina borrada de Firebase: ${routine.routineIdFirebase}")
+            } catch (e: Exception) {
+                Log.e("RoutineRepository", "Error borrando rutina de Firebase", e)
+            }
+        }
+
         routineDao.deleteRoutine(localRoutineId)
     }
     suspend fun updateRoutineFirebaseId(localId: Int, firebaseId: String) {

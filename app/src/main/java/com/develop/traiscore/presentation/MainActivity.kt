@@ -608,8 +608,6 @@ fun AppNavigation(navController: NavHostController) {
             // Configurar el ViewModel para cargar rutinas del cliente específico
             LaunchedEffect(clientId) {
                 routineViewModel.setTargetClient(clientId)
-                // ✅ USAR context que está fuera del LaunchedEffect
-                routineViewModel.loadRoutines(context = context) { }
             }
 
             // Limpiar cuando se sale de la pantalla

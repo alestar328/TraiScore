@@ -108,9 +108,11 @@ fun shareViaWhatsApp(context: Context, code: String, trainerName: String) {
 
 private fun buildInviteMessage(code: String, trainerName: String) =
     "¡Únete a TraiScore!\n\n" +
-    "$trainerName te invita a entrenar.\n\n" +
+    "$trainerName te invita a entrenar juntos.\n\n" +
     "Tu código de invitación: *$code*\n\n" +
-    "Abre TraiScore → Perfil → \"Unirme a un entrenador\" e introduce el código."
+    "1️⃣ Descarga TraiScore:\n" +
+    "https://play.google.com/store/apps/details?id=com.develop.traiscore\n\n" +
+    "2️⃣ Abre la app → Perfil → \"Unirme a un entrenador\" e introduce el código."
 
 fun copyToClipboard(context: Context, code: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
