@@ -31,7 +31,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavHostController
 import com.develop.traiscore.BuildConfig
 import com.develop.traiscore.R
-import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.presentation.ScreenState
 import com.develop.traiscore.presentation.components.general.ProfilePhotoComponent
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
@@ -69,15 +68,11 @@ fun ProfileScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
-    var currentUserRole by remember { mutableStateOf<UserRole?>(null) }
     var trainerInfo by remember { mutableStateOf<TrainerInfo?>(null) }
     var isLoading by remember { mutableStateOf(true) }
 
     // Estado para controlar el listener de Firestore
     var firestoreListener by remember { mutableStateOf<ListenerRegistration?>(null) }
-    val isAthlete = BuildConfig.FLAVOR == "athlete"
-    val isLite = BuildConfig.FLAVOR == "lite"
-    val isProduction = BuildConfig.FLAVOR == "production"
     val isTrainer = BuildConfig.FLAVOR == "trainer"
     // Función para limpiar el listener
     fun cleanupListener() {
@@ -157,7 +152,7 @@ fun ProfileScreen(
                 )
             }
 
-            "production", "athlete", "lite" -> {
+            "production" -> {
                 onConfigureTopBar(
                     {
                      /*   Box(
@@ -189,23 +184,41 @@ fun ProfileScreen(
         // 3️⃣ Configurar FAB global
         onConfigureFAB(null)
 
-        // 4️⃣ Listener Firestore SOLO para athletes
-        if (isAthlete || isProduction || isLite) {
-            val currentUser = auth.currentUser ?: return@LaunchedEffect
+        // 4️⃣ Migrar userRole si es null (cuentas creadas antes de añadir el campo)
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            try {
+                val doc = FirebaseFirestore.getInstance()
+                    .collection("users").document(currentUser.uid).get().await()
+                if (doc.exists() && doc.getString("userRole") == null) {
+                    val correctRole = if (BuildConfig.FLAVOR == "trainer") "TRAINER" else "CLIENT"
+                    FirebaseFirestore.getInstance()
+                        .collection("users").document(currentUser.uid)
+                        .update("userRole", correctRole).await()
+                    android.util.Log.d("ProfileScreen", "userRole migrado → $correctRole")
+                }
+            } catch (e: Exception) {
+                android.util.Log.w("ProfileScreen", "No se pudo migrar userRole: ${e.message}")
+            }
+        }
+
+        // 5️⃣ Listener Firestore SOLO para athletes
+        if (!isTrainer) {
+            val athleteUser = auth.currentUser ?: return@LaunchedEffect
             isLoading = true
             trainerInfo = null
 
             try {
                 FirebaseFirestore.getInstance()
                     .collection("users")
-                    .document(currentUser.uid)
+                    .document(athleteUser.uid)
                     .get()
                     .await()
 
                 cleanupListener()
                 firestoreListener = FirebaseFirestore.getInstance()
                     .collection("users")
-                    .document(currentUser.uid)
+                    .document(athleteUser.uid)
                     .addSnapshotListener { snapshot, error ->
                         if (error != null) {
                             android.util.Log.e("ProfileScreen", "Error listener", error)
@@ -274,19 +287,6 @@ fun ProfileScreen(
 
                 Spacer(Modifier.height(24.dp))
 
-                // Sección de Trainer para CLIENTES
-                if (currentUserRole == UserRole.CLIENT) {
-                    TrainerSection(
-                        trainerInfo = trainerInfo,
-                        isLoading = isLoading,
-                        onAddTrainer = {
-                            // Navegamos directamente a la pantalla de invitación
-                            navController.navigate(NavigationRoutes.EnterInvitation.route)
-                        }
-                    )
-                    Spacer(Modifier.height(20.dp))
-                }
-
                 // Botón de invitaciones para TRAINERS
                 if (isTrainer) {
                     ProfileButton(
@@ -300,16 +300,15 @@ fun ProfileScreen(
                 }
 
                 // Botones principales
-                if (isAthlete || isProduction || isLite) {
-                  /*  TrainerSection(
+                if (!isTrainer) {
+                    TrainerSection(
                         trainerInfo = trainerInfo,
                         isLoading = isLoading,
                         onAddTrainer = {
-                            // Navegamos directamente a la pantalla de invitación
                             navController.navigate(NavigationRoutes.EnterInvitation.route)
                         }
                     )
-                    Spacer(Modifier.height(20.dp))*/
+                    Spacer(Modifier.height(20.dp))
 
                     Row(
                         modifier = Modifier.fillMaxWidth(),

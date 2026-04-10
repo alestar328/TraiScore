@@ -26,6 +26,17 @@ class InvitationViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    // Emite la invitación recién creada para mostrar el diálogo de compartir
+    private val _newlyCreatedInvitation = MutableStateFlow<InvitationEntity?>(null)
+    val newlyCreatedInvitation: StateFlow<InvitationEntity?> = _newlyCreatedInvitation.asStateFlow()
+
+    // Emite true cuando el cliente acepta una invitación con éxito
+    private val _acceptedSuccessfully = MutableStateFlow(false)
+    val acceptedSuccessfully: StateFlow<Boolean> = _acceptedSuccessfully.asStateFlow()
+
+    fun clearNewInvitation() { _newlyCreatedInvitation.value = null }
+    fun clearAccepted() { _acceptedSuccessfully.value = false }
+
     fun loadInvitations() {
         viewModelScope.launch {
             _isLoading.value = true
@@ -69,7 +80,8 @@ class InvitationViewModel @Inject constructor(
             ).fold(
                 onSuccess = { invitation ->
                     _error.value = null
-                    loadInvitations() // Recargar la lista
+                    _newlyCreatedInvitation.value = invitation
+                    loadInvitations()
                 },
                 onFailure = { exception ->
                     _error.value = "Error al crear invitación: ${exception.message}"
@@ -121,6 +133,7 @@ class InvitationViewModel @Inject constructor(
                             invitationRepository.acceptInvitation(invitation.id, clientId).fold(
                                 onSuccess = {
                                     _error.value = null
+                                    _acceptedSuccessfully.value = true
                                     android.util.Log.d("InvitationVM", "✅ Invitación aceptada exitosamente")
                                 },
                                 onFailure = { exception ->

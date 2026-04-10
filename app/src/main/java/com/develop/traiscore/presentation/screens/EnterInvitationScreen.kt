@@ -37,14 +37,14 @@ fun EnterInvitationScreen(
     var invitationCode by remember { mutableStateOf("") }
     val isLoading by viewModel.isLoading.collectAsState()
     val error by viewModel.error.collectAsState()
+    val acceptedSuccessfully by viewModel.acceptedSuccessfully.collectAsState()
     val focusManager = LocalFocusManager.current
 
     val currentUser = FirebaseAuth.getInstance().currentUser
 
-    LaunchedEffect(error, isLoading) { // <- Cambiar la dependencia
-        if (error == null && isLoading == false && invitationCode.isNotEmpty()) {
-            // Esperar un poco para que se complete la sincronización
-            kotlinx.coroutines.delay(500)
+    LaunchedEffect(acceptedSuccessfully) {
+        if (acceptedSuccessfully) {
+            viewModel.clearAccepted()
             onSuccess()
         }
     }

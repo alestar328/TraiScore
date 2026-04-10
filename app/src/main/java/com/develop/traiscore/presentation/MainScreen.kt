@@ -183,7 +183,7 @@ fun MainScreen(
                         }
                     )
                 }
-                "athlete", "production" -> {
+                else -> {
                     BottomNavigationBar(
                         navItemList = navItemList,
                         selectedIndex = selectedIndex,
@@ -191,22 +191,6 @@ fun MainScreen(
                             Log.d("MainScreen", "👉 Click en BottomNav index=$index flavor=${BuildConfig.FLAVOR}")
                             if (index == 2) {
                                 Log.d("MainScreen", "🟢 Abriendo AddExerciseBottomSheet desde flavor=${BuildConfig.FLAVOR}")
-                                isBottomSheetVisible = true
-                            } else {
-                                if (index != selectedIndex) {
-                                    routineScreenState = ScreenState.MAIN_ROUTINE_MENU
-                                }
-                                selectedIndex = index
-                            }
-                        }
-                    )
-                }
-                else -> {
-                    BottomNavigationBar(
-                        navItemList = navItemList,
-                        selectedIndex = selectedIndex,
-                        onItemClick = { index ->
-                            if (index == 2) {
                                 isBottomSheetVisible = true
                             } else {
                                 if (index != selectedIndex) {
@@ -261,7 +245,7 @@ fun MainScreen(
                 onLogout = logoutAction,
                 )
             // ✅ NUEVO: Solo mostrar AddExerciseBottomSheet en la versión athlete
-            if (BuildConfig.FLAVOR == "athlete" || BuildConfig.FLAVOR == "production" || BuildConfig.FLAVOR == "lite") {
+            if (BuildConfig.FLAVOR != "trainer") {
                 val addExerciseViewModel: AddExerciseViewModel = hiltViewModel()
                 //Log.d("AddExerciseBS", "FLAVOR=${BuildConfig.FLAVOR}, isBottomSheetVisible=$isBottomSheetVisible")
 
@@ -330,27 +314,6 @@ fun ContentScreen(
             TrainerContent(
                 selectedIndex = selectedIndex,
                 navController = navController,
-                routineScreenState = routineScreenState,
-                onRoutineSelected = onRoutineSelected,
-                onBackToRoutineMenu = onBackToRoutineMenu,
-                onCreateRoutine = onCreateRoutine,
-                onMeasurementsClick = onMeasurementsClick,
-                onMeasurementsHistoryClick = onMeasurementsHistoryClick,
-                onEditMeasurementFromHistory = onEditMeasurementFromHistory,
-                onBackToMeasurements = onBackToMeasurements,
-                routineViewModel = routineViewModel,
-                onConfigureTopBar = onConfigureTopBar,
-                onConfigureFAB = onConfigureFAB,
-                setRoutineScreenState = setRoutineScreenState,
-                onOpenChrono = onOpenChrono,
-                onLogout = onLogout
-            )
-        }
-        "athlete" -> {
-            AthleteContent(
-                selectedIndex = selectedIndex,
-                navController = navController,
-                exeScreenViewModel = exeScreenViewModel,
                 routineScreenState = routineScreenState,
                 onRoutineSelected = onRoutineSelected,
                 onBackToRoutineMenu = onBackToRoutineMenu,

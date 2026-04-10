@@ -7,6 +7,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.credentials.CredentialManager
 import androidx.credentials.GetCredentialRequest
+import com.develop.traiscore.BuildConfig
 import com.develop.traiscore.R
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
@@ -90,6 +91,19 @@ class AuthenticationManager(
             when {
                 hasFirestoreProfile -> {
                     // Perfil completo en Firestore → login normal
+                    // Auto-migrar userRole si es null (cuentas creadas antes de que se añadiera el campo)
+                    val storedRole = userDoc.getString("userRole")
+                    if (storedRole == null) {
+                        val correctRole = if (BuildConfig.FLAVOR == "trainer") "TRAINER" else "CLIENT"
+                        try {
+                            firestore.collection("users").document(firebaseUser.uid)
+                                .update("userRole", correctRole)
+                                .await()
+                            Log.d("AuthDebug", "Migrated userRole → $correctRole")
+                        } catch (e: Exception) {
+                            Log.w("AuthDebug", "Could not migrate userRole: ${e.message}")
+                        }
+                    }
                     Log.d("AuthDebug", "Existing user with Firestore profile - Success")
                     trySend(AuthResponse.Success)
                 }

@@ -217,7 +217,7 @@ fun RoutineMenuScreen(
                 onConfigureTopBar({ }, { }) // TopBar por defecto: logo "TraiScore" centrado
             }
 
-            "production", "lite" -> {
+            else -> {
                 onConfigureTopBar(
                     {
                      /*   FloatingActionButton(

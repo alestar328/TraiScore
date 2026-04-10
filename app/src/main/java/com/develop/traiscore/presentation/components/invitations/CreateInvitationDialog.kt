@@ -79,15 +79,38 @@ fun shareInvitation(context: Context, code: String, trainerName: String) {
     val shareIntent = Intent().apply {
         action = Intent.ACTION_SEND
         type = "text/plain"
-        putExtra(Intent.EXTRA_TEXT,
-            "¡Únete a TraiScore!\n\n" +
-                    "$trainerName te invita a entrenar con TraiScore.\n\n" +
-                    "Usa este código de invitación: $code\n\n" +
-                    "Descarga la app y regístrate con este código para comenzar."
+        putExtra(
+            Intent.EXTRA_TEXT,
+            buildInviteMessage(code, trainerName)
         )
     }
     context.startActivity(Intent.createChooser(shareIntent, "Compartir invitación"))
 }
+
+fun shareViaWhatsApp(context: Context, code: String, trainerName: String) {
+    val message = buildInviteMessage(code, trainerName)
+    try {
+        val intent = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            setPackage("com.whatsapp")
+            putExtra(Intent.EXTRA_TEXT, message)
+        }
+        context.startActivity(intent)
+    } catch (e: android.content.ActivityNotFoundException) {
+        // WhatsApp no instalado → selector genérico
+        val fallback = Intent(Intent.ACTION_SEND).apply {
+            type = "text/plain"
+            putExtra(Intent.EXTRA_TEXT, message)
+        }
+        context.startActivity(Intent.createChooser(fallback, "Compartir invitación"))
+    }
+}
+
+private fun buildInviteMessage(code: String, trainerName: String) =
+    "¡Únete a TraiScore!\n\n" +
+    "$trainerName te invita a entrenar.\n\n" +
+    "Tu código de invitación: *$code*\n\n" +
+    "Abre TraiScore → Perfil → \"Unirme a un entrenador\" e introduce el código."
 
 fun copyToClipboard(context: Context, code: String) {
     val clipboard = context.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager

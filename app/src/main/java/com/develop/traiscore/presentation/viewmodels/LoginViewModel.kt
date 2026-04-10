@@ -8,7 +8,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.develop.traiscore.BuildConfig
 import com.develop.traiscore.core.Gender
+import com.develop.traiscore.core.UserRole
 import com.develop.traiscore.data.Authentication.AuthResponse
 import com.develop.traiscore.data.Authentication.AuthenticationManager
 import com.develop.traiscore.data.local.entity.UserEntity
@@ -123,7 +125,8 @@ class LoginViewModel(application: Application) : AndroidViewModel(application) {
                     email = currentUser.email ?: googleUserEmail,
                     birthYear = birthDate.year,
                     gender = gender,
-                    photoURL = currentUser.photoUrl?.toString() ?: googleUserPhotoUrl
+                    photoURL = currentUser.photoUrl?.toString() ?: googleUserPhotoUrl,
+                    userRole = if (BuildConfig.FLAVOR == "trainer") UserRole.TRAINER else UserRole.CLIENT
                 )
 
                 val docRef = db.collection("users").document(currentUser.uid)

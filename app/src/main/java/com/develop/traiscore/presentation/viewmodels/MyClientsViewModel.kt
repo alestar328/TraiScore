@@ -57,7 +57,6 @@ class MyClientsViewModel @Inject constructor(
         // Configurar nuevo listener en tiempo real
         clientsListener = firestore.collection("users")
             .whereEqualTo("linkedTrainerUid", currentTrainerId)
-            .whereEqualTo("userRole", "CLIENT")
             .addSnapshotListener { snapshot, error ->
                 if (error != null) {
                     android.util.Log.e("MyClientsVM", "Error en listener de clientes", error)

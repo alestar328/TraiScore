@@ -29,9 +29,13 @@ service cloud.firestore {
       // Solo el propio usuario puede gestionar su documento raíz
       allow get, create, update, delete: if request.auth != null && request.auth.uid == userId;
 
-      // ✅ NUEVO: Los trainers pueden leer el documento de un cliente vinculado a ellos
+      // Los trainers pueden leer el documento de un cliente vinculado a ellos
       allow get: if request.auth != null
                  && resource.data.linkedTrainerUid == request.auth.uid;
+
+      // Los clientes pueden leer el perfil de su trainer (para mostrar info en ProfileScreen)
+      allow get: if request.auth != null
+                 && exists(/databases/$(database)/documents/users/$(userId)/clients/$(request.auth.uid));
 
       // ✅ NUEVO: Los trainers pueden hacer queries sobre users filtrando por linkedTrainerUid.
       // Firestore evalúa esta regla por cada documento devuelto; como el cliente ya consulta
@@ -48,7 +52,11 @@ service cloud.firestore {
 
       // === CLIENTES ===
       match /clients/{clientId} {
-        allow read, write, create, delete: if request.auth != null && request.auth.uid == userId;
+        // El propio trainer gestiona su lista de clientes
+        allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+        // Un cliente puede crearse a sí mismo en la lista de su trainer (al aceptar invitación)
+        allow create: if request.auth != null &&
+          (request.auth.uid == userId || request.auth.uid == clientId);
       }
 
       // === BODY STATS ===
@@ -64,6 +72,9 @@ service cloud.firestore {
       // === WORKOUT ENTRIES ===
       match /workoutEntries/{workoutId} {
         allow read, write, update, delete: if request.auth != null && request.auth.uid == userId;
+        // El trainer puede leer los entrenamientos de sus clientes vinculados
+        allow read: if request.auth != null &&
+          exists(/databases/$(database)/documents/users/$(userId)/clients/$(request.auth.uid));
       }
 
       // === EJERCICIOS PERSONALIZADOS ===
@@ -111,9 +122,8 @@ service cloud.firestore {
       // Todos los autenticados pueden leer (para buscar códigos)
       allow read: if request.auth != null;
 
-      // Solo los trainers pueden crear invitaciones
+      // Solo usuarios autenticados pueden crear invitaciones (la app trainer es la única que expone esta funcionalidad)
       allow create: if request.auth != null &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userRole == 'TRAINER' &&
         request.resource.data.trainerId == request.auth.uid;
 
       // Permitir actualización si el trainer o el cliente la usa

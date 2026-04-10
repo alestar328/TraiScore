@@ -31,14 +31,6 @@ class InvitationRepository @Inject constructor(
                 Exception("Usuario no autenticado")
             )
 
-            // Verificar que el usuario es un trainer
-            val userDoc = usersCollection.document(trainerId).get().await()
-            val userRole = userDoc.getString("userRole")
-
-            if (userRole != "TRAINER") {
-                return Result.failure(Exception("Solo los entrenadores pueden crear invitaciones"))
-            }
-
             // Generar código único
             var inviteCode: String
             var attempts = 0

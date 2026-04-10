@@ -50,7 +50,9 @@ import com.develop.traiscore.exports.ImportRoutineViewModel
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.screens.CameraGalleryScreen
 import com.develop.traiscore.presentation.screens.CameraScanScreen
+import com.develop.traiscore.presentation.screens.BodyMeasurementsHistoryScreen
 import com.develop.traiscore.presentation.screens.ClientProfileScreen
+import com.develop.traiscore.presentation.screens.ClientSessionsScreen
 import com.develop.traiscore.presentation.screens.CreateCategoryUI
 import com.develop.traiscore.presentation.screens.CreateRoutineScreen
 import com.develop.traiscore.presentation.screens.LabResultsScreen
@@ -519,6 +521,9 @@ fun AppNavigation(navController: NavHostController) {
                 ClientProfileScreen(
                     client = client,
                     onBack = { navController.popBackStack() },
+                    onSessionsClick = { clientUid ->
+                        navController.navigate("client_sessions/$clientUid")
+                    },
                     onStatsClick = { clientUid ->
                         navController.navigate("client_stats/$clientUid")
                     },
@@ -528,7 +533,7 @@ fun AppNavigation(navController: NavHostController) {
                     onRoutinesClick = { clientUid ->
                         navController.navigate("client_routines/$clientUid")
                     },
-                    onRemoveClient = { clientUid, onSuccess -> // ✅ NUEVO CALLBACK
+                    onRemoveClient = { clientUid, onSuccess ->
                         myClientsViewModel.removeClient(clientUid) { success, error ->
                             if (success) {
                                 Toast.makeText(
@@ -555,6 +560,34 @@ fun AppNavigation(navController: NavHostController) {
                     CircularProgressIndicator()
                 }
             }
+        }
+
+        composable(
+            route = "client_sessions/{clientId}",
+            arguments = listOf(navArgument("clientId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val clientId = backStackEntry.arguments?.getString("clientId") ?: return@composable
+            val myClientsViewModel: MyClientsViewModel = hiltViewModel()
+            val clients by myClientsViewModel.clients.collectAsState()
+            val clientName = clients.find { it.uid == clientId }?.getFullName() ?: "Cliente"
+
+            ClientSessionsScreen(
+                clientId = clientId,
+                clientName = clientName,
+                onBack = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = "client_measurements_history/{clientId}",
+            arguments = listOf(navArgument("clientId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            backStackEntry.arguments?.getString("clientId") ?: return@composable
+            BodyMeasurementsHistoryScreen(
+                onBack = { navController.popBackStack() },
+                onConfigureTopBar = { _, _, _ -> },
+                onConfigureFAB = {}
+            )
         }
 
         composable(

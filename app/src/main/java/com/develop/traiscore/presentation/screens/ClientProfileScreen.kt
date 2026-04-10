@@ -32,6 +32,7 @@ fun ClientProfileScreen(
     onBack: () -> Unit,
     onStatsClick: (String) -> Unit,
     onMeasurementsClick: (String) -> Unit,
+    onSessionsClick: (String) -> Unit = {},
     modifier: Modifier = Modifier,
     onRoutinesClick: (String) -> Unit,
     onRemoveClient: (String, () -> Unit) -> Unit,
@@ -129,27 +130,37 @@ fun ClientProfileScreen(
                 AdditionalInfoCard(client = client)
             }
 
-            // Botón de Estadísticas
+            // Entrenamientos / sesiones
             item {
                 ActionButton(
-                    text = "Ver Estadísticas",
-                    icon = Icons.Default.Star,
-                    onClick = { onStatsClick(client.uid) },
+                    text = "Entrenamientos",
+                    icon = Icons.Default.DateRange,
+                    onClick = { onSessionsClick(client.uid) },
                     containerColor = traiBlue
                 )
             }
 
-            // Botón de Rutinas (futuro)
+            // Rutinas
             item {
                 ActionButton(
                     text = "Rutinas Asignadas",
-                    icon = Icons.Default.Person,
+                    icon = Icons.Default.Star,
                     onClick = { onRoutinesClick(client.uid) },
                     containerColor = traiOrange
                 )
             }
 
-            // Botón de Medidas Corporales (futuro)
+            // Estadísticas
+            item {
+                ActionButton(
+                    text = "Ver Estadísticas",
+                    icon = Icons.Default.Person,
+                    onClick = { onStatsClick(client.uid) },
+                    containerColor = Color(0xFF7B68EE)
+                )
+            }
+
+            // Medidas corporales
             item {
                 ActionButton(
                     text = "Medidas Corporales",
