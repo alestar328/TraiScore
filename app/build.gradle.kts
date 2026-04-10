@@ -61,7 +61,7 @@ android {
         }*/
         create("trainer") {
             dimension = "version"
-            applicationId = "com.traiscore.trainer"
+            applicationId = "com.develop.traiscore.trainer"
         }
         /*create("lite") {
             dimension = "version"

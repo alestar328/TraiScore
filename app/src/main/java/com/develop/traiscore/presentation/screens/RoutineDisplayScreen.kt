@@ -20,7 +20,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material3.AlertDialog
@@ -45,7 +44,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.develop.traiscore.presentation.viewmodels.RoutineViewModel
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -64,7 +63,7 @@ import com.google.firebase.auth.FirebaseAuth
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RoutineScreen(
-    routineViewModel: RoutineViewModel = viewModel(),
+    routineViewModel: RoutineViewModel = hiltViewModel(),
     documentId: String,
     selectedType: String,
     onBack: () -> Unit,
@@ -76,7 +75,7 @@ fun RoutineScreen(
     onConfigureFAB: (fab: (@Composable () -> Unit)?) -> Unit,
     onOpenChrono: () -> Unit = {}
 ) {
-    val exerciseVM: AddExerciseViewModel = viewModel()
+    val exerciseVM: AddExerciseViewModel = hiltViewModel()
     val exerciseNames by exerciseVM.exerciseNames.collectAsState()
     val context = LocalContext.current
 
@@ -84,7 +83,6 @@ fun RoutineScreen(
     var showAddDialog by remember { mutableStateOf(false) }
     var exerciseCategory by remember { mutableStateOf<com.develop.traiscore.core.DefaultCategoryExer?>(null) }
 
-    var showViewModeSelector by remember { mutableStateOf(false) }
     var currentViewMode by remember { mutableStateOf(ViewMode.TODAY) }
     var selectedMonth by remember { mutableStateOf<MonthYear?>(null) }
 
@@ -142,9 +140,10 @@ fun RoutineScreen(
     val filteredExercises = routineViewModel.getExercisesByType(selectedType)
     val routineTitle = currentRoutineData.routineName.ifBlank { "Rutina" }
 
-    LaunchedEffect(routineTitle) {
+    LaunchedEffect(routineTitle, isTrainerVersion) {
         onConfigureTopBar(
             {
+                // Izquierda: botón volver
                 IconButton(onClick = onBack) {
                     Icon(
                         Icons.AutoMirrored.Filled.ArrowBack,
@@ -154,19 +153,55 @@ fun RoutineScreen(
                 }
             },
             {
-                FloatingActionButton(
-                    onClick = onOpenChrono,
-                    modifier = Modifier.size(30.dp),
-                    containerColor = MaterialTheme.tsColors.ledCyan
-                ) {
-                    Icon(
-                        painter = painterResource(id = R.drawable.timer_icon),
-                        contentDescription = "Temporizador",
-                        tint = Color.Black
-                    )
+                // Derecha: Export (amarillo, todos los flavors) + temporizador
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = {
+                        val routine = routineViewModel.routineDocument ?: return@IconButton
+                        if (routine.sections.isEmpty()) {
+                            Toast.makeText(context, "La rutina no tiene secciones", Toast.LENGTH_SHORT).show()
+                            return@IconButton
+                        }
+                        com.develop.traiscore.exports.RoutineExportManager.exportRoutine(
+                            context = context,
+                            routine = routine,
+                            onSuccess = { fileUri ->
+                                com.develop.traiscore.exports.RoutineExportManager.shareRoutineFile(
+                                    context,
+                                    fileUri,
+                                    routine.routineName
+                                )
+                            },
+                            onError = { err ->
+                                Toast.makeText(context, "❌ Error: $err", Toast.LENGTH_LONG).show()
+                            }
+                        )
+                    }) {
+                        Icon(
+                            painter = painterResource(id = R.drawable.outbox_icon),
+                            modifier = Modifier
+                                .size(80.dp)
+                                .padding(end = 12.dp),
+                            contentDescription = "Exportar rutina",
+                            tint = Color(0xFFFFD600)
+                        )
+                    }
+                    if (!isTrainerVersion) {
+                        FloatingActionButton(
+                            onClick = onOpenChrono,
+                            modifier = Modifier.size(30.dp),
+                            containerColor = MaterialTheme.tsColors.ledCyan
+                        ) {
+                            Icon(
+                                painter = painterResource(id = R.drawable.timer_icon),
+                                contentDescription = "Temporizador",
+                                tint = Color.Black
+                            )
+                        }
+                    }
                 }
             },
             {
+                // Centro: nombre de la rutina
                 Text(
                     text = routineTitle,
                     color = traiBlue
@@ -177,38 +212,8 @@ fun RoutineScreen(
 
     LaunchedEffect(currentViewMode, isTrainerVersion) {
         when {
-            isTrainerVersion -> {
-                onConfigureFAB {
-                    FloatingActionButton(
-                        onClick = {
-                            val routine = routineViewModel.routineDocument ?: return@FloatingActionButton
-                            if (routine.sections.isEmpty()) {
-                                Toast.makeText(context, "La rutina no tiene secciones", Toast.LENGTH_SHORT).show()
-                                return@FloatingActionButton
-                            }
-                            com.develop.traiscore.exports.RoutineExportManager.exportRoutine(
-                                context = context,
-                                routine = routine,
-                                onSuccess = { fileUri ->
-                                    com.develop.traiscore.exports.RoutineExportManager.shareRoutineFile(
-                                        context,
-                                        fileUri,
-                                        routine.routineName
-                                    )
-                                },
-                                onError = { err ->
-                                    Toast.makeText(context, "❌ Error: $err", Toast.LENGTH_LONG).show()
-                                }
-                            )
-                        },
-                        containerColor = Color.Yellow,
-                        contentColor = Color.Black
-                    ) {
-                        Icon(Icons.Default.Email, contentDescription = "Enviar Rutina")
-                    }
-                }
-            }
-            currentViewMode == ViewMode.TODAY -> {
+            isTrainerVersion || currentViewMode == ViewMode.TODAY -> {
+                // Trainer y modo TODAY: FAB de añadir ejercicio
                 onConfigureFAB {
                     FloatingActionButton(
                         onClick = { showAddDialog = true },
@@ -232,16 +237,18 @@ fun RoutineScreen(
             .background(MaterialTheme.colorScheme.background)
     ) {
 
-        ViewModeSelector(
-            selectedMode = currentViewMode,
-            onModeSelected = { mode ->
-                currentViewMode = mode
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(MaterialTheme.colorScheme.background)
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-        )
+        if (!isTrainerVersion) {
+            ViewModeSelector(
+                selectedMode = currentViewMode,
+                onModeSelected = { mode ->
+                    currentViewMode = mode
+                },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(MaterialTheme.colorScheme.background)
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            )
+        }
 
 
         when (currentViewMode) {

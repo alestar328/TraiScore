@@ -1,0 +1,135 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /************************************************************
+     * 🧩 OPCIÓN DE DEBUG GLOBAL (activar solo para pruebas)
+     ************************************************************/
+    /*
+    match /{document=**} {
+      allow read, write, create, update, delete: if true;
+    }
+    */
+
+    /************************************************************
+     * 🔐 REGLAS REALES
+     ************************************************************/
+    match /profile_photos/{userId}/{fileName} {
+      // Solo el dueño puede subir/actualizar su foto
+      allow write: if request.auth != null && request.auth.uid == userId;
+
+      // Todos pueden leer las fotos (para verlas en la app)
+      allow read: if request.auth != null;
+    }
+
+    // === USERS ===
+    match /users/{userId} {
+
+      // Solo el propio usuario puede gestionar su documento raíz
+      allow get, create, update, delete: if request.auth != null && request.auth.uid == userId;
+
+      // ✅ NUEVO: Los trainers pueden leer el documento de un cliente vinculado a ellos
+      allow get: if request.auth != null
+                 && resource.data.linkedTrainerUid == request.auth.uid;
+
+      // ✅ NUEVO: Los trainers pueden hacer queries sobre users filtrando por linkedTrainerUid.
+      // Firestore evalúa esta regla por cada documento devuelto; como el cliente ya consulta
+      // con .whereEqualTo("linkedTrainerUid", trainerId), todos los docs pasan la regla.
+      allow list: if request.auth != null
+                  && resource.data.linkedTrainerUid == request.auth.uid;
+
+      // ✅ NUEVO: Los trainers pueden actualizar linkedTrainerUid e isActive en sus clientes
+      // (usado por la función removeClient del ViewModel)
+      allow update: if request.auth != null
+                    && resource.data.linkedTrainerUid == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['linkedTrainerUid', 'isActive']);
+
+      // === CLIENTES ===
+      match /clients/{clientId} {
+        allow read, write, create, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // === BODY STATS ===
+      match /bodyStats/{bodyStatsId} {
+        // Usuario puede leer y escribir sus medidas
+        allow read, write, create, update, delete: if request.auth != null && request.auth.uid == userId;
+
+        // Trainer puede leer medidas de sus clientes
+        allow read: if request.auth != null &&
+          exists(/databases/$(database)/documents/users/$(request.auth.uid)/clients/$(userId));
+      }
+
+      // === WORKOUT ENTRIES ===
+      match /workoutEntries/{workoutId} {
+        allow read, write, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // === EJERCICIOS PERSONALIZADOS ===
+      match /exercises/{exerciseId} {
+        allow read, write, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // === RUTINAS ===
+      match /routines/{routineId} {
+        // Usuario o su trainer puede leer y escribir
+        allow read, write, update, delete: if request.auth != null &&
+          (
+            request.auth.uid == userId ||
+            resource.data.trainerId == request.auth.uid
+          );
+
+        // Permitir crear rutina desde trainer hacia cliente
+        allow create: if request.auth != null &&
+          request.resource.data.trainerId == request.auth.uid &&
+          request.resource.data.userId == userId;
+      }
+
+      // === SESIONES ===
+      match /sessions/{sessionId} {
+        // Solo el usuario puede crear, leer, actualizar o eliminar sus sesiones
+        allow read, write, create, update, delete: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // === COLECCIÓN GLOBAL DE EJERCICIOS ===
+    match /exercises/{exerciseId} {
+      // Cualquier usuario autenticado puede leer (ver ejercicios por defecto)
+      allow read: if request.auth != null;
+      // Solo administradores o sistema podrían escribir, restringido a uid concreto si quieres
+      allow write: if request.auth != null && request.auth.token.admin == true;
+    }
+
+    // === SUSCRIPCIONES ===
+    match /subscriptions/{userId} {
+      allow read, write, create, update, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // === INVITACIONES ===
+    match /invitations/{invitationId} {
+      // Todos los autenticados pueden leer (para buscar códigos)
+      allow read: if request.auth != null;
+
+      // Solo los trainers pueden crear invitaciones
+      allow create: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.userRole == 'TRAINER' &&
+        request.resource.data.trainerId == request.auth.uid;
+
+      // Permitir actualización si el trainer o el cliente la usa
+      allow update: if request.auth != null &&
+        (
+          resource.data.trainerId == request.auth.uid ||
+          (
+            resource.data.isActive == true &&
+            resource.data.usedBy == null &&
+            request.resource.data.usedBy == request.auth.uid &&
+            request.resource.data.isActive == false
+          )
+        );
+
+      // Trainer puede eliminar sus invitaciones
+      allow delete: if request.auth != null && resource.data.trainerId == request.auth.uid;
+    }
+  }
+}

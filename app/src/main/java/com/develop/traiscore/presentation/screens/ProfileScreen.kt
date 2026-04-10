@@ -32,10 +32,7 @@ import androidx.navigation.NavHostController
 import com.develop.traiscore.BuildConfig
 import com.develop.traiscore.R
 import com.develop.traiscore.core.UserRole
-import com.develop.traiscore.data.local.AppDatabase
-import com.develop.traiscore.presentation.MainActivity
 import com.develop.traiscore.presentation.ScreenState
-import com.develop.traiscore.presentation.components.TraiScoreTopBar
 import com.develop.traiscore.presentation.components.general.ProfilePhotoComponent
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.theme.*
@@ -43,10 +40,8 @@ import com.develop.traiscore.presentation.viewmodels.ProfileViewModel
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.ListenerRegistration
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import kotlinx.coroutines.withContext
 
 data class TrainerInfo(
     val name: String,

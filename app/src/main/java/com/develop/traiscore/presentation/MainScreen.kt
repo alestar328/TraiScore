@@ -435,7 +435,9 @@ private fun TrainerContent(
             },
             onInvitationsClick = {
                 navController.navigate(NavigationRoutes.TrainerInvitations.route)
-            }
+            },
+            onConfigureTopBar = onConfigureTopBar,
+            onConfigureFAB = onConfigureFAB
         )
         1 -> {
             val state = routineScreenState

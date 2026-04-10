@@ -59,7 +59,6 @@ import com.develop.traiscore.R
 import com.develop.traiscore.core.DefaultCategoryExer
 import com.develop.traiscore.data.firebaseData.RoutineDocument
 import com.develop.traiscore.exports.ImportRoutineViewModel
-import com.develop.traiscore.presentation.components.trainers.TopBarTrainersRoutines
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
 import com.develop.traiscore.presentation.theme.traiBlue
 import com.develop.traiscore.presentation.theme.tsColors
@@ -215,17 +214,7 @@ fun RoutineMenuScreen(
         when (BuildConfig.FLAVOR) {
 
             "trainer" -> {
-                onConfigureTopBar(
-                    {
-                        /* Left icon vacío para entrenador */
-                    },
-                    {
-                        TopBarTrainersRoutines(
-                            title = screenTitle,
-                            onShareClick = { println("Compartir rutinas") }
-                        )
-                    }
-                )
+                onConfigureTopBar({ }, { }) // TopBar por defecto: logo "TraiScore" centrado
             }
 
             "production", "lite" -> {
