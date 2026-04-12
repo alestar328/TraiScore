@@ -149,6 +149,16 @@ class StatScreenViewModel @Inject constructor(
                 }
         }
 
+        // BLOQUE: Re-cargar gráficas cuando cambia el rango temporal
+        viewModelScope.launch {
+            _selectedTimeRange
+                .collect {
+                    _selectedExercise.value?.let { exercise ->
+                        loadAllProgressFor(exercise)
+                    }
+                }
+        }
+
         // BLOQUE 2: Live update cuando se agregan/modifican workouts
         viewModelScope.launch {
             workoutRepository.workouts.collect { workouts ->
@@ -421,6 +431,10 @@ class StatScreenViewModel @Inject constructor(
         _selectedExercise.value = name
     }
 
+    fun setTimeRange(range: TimeRange) {
+        _selectedTimeRange.value = range
+    }
+
     private fun loadAllProgressFor(exerciseName: String) {
         viewModelScope.launch {
             try {
@@ -474,22 +488,73 @@ class StatScreenViewModel @Inject constructor(
             return
         }
 
-        val sdf = SimpleDateFormat("dd/MM", Locale.getDefault())
+        // Filtrar por rango temporal seleccionado
+        val cutoff = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_YEAR, -_selectedTimeRange.value.days)
+        }.time
 
-        // ✅ Simplemente ordenar por timestamp y tomar los últimos 12 registros
         val sorted = entries
-            .sortedBy { it.timestamp }  // Orden cronológico (más antiguo primero)
-            .takeLast(12)                // Últimos 12 registros
+            .filter { it.timestamp.after(cutoff) }
+            .sortedBy { it.timestamp }
 
-        // Mapear a las listas de gráficas
-        val wData = sorted.map { sdf.format(it.timestamp) to it.weight }
-        val rData = sorted.map { sdf.format(it.timestamp) to it.reps.toFloat() }
-        val rirData = sorted.map { sdf.format(it.timestamp) to (it.rir ?: 0).toFloat() }
+        if (sorted.isEmpty()) {
+            _weightProgress.value = emptyList()
+            _repsProgress.value = emptyList()
+            _rirProgress.value = emptyList()
+            _circularData.value = Triple(0f, 0, 0)
+            return
+        }
+
+        // Mapear a las listas de gráficas según el rango seleccionado
+        when (_selectedTimeRange.value) {
+            TimeRange.ONE_YEAR -> {
+                // Agrupar por mes: valor más alto de cada mes
+                val monthSdf = SimpleDateFormat("MMM/yy", Locale.getDefault())
+                val grouped = sorted.groupBy { entry ->
+                    val c = Calendar.getInstance().apply { time = entry.timestamp }
+                    c.get(Calendar.YEAR) * 100 + c.get(Calendar.MONTH)
+                }.toSortedMap()
+                _weightProgress.value = grouped.values.map { g ->
+                    monthSdf.format(g.first().timestamp) to g.maxOf { it.weight }
+                }
+                _repsProgress.value = grouped.values.map { g ->
+                    monthSdf.format(g.first().timestamp) to g.maxOf { it.reps }.toFloat()
+                }
+                _rirProgress.value = grouped.values.map { g ->
+                    val rirs = g.mapNotNull { it.rir }
+                    val avg = if (rirs.isNotEmpty()) rirs.average().toFloat() else 0f
+                    monthSdf.format(g.first().timestamp) to avg
+                }
+            }
+            TimeRange.SIX_MONTHS -> {
+                // Agrupar por semana: valor más alto de cada semana
+                val weekSdf = SimpleDateFormat("dd/MM", Locale.getDefault())
+                val grouped = sorted.groupBy { entry ->
+                    val c = Calendar.getInstance().apply { time = entry.timestamp }
+                    c.get(Calendar.YEAR) * 100 + c.get(Calendar.WEEK_OF_YEAR)
+                }.toSortedMap()
+                _weightProgress.value = grouped.values.map { g ->
+                    weekSdf.format(g.first().timestamp) to g.maxOf { it.weight }
+                }
+                _repsProgress.value = grouped.values.map { g ->
+                    weekSdf.format(g.first().timestamp) to g.maxOf { it.reps }.toFloat()
+                }
+                _rirProgress.value = grouped.values.map { g ->
+                    val rirs = g.mapNotNull { it.rir }
+                    val avg = if (rirs.isNotEmpty()) rirs.average().toFloat() else 0f
+                    weekSdf.format(g.first().timestamp) to avg
+                }
+            }
+            else -> {
+                // Registros individuales para rangos cortos
+                val sdf = SimpleDateFormat("dd/MM", Locale.getDefault())
+                _weightProgress.value = sorted.map { sdf.format(it.timestamp) to it.weight }
+                _repsProgress.value = sorted.map { sdf.format(it.timestamp) to it.reps.toFloat() }
+                _rirProgress.value = sorted.map { sdf.format(it.timestamp) to (it.rir ?: 0).toFloat() }
+            }
+        }
+
         val allRir = sorted.mapNotNull { it.rir }
-
-        _weightProgress.value = wData
-        _repsProgress.value = rData
-        _rirProgress.value = rirData
 
         // Calcular datos circulares (máximos y promedio)
         val oneRm = sorted.maxOfOrNull { entry ->
@@ -534,10 +599,7 @@ class StatScreenViewModel @Inject constructor(
 
         _circularData.value = Triple(oneRm, maxRp, avgRir)
 
-        Log.d("StatsVM", "📊 Procesados ${sorted.size} registros del ejercicio")
-        Log.d("StatsVM", "📈 Weight data: $wData")
-        Log.d("StatsVM", "📊 Reps data: $rData")
-        Log.d("StatsVM", "🎯 RIR data: $rirData")
+        Log.d("StatsVM", "📊 Procesados ${sorted.size} registros · rango=${_selectedTimeRange.value.displayName}")
     }
 
 

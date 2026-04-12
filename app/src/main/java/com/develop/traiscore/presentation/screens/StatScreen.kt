@@ -54,12 +54,14 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
 import com.develop.traiscore.R
+import com.develop.traiscore.core.TimeRange
 import com.develop.traiscore.domain.model.BodyMeasurementProgressData
 import com.develop.traiscore.domain.model.BodyMeasurementType
 import com.develop.traiscore.presentation.components.ChronoScreen
 import com.develop.traiscore.presentation.components.CircularProgressView
 import com.develop.traiscore.presentation.components.FilterableDropdown
 import com.develop.traiscore.presentation.components.LineChartView
+import com.develop.traiscore.presentation.components.PeriodicityBar
 import com.develop.traiscore.presentation.components.ToggleButtonRowStats
 import com.develop.traiscore.presentation.navigation.NavigationRoutes
 import com.develop.traiscore.presentation.theme.TraiScoreTheme
@@ -105,6 +107,7 @@ fun StatScreen(
 
     val radarChartData by viewModel.radarChartData.collectAsState()
     val isLoadingRadarData by viewModel.isLoadingRadarData.collectAsState()
+    val selectedTimeRange by viewModel.selectedTimeRange.collectAsState()
 
     var photoUri by remember { mutableStateOf<Uri?>(null) }
     val context = LocalContext.current
@@ -233,7 +236,7 @@ fun StatScreen(
                                     Column {
                                         Text(
                                             text = stringResource(id = R.string.stats_filter),
-                                            style = MaterialTheme.typography.titleLarge,
+                                            style = MaterialTheme.typography.titleMedium,
                                             color = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.padding(bottom = 8.dp)
                                         )
@@ -261,7 +264,7 @@ fun StatScreen(
                                         ) {
                                             Text(
                                                 text = "Últimas series",
-                                                style = MaterialTheme.typography.titleLarge
+                                                style = MaterialTheme.typography.titleMedium
                                             )
                                             Text(
                                                 text = "RM: Repetición máxima según tu útima serie",
@@ -358,11 +361,18 @@ fun StatScreen(
 
                                     }
 
+                                    // Selector de rango temporal
+                                    PeriodicityBar(
+                                        selectedRange = selectedTimeRange,
+                                        onRangeSelected = { viewModel.setTimeRange(it) },
+                                        modifier = Modifier.padding(vertical = 4.dp)
+                                    )
+
                                     // Gráfica Por peso
                                     Column {
                                         Text(
                                             text = stringResource(id = R.string.stats_by_weight),
-                                            style = MaterialTheme.typography.titleLarge,
+                                            style = MaterialTheme.typography.titleMedium,
                                             color = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.padding(bottom = 8.dp)
                                         )
@@ -381,7 +391,7 @@ fun StatScreen(
                                     Column {
                                         Text(
                                             text = stringResource(id = R.string.stats_by_reps),
-                                            style = MaterialTheme.typography.titleLarge,
+                                            style = MaterialTheme.typography.titleMedium,
                                             color = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.padding(bottom = 8.dp)
                                         )
@@ -399,7 +409,7 @@ fun StatScreen(
                                     Column {
                                         Text(
                                             text = stringResource(id = R.string.stats_by_rir),
-                                            style = MaterialTheme.typography.titleLarge,
+                                            style = MaterialTheme.typography.titleMedium,
                                             color = MaterialTheme.colorScheme.onBackground,
                                             modifier = Modifier.padding(bottom = 8.dp)
                                         )
@@ -608,8 +618,262 @@ fun StatScreen(
                 showChronoScreen = false
             }
         )
+}
 
+// ─────────────────────────────────────────────
+// PREVIEWS
+// ─────────────────────────────────────────────
 
+@androidx.compose.ui.tooling.preview.Preview(
+    name = "StatScreen – Records",
+    showBackground = true,
+    backgroundColor = 0xFF1A1A2E
+)
+@Composable
+private fun StatScreenRecordsPreview() {
+    com.develop.traiscore.presentation.theme.TraiScoreTheme {
+        StatScreenPreviewContent(tab = StatTab.RECORDS)
+    }
+}
 
+@androidx.compose.ui.tooling.preview.Preview(
+    name = "StatScreen – Measurements",
+    showBackground = true,
+    backgroundColor = 0xFF1A1A2E
+)
+@Composable
+private fun StatScreenMeasurementsPreview() {
+    com.develop.traiscore.presentation.theme.TraiScoreTheme {
+        StatScreenPreviewContent(tab = StatTab.MEASUREMENTS)
+    }
+}
 
+@Composable
+private fun StatScreenPreviewContent(tab: StatTab) {
+    val fakeWeightData = listOf(
+        "Ene" to 60f, "Feb" to 65f, "Mar" to 72f,
+        "Abr" to 70f, "May" to 75f, "Jun" to 80f
+    )
+    val fakeRepsData = listOf(
+        "Ene" to 8f, "Feb" to 10f, "Mar" to 10f,
+        "Abr" to 12f, "May" to 12f, "Jun" to 14f
+    )
+    val fakeRirData = listOf(
+        "Ene" to 3f, "Feb" to 2f, "Mar" to 2f,
+        "Abr" to 1f, "May" to 2f, "Jun" to 1f
+    )
+    val fakeBodyData = listOf(
+        "Ene" to 85f, "Mar" to 83f, "Jun" to 80f
+    )
+    val fakeOneRm = 102.5
+    val fakeBestWeight = 90f
+    val fakePercentRm = 0.88f
+    val fakeAverageRir = 2.0
+
+    var selectedTab by remember { mutableStateOf(tab) }
+
+    Column(
+        modifier = Modifier
+            .background(MaterialTheme.colorScheme.background)
+            .padding(horizontal = 16.dp)
+            .fillMaxSize()
+    ) {
+        ToggleButtonRowStats(
+            selectedTab = selectedTab,
+            onTabSelected = { selectedTab = it },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 8.dp)
+        )
+
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = 8.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            // ── RECORDS TAB ──────────────────────────────────────────
+            item {
+                AnimatedVisibility(visible = selectedTab == StatTab.RECORDS) {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        // Filtro (estático en preview)
+                        Column {
+                            Text(
+                                text = "Filtrar por ejercicio",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onBackground,
+                                modifier = Modifier.padding(bottom = 8.dp)
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(50.dp)
+                                    .background(Color.DarkGray, RoundedCornerShape(8.dp))
+                                    .padding(horizontal = 12.dp),
+                                contentAlignment = Alignment.CenterStart
+                            ) {
+                                Text("Press Banca", color = Color.White, fontSize = 14.sp)
+                            }
+                        }
+
+                        // Leyenda
+                        Column(modifier = Modifier.padding(3.dp)) {
+                            Text("Últimas series", style = MaterialTheme.typography.titleMedium,
+                                color = MaterialTheme.colorScheme.onBackground)
+                            Text("RM: Repetición máxima según tu última serie",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+                            Text("MR: Máximas repeticiones posibles",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.6f))
+                        }
+
+                        // Circulares
+                        Row(
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.DarkGray, RoundedCornerShape(8.dp))
+                                .padding(5.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(8.dp)
+                            ) {
+                                Text("1RM: ${"%.1f".format(fakeOneRm)}",
+                                    style = MaterialTheme.typography.bodyLarge, color = traiBlue)
+                                Spacer(Modifier.height(8.dp))
+                                CircularProgressView(
+                                    progress = (fakeOneRm / 150).toFloat().coerceIn(0f, 1f),
+                                    maxLabel = "${"%.1f".format(fakeOneRm)} Kg",
+                                    modifier = Modifier.size(80.dp),
+                                    strokeColor = Color.Cyan,
+                                    backgroundColor = traiOrange
+                                )
+                            }
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(8.dp)
+                            ) {
+                                Text("Φ: ${(fakePercentRm * 100).toInt()}%",
+                                    style = MaterialTheme.typography.bodyLarge, color = traiBlue)
+                                Spacer(Modifier.height(8.dp))
+                                CircularProgressView(
+                                    progress = fakePercentRm.coerceIn(0f, 1f),
+                                    maxLabel = "${fakeBestWeight}kg",
+                                    modifier = Modifier.size(80.dp),
+                                    strokeColor = Color.Cyan,
+                                    backgroundColor = traiOrange
+                                )
+                            }
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(8.dp)
+                            ) {
+                                Text("Esfuerzo",
+                                    style = MaterialTheme.typography.bodyLarge, color = traiBlue)
+                                Spacer(Modifier.height(8.dp))
+                                CircularProgressView(
+                                    progress = (fakeAverageRir / 10f).toFloat().coerceIn(0f, 1f),
+                                    maxLabel = "${fakeAverageRir} RIR",
+                                    modifier = Modifier.size(80.dp),
+                                    strokeColor = Color.Cyan,
+                                    backgroundColor = traiOrange
+                                )
+                            }
+                        }
+
+                        // Gráficas
+                        listOf(
+                            "Progreso por peso" to fakeWeightData,
+                            "Progreso por repeticiones" to fakeRepsData,
+                            "Progreso por RIR" to fakeRirData
+                        ).forEach { (title, data) ->
+                            Column {
+                                Text(title, style = MaterialTheme.typography.titleMedium,
+                                    color = MaterialTheme.colorScheme.onBackground,
+                                    modifier = Modifier.padding(bottom = 8.dp))
+                                LineChartView(
+                                    dataPoints = data,
+                                    lineColor = Color.Cyan,
+                                    backgroundChartColor = Color.DarkGray,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(120.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            // ── MEASUREMENTS TAB ─────────────────────────────────────
+            item {
+                AnimatedVisibility(visible = selectedTab == StatTab.MEASUREMENTS) {
+                    Column(verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text("Selecciona una medida",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.padding(bottom = 8.dp))
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(55.dp)
+                                .background(Color.DarkGray, RoundedCornerShape(8.dp))
+                                .padding(horizontal = 12.dp),
+                            contentAlignment = Alignment.CenterStart
+                        ) {
+                            Text("Cintura", color = Color.White, fontSize = 15.sp)
+                        }
+
+                        Text("Progreso de Cintura:",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onBackground,
+                            modifier = Modifier.padding(bottom = 8.dp))
+                        LineChartView(
+                            dataPoints = fakeBodyData,
+                            lineColor = traiBlue,
+                            backgroundChartColor = Color.DarkGray,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(120.dp)
+                        )
+
+                        // Resumen
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(Color.DarkGray, RoundedCornerShape(8.dp))
+                                .padding(20.dp)
+                        ) {
+                            Text("Resumen Cintura",
+                                style = MaterialTheme.typography.titleMedium,
+                                color = Color.White,
+                                modifier = Modifier.padding(bottom = 8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween
+                            ) {
+                                Column {
+                                    Text("Actual", color = Color.Gray,
+                                        style = MaterialTheme.typography.bodySmall)
+                                    Text("80.0 cm", color = traiBlue)
+                                }
+                                Column {
+                                    Text("Cambio total", color = Color.Gray,
+                                        style = MaterialTheme.typography.bodySmall)
+                                    Text("-5.0 cm", color = traiBlue)
+                                }
+                                Column {
+                                    Text("Registros", color = Color.Gray,
+                                        style = MaterialTheme.typography.bodySmall)
+                                    Text("3", color = traiBlue)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
