@@ -81,7 +81,6 @@ fun BodyMeasurementsScreen(
         "Female" to stringResource(R.string.gender_female),
         "Other" to stringResource(R.string.gender_other)
     )
-    var showUpgradeDialog by remember { mutableStateOf(false) }
     var subscriptionLimits by remember { mutableStateOf<SubscriptionLimits?>(null) }
 
     // Estados de medidas - inicializar con datos del ViewModel o initialData
@@ -149,20 +148,17 @@ fun BodyMeasurementsScreen(
             gender = selectedGender,
             measurements = currentMeasurements,
             subscriptionViewModel = subscriptionViewModel
-        ) { success, error, requiresUpgrade ->
-            when {
-                success -> {
-                    val message = if (bodyStatsViewModel.isEditMode) {
-                        "Medidas actualizadas exitosamente"
-                    } else {
-                        "Medidas guardadas exitosamente"
-                    }
-                    Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
-                    subscriptionLimits = subscriptionViewModel.checkBodyStatsLimits()
-                    onSave(selectedGender, currentMeasurements)
+        ) { success, error, _ ->
+            if (success) {
+                val message = if (bodyStatsViewModel.isEditMode) {
+                    "Medidas actualizadas exitosamente"
+                } else {
+                    "Medidas guardadas exitosamente"
                 }
-                requiresUpgrade -> showUpgradeDialog = true
-                else -> Toast.makeText(context, error ?: "Error al guardar", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, message, Toast.LENGTH_SHORT).show()
+                onSave(selectedGender, currentMeasurements)
+            } else {
+                Toast.makeText(context, error ?: "Error al guardar", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -210,23 +206,6 @@ fun BodyMeasurementsScreen(
     }
 
     // Diálogo de actualización de plan
-    if (showUpgradeDialog) {
-        UpgradeDialog(
-            limits = subscriptionLimits,
-            onDismiss = { showUpgradeDialog = false },
-            onUpgrade = {
-                // Simular upgrade (aquí se integrará el sistema de pagos)
-                subscriptionViewModel.upgradeToPremium { success ->
-                    if (success) {
-                        Toast.makeText(context, "¡Upgrade exitoso! Ahora tienes medidas ilimitadas", Toast.LENGTH_LONG).show()
-                        showUpgradeDialog = false
-                    } else {
-                        Toast.makeText(context, "Error en el upgrade", Toast.LENGTH_SHORT).show()
-                    }
-                }
-            }
-        )
-    }
 
     LaunchedEffect(bodyStatsViewModel.isEditMode) {
         onConfigureTopBar(
@@ -321,13 +300,6 @@ fun BodyMeasurementsScreen(
                     verticalArrangement = Arrangement.spacedBy(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Mostrar información de suscripción
-                    if (!bodyStatsViewModel.isEditMode) {
-                        subscriptionLimits?.let { limits ->
-                            SubscriptionInfoCard(limits = limits)
-                        }
-                    }
-
                     // 1) Selector de género
              /*       Text("Género", style = MaterialTheme.typography.titleLarge)
 

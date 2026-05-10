@@ -505,52 +505,96 @@ class StatScreenViewModel @Inject constructor(
             return
         }
 
+        val sdf = SimpleDateFormat("dd/MM", Locale.getDefault())
+
         // Mapear a las listas de gráficas según el rango seleccionado
         when (_selectedTimeRange.value) {
             TimeRange.ONE_YEAR -> {
-                // Agrupar por mes: valor más alto de cada mes
+                // Agrupa por mes → entrada de mayor peso del mes, últimos 12 meses
                 val monthSdf = SimpleDateFormat("MMM/yy", Locale.getDefault())
                 val grouped = sorted.groupBy { entry ->
                     val c = Calendar.getInstance().apply { time = entry.timestamp }
                     c.get(Calendar.YEAR) * 100 + c.get(Calendar.MONTH)
                 }.toSortedMap()
-                _weightProgress.value = grouped.values.map { g ->
-                    monthSdf.format(g.first().timestamp) to g.maxOf { it.weight }
-                }
-                _repsProgress.value = grouped.values.map { g ->
-                    monthSdf.format(g.first().timestamp) to g.maxOf { it.reps }.toFloat()
-                }
-                _rirProgress.value = grouped.values.map { g ->
+                val points: List<List<WorkoutEntry>> = grouped.values.toList().takeLast(12)
+                val wList = mutableListOf<Pair<String, Float>>()
+                val rList = mutableListOf<Pair<String, Float>>()
+                val rirList = mutableListOf<Pair<String, Float>>()
+                points.forEach { g ->
+                    val top = g.maxByOrNull { it.weight }!!
+                    val label = monthSdf.format(top.timestamp)
+                    wList.add(label to top.weight)
+                    rList.add(label to top.reps.toFloat())
                     val rirs = g.mapNotNull { it.rir }
                     val avg = if (rirs.isNotEmpty()) rirs.average().toFloat() else 0f
-                    monthSdf.format(g.first().timestamp) to avg
+                    rirList.add(label to avg)
                 }
+                _weightProgress.value = wList
+                _repsProgress.value = rList
+                _rirProgress.value = rirList
             }
             TimeRange.SIX_MONTHS -> {
-                // Agrupar por semana: valor más alto de cada semana
-                val weekSdf = SimpleDateFormat("dd/MM", Locale.getDefault())
+                // Agrupa por sesión (día) → entrada de mayor peso, últimas 20 sesiones
                 val grouped = sorted.groupBy { entry ->
                     val c = Calendar.getInstance().apply { time = entry.timestamp }
-                    c.get(Calendar.YEAR) * 100 + c.get(Calendar.WEEK_OF_YEAR)
+                    c.get(Calendar.YEAR) * 10000 + c.get(Calendar.MONTH) * 100 + c.get(Calendar.DAY_OF_MONTH)
                 }.toSortedMap()
-                _weightProgress.value = grouped.values.map { g ->
-                    weekSdf.format(g.first().timestamp) to g.maxOf { it.weight }
-                }
-                _repsProgress.value = grouped.values.map { g ->
-                    weekSdf.format(g.first().timestamp) to g.maxOf { it.reps }.toFloat()
-                }
-                _rirProgress.value = grouped.values.map { g ->
+                val points: List<List<WorkoutEntry>> = grouped.values.toList().takeLast(20)
+                val wList = mutableListOf<Pair<String, Float>>()
+                val rList = mutableListOf<Pair<String, Float>>()
+                val rirList = mutableListOf<Pair<String, Float>>()
+                points.forEach { g ->
+                    val top = g.maxByOrNull { it.weight }!!
+                    val label = sdf.format(top.timestamp)
+                    wList.add(label to top.weight)
+                    rList.add(label to top.reps.toFloat())
                     val rirs = g.mapNotNull { it.rir }
                     val avg = if (rirs.isNotEmpty()) rirs.average().toFloat() else 0f
-                    weekSdf.format(g.first().timestamp) to avg
+                    rirList.add(label to avg)
                 }
+                _weightProgress.value = wList
+                _repsProgress.value = rList
+                _rirProgress.value = rirList
             }
-            else -> {
-                // Registros individuales para rangos cortos
-                val sdf = SimpleDateFormat("dd/MM", Locale.getDefault())
-                _weightProgress.value = sorted.map { sdf.format(it.timestamp) to it.weight }
-                _repsProgress.value = sorted.map { sdf.format(it.timestamp) to it.reps.toFloat() }
-                _rirProgress.value = sorted.map { sdf.format(it.timestamp) to (it.rir ?: 0).toFloat() }
+            TimeRange.TWO_MONTHS -> {
+                // Agrupa por sesión (día), emite max y min de peso con sus reps correspondientes
+                val grouped = sorted.groupBy { entry ->
+                    val c = Calendar.getInstance().apply { time = entry.timestamp }
+                    c.get(Calendar.YEAR) * 10000 + c.get(Calendar.MONTH) * 100 + c.get(Calendar.DAY_OF_MONTH)
+                }.toSortedMap()
+                val weightPoints = mutableListOf<Pair<String, Float>>()
+                val repsPoints = mutableListOf<Pair<String, Float>>()
+                val rirPoints = mutableListOf<Pair<String, Float>>()
+                grouped.values.forEach { g ->
+                    val label = sdf.format(g.first().timestamp)
+                    val maxEntry = g.maxByOrNull { it.weight }!!
+                    val minEntry = g.minByOrNull { it.weight }!!
+                    val rirs = g.mapNotNull { it.rir }
+                    val avgRir = if (rirs.isNotEmpty()) rirs.average().toFloat() else 0f
+                    weightPoints.add(label to maxEntry.weight)
+                    weightPoints.add(label to minEntry.weight)
+                    repsPoints.add(label to maxEntry.reps.toFloat())
+                    repsPoints.add(label to minEntry.reps.toFloat())
+                    rirPoints.add(label to avgRir)
+                    rirPoints.add(label to avgRir)
+                }
+                _weightProgress.value = weightPoints
+                _repsProgress.value = repsPoints
+                _rirProgress.value = rirPoints
+            }
+            TimeRange.ONE_MONTH -> {
+                // Registros individuales → últimos 20
+                val points: List<WorkoutEntry> = sorted.drop(maxOf(0, sorted.size - 20))
+                _weightProgress.value = points.map { sdf.format(it.timestamp) to it.weight }
+                _repsProgress.value = points.map { sdf.format(it.timestamp) to it.reps.toFloat() }
+                _rirProgress.value = points.map { sdf.format(it.timestamp) to (it.rir ?: 0).toFloat() }
+            }
+            TimeRange.TWO_WEEKS -> {
+                // Registros individuales → últimos 12
+                val points: List<WorkoutEntry> = sorted.drop(maxOf(0, sorted.size - 12))
+                _weightProgress.value = points.map { sdf.format(it.timestamp) to it.weight }
+                _repsProgress.value = points.map { sdf.format(it.timestamp) to it.reps.toFloat() }
+                _rirProgress.value = points.map { sdf.format(it.timestamp) to (it.rir ?: 0).toFloat() }
             }
         }
 

@@ -5,6 +5,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import com.develop.traiscore.R
 import com.develop.traiscore.data.local.entity.UserMeasurements
 
 
@@ -21,7 +22,7 @@ fun QuickMeasurementSummary(
             MeasurementChip(
                 label = "Peso",
                 value = "${measurements.weight} kg",
-                icon = Icons.Default.ThumbUp
+                drawableRes = R.drawable.weight
             )
         }
 
@@ -29,7 +30,7 @@ fun QuickMeasurementSummary(
             MeasurementChip(
                 label = "Altura",
                 value = "${measurements.height} cm",
-                icon = Icons.Default.ThumbUp
+                drawableRes = R.drawable.height
             )
         }
 

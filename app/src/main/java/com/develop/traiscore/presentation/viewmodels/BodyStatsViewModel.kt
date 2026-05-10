@@ -55,6 +55,12 @@ class BodyStatsViewModel @Inject constructor(
     // Lista de medidas para el historial
     private var bodyStatsList by mutableStateOf<List<BodyStatsEntity>>(emptyList())
 
+    init {
+        FirebaseAuth.getInstance().currentUser?.uid?.let { uid ->
+            loadBodyStatsForUser(uid)
+        }
+    }
+
     private fun getCurrentUserId(): String {
         val userId = targetUserId ?: FirebaseAuth.getInstance().currentUser?.uid ?: ""
         Log.d(TAG, "🔧 getCurrentUserId() retorna: $userId (targetUserId=$targetUserId)")
@@ -184,61 +190,23 @@ class BodyStatsViewModel @Inject constructor(
         Log.d(TAG, "Iniciando guardado/actualización. EditMode: $isEditMode, LocalId: $editingLocalId")
 
         if (isEditMode && editingLocalId != null) {
-            // Modo edición: actualizar registro existente
             updateBodyStats(editingLocalId!!, gender, measurements) { success, error ->
-                if (success) {
-                    clearEditMode()
-                }
+                if (success) clearEditMode()
                 onComplete(success, error, false)
             }
         } else {
-            // Modo creación: verificar límites y crear nuevo
-            saveBodyStatsWithLimits(gender, measurements, subscriptionViewModel, onComplete)
-        }
-    }
-
-    /**
-     * Guardar nuevas medidas con verificación de límites
-     */
-    private fun saveBodyStatsWithLimits(
-        gender: String,
-        measurements: Map<String, String>,
-        subscriptionViewModel: SubscriptionViewModel,
-        onComplete: (success: Boolean, error: String?, requiresUpgrade: Boolean) -> Unit
-    ) {
-        viewModelScope.launch {
-            Log.d(TAG, "Verificando límites de suscripción...")
-
-            // Verificar límites usando el conteo local
-            val currentCount = repository.getBodyStatsCount(getCurrentUserId())
-            subscriptionViewModel.checkCanCreateNewDocumentWithCount(currentCount) { canCreate, message ->
-                if (!canCreate) {
-                    Log.w(TAG, "Límite alcanzado: $message")
-                    onComplete(false, message, true)
-                    return@checkCanCreateNewDocumentWithCount
-                }
-
-                // Guardar en Repository (local + sync)
-                viewModelScope.launch {
-                    isLoading = true
-                    val localId = repository.createBodyStats(gender, measurements)
-
-                    if (localId > 0) {
-                        Log.d(TAG, "✅ Medidas guardadas con ID local: $localId")
-
-                        // Actualizar estado local
-                        selectedGender = gender
-                        bodyMeasurements = measurements
-
-                        // Actualizar conteo en subscription
-                        subscriptionViewModel.updateBodyStatsCount(currentCount + 1)
-
-                        isLoading = false
-                        onComplete(true, null, false)
-                    } else {
-                        isLoading = false
-                        onComplete(false, "Error al guardar medidas", false)
-                    }
+            viewModelScope.launch {
+                isLoading = true
+                val localId = repository.createBodyStats(gender, measurements)
+                if (localId > 0) {
+                    Log.d(TAG, "✅ Medidas guardadas con ID local: $localId")
+                    selectedGender = gender
+                    bodyMeasurements = measurements
+                    isLoading = false
+                    onComplete(true, null, false)
+                } else {
+                    isLoading = false
+                    onComplete(false, "Error al guardar medidas", false)
                 }
             }
         }
@@ -312,8 +280,9 @@ class BodyStatsViewModel @Inject constructor(
                     return@launch
                 }
 
-                // Usar datos locales
-                val historyList = bodyStatsList.map { entity ->
+                // Leer siempre directo de Room para no depender de bodyStatsList
+                val entities = repository.getBodyStatsForUser(userId)
+                val historyList = entities.map { entity ->
                     mapOf(
                         "documentId" to (entity.firebaseId.ifEmpty { entity.id.toString() }),
                         "gender" to entity.gender,
